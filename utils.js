@@ -5,21 +5,28 @@
 "use strict";
 
 
-const FOAF = require("./foaf");
-const RDFS = require("./rdfs");
-const SKOS = require("./skos");
-const DCTERMS = require("./dcterms");
-const hk = require("./hk");
-const Constants = require("./constants");
+const FOAF 			= require("./foaf");
+const RDFS 			= require("./rdfs");
+const SKOS 			= require("./skos");
+const DCTERMS 		= require("./dcterms");
+const hk 			= require("./hk");
+const Constants 	= require("./constants");
 
-const MD5 = require("md5.js");
+const MD5 			= require("md5.js");
 
-const xml = require("./xmlschema");
-const HKTypes = require("hklib").Types;
+const xml 			= require("./xmlschema");
+const HKTypes 		= require("hklib").Types;
 
-const HKProtocolLength = Constants.HYPERKNOWLEDGE_PROTOCOL.length;
-const BlankIdProtocolLength = Constants.BLANK_ID_PROTOCOL.length;
-const HKRefProtocolLength = Constants.HK_REFERENCE.length;
+const HKProtocolLength = Constants.HK_ID_PREFIX.length;
+const BlankIdProtocolLength = Constants.HK_BLANK_NODE_PREFIX.length;
+const HKRefProtocolLength = Constants.HK_REFERENCE_PREFIX.length;
+
+const NUMBER_DATATYPES = new Set();
+NUMBER_DATATYPES.add(xml.INTEGER_URI);
+NUMBER_DATATYPES.add(xml.NONNEGATIVEINTEGER_URI);
+NUMBER_DATATYPES.add(xml.DECIMAL_URI);
+NUMBER_DATATYPES.add(xml.DOUBLE_URI);
+NUMBER_DATATYPES.add(xml.FLOAT_URI);
 
 const LIST_OF_PROPERTIES = 
 [
@@ -86,9 +93,9 @@ function getIdFromResource(uri)
         {
             return null;
         }
-        else if(uri.startsWith(`<${Constants.HYPERKNOWLEDGE_PROTOCOL}`))
+        else if(uri.startsWith(`<${Constants.HK_ID_PREFIX}`))
         {
-            let id = uri.slice(HKProtocolLength + 1, -1);
+            let id = uri.slice(HKProtocolLength + 2, -1); // +2 for '<' and '/'; -1 for '>'
 
             if(id !== "null")
             {
@@ -99,9 +106,9 @@ function getIdFromResource(uri)
                 return null;
             }
         }
-		else if(uri.startsWith(`<${Constants.BLANK_ID_PROTOCOL}`))
+		else if(uri.startsWith(`<${Constants.HK_BLANK_NODE_PREFIX}`))
         {
-            let id = uri.slice(BlankIdProtocolLength + 1, -1);
+            let id = uri.slice(BlankIdProtocolLength + 2, -1);
 
             return `_:${id}`;
         }
@@ -113,7 +120,7 @@ function generateResourceFromId(id)
 {  
     if(id)
     {
-        return `${Constants.HYPERKNOWLEDGE_PROTOCOL}${encodeURIComponent(id)}`;
+        return `${Constants.HK_ID_PREFIX}/${encodeURIComponent(id)}`;
     }
     return Constants.HK_NULL;
 }
@@ -207,9 +214,11 @@ function adHocGetType(input)
     return null;
 }
 
-function getValueFromLiteral(literal, typeInfo = {})
+function getValueFromLiteral(literal, typeInfo = {}, convert = false)
 {
     let parsedLiteral = adHocGetType(literal);
+
+	typeInfo = typeInfo || {}; // in case of
 
     let value = null;
     if(parsedLiteral)
@@ -217,7 +226,31 @@ function getValueFromLiteral(literal, typeInfo = {})
         typeInfo.type = parsedLiteral.type;
         typeInfo.lang = parsedLiteral.lang;
 
-        return parsedLiteral.value;
+		value = parsedLiteral.value;
+		if(convert)
+		{
+			if (NUMBER_DATATYPES.has(typeInfo.type))
+			{
+				let numberValue = Number(value);
+				if (!isNaN(numberValue))
+				{
+					value = numberValue;
+				}
+			}
+			else if (typeInfo.type === xml.BOOLEAN_URI)
+			{
+				if (value === "false")
+				{
+					value = false;
+				}
+				else if(value === "true")
+				{
+					value = true
+				}
+			}
+		}
+
+        return value;
     }
     else if(!isUriOrBlankNode(literal)) 
     {
@@ -389,18 +422,18 @@ function createLiteral(value, lang, type)
 function createRefUri(id, parent)
 {
 	let hash = new MD5().update(`${encodeURIComponent(parent)}/${encodeURIComponent(id)}`).digest("hex");
-	return `<${Constants.HK_REFERENCE}/${hash}>`;
+	return `<${Constants.HK_REFERENCE_PREFIX}/${hash}>`;
 }
 
 function createBlankNodeUri(id)
 {
-	return `<${Constants.BLANK_ID_PROTOCOL}${id}>`;
+	return `<${Constants.HK_BLANK_NODE_PREFIX}/${id}>`;
 }
 
 function createSpoUri(s, p, o, g = "")
 {
 	let hash = new MD5().update(`${s}${p}${o}${g}`).digest("hex");
-	return `<${Constants.HK_LINK}/${hash}>`;
+	return `<${Constants.HK_LINK_PREFIX}/${hash}>`;
 }
 
 exports.createLiteralObject = createLiteralObject;
