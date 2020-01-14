@@ -95,7 +95,11 @@ function serializeGraph(graph, callback)
 
 function rdfStreamParse(inputData, mimeType, callback)
 {
-	const parser = new RDFSParser.RdfXmlParser();
+	const parser = new RDFSParser.RdfXmlParser(
+		{
+			baseIRI: Constants.HK_NULL
+		}
+	);
 
 	parser.write(inputData);
 	parser.end();
