@@ -505,7 +505,7 @@ function isCompressedAnchor(uri)
 
 function decompressRoleUri(uri)
 {
-    return decodeURIComponent(uri.slice(12, -1));
+    return decodeURIComponent(uri.slice(Constants.HK_ROLE_PREFIX.length + 2, -1));
 }
 
 
