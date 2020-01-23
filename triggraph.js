@@ -11,19 +11,18 @@ const Utils = require("./utils");
 const { DataFactory } = N3;
 const { namedNode, literal, blankNode } = DataFactory;
 
-function TriGGraph( storedGraph, baseUri, mimetype) 
+function TriGGraph( storedGraph, baseUri, mimetype, store = false) 
 {
 	this.mimeType = mimetype || "application/trig";
-	this.graph = storedGraph || new N3.Store();
+	this.store = store;
+	this.graph = storedGraph || (this.store? new N3.Store() : new N3.Writer({format: this.mimeType}));
 	this.baseUri = baseUri || Constants.HK_NULL;
+	
 }
 
 TriGGraph.prototype.add = function(s, p, o, g) {
-
 	s = createResource(s);
-	p = createResource(p);
-	
-	
+	p = createResource(p);	
 
 	if(typeof o === "object")
 	{
@@ -49,8 +48,6 @@ TriGGraph.prototype.add = function(s, p, o, g) {
 	{
 		this.graph.addQuad(s, p, o);
 	}
-	
-
 };
 
 TriGGraph.prototype.forEachStatement = function(callback) {
