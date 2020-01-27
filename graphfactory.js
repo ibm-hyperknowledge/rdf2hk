@@ -129,7 +129,7 @@ function n3Parse(inputData, mimeType, callback)
 			}
 			else if(!err)
 			{
-				let triggraph = new TriGGraph(store, `${Constants.HK_NULL}`, mimeType);
+				let triggraph = new TriGGraph(store, `${Constants.HK_NULL}`, mimeType, true);
 				callback(null, triggraph);
 			}
 			else
