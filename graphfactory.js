@@ -12,7 +12,7 @@ const Constants = require("./constants");
 let RDFSParser = require("rdfxml-streaming-parser");
 let N3 = require("n3");
 
-function createGraph(mimeType)
+function createGraph(mimeType, store = false)
 {
 	let out = null;
 	switch(mimeType)
@@ -24,7 +24,7 @@ function createGraph(mimeType)
 		case "application/trig":
 		case "application/turtle":
 		case "text/turtle":
-			return new TriGGraph(undefined, undefined, mimeType);
+			return new TriGGraph(undefined, undefined, mimeType, store);
 		case "application/rdf+xml":
 			return new RDFGraph(undefined, undefined, mimeType);
 	}
@@ -73,21 +73,21 @@ function parseGraph(inputData, mimeType, callback)
 	return out;
 }
 
-function serializeGraph(graph, callback)
+function serializeGraph(aGraph, callback)
 {
 	let out = null;
-	let mimeType = graph.mimeType;
+	let mimeType = aGraph.mimeType;
 	switch(mimeType)
 	{
 		case "application/json":
-			callback(null, JSON.stringify(graph.triples, null, " "));
+			callback(null, JSON.stringify(aGraph.triples, null, " "));
 			break;
 		case "application/n-triples":
 		case "application/n-quads":
 		case "application/trig":
 		case "application/turtle":
 		case "text/turtle":
-			n3Serialize(graph, callback);
+			n3Serialize(aGraph, callback);
 			break;
 	}
 	return out;
@@ -95,7 +95,11 @@ function serializeGraph(graph, callback)
 
 function rdfStreamParse(inputData, mimeType, callback)
 {
-	const parser = new RDFSParser.RdfXmlParser();
+	const parser = new RDFSParser.RdfXmlParser(
+		{
+			baseIRI: Constants.HK_NULL
+		}
+	);
 
 	parser.write(inputData);
 	parser.end();
@@ -125,7 +129,7 @@ function n3Parse(inputData, mimeType, callback)
 			}
 			else if(!err)
 			{
-				let triggraph = new TriGGraph(store, `${Constants.HK_NULL}`, mimeType);
+				let triggraph = new TriGGraph(store, `${Constants.HK_NULL}`, mimeType, true);
 				callback(null, triggraph);
 			}
 			else
@@ -140,30 +144,51 @@ function n3Parse(inputData, mimeType, callback)
 	}
 }
 
-function n3Serialize(graph, callback)
+function n3Serialize(aGraph, callback)
 {
-	const writer = new N3.Writer({format: graph.mimeType});
+	if (aGraph.store)
+	{
+		const writer = new N3.Writer({format: aGraph.mimeType});
 	
-	graph.graph.forEach ((statement) =>
-	{
-		if(statement)
+		aGraph.graph.forEach ((statement) =>
 		{
-			writer.addQuad(statement);
-		}
+			if(statement)
+			{
+				writer.addQuad(statement);
+			}
 
-	});
-	writer.end((err, data) =>
+		});
+
+		writer.end((err, data) =>
+		{
+			if(!err)
+			{
+				callback(null, data);
+			}
+			else
+			{
+				callback(err);
+			}
+			
+		});
+	}
+	else
 	{
-		if(!err)
+		// Graph is already a writer
+		aGraph.graph.end((err, data) =>
 		{
-			callback(null, data);
-		}
-		else
-		{
-			callback(err);
-		}
-		
-	});
+			if(!err)
+			{
+				callback(null, data);
+			}
+			else
+			{
+				callback(err);
+			}
+		});
+
+	}
+	
 }
 
 exports.createGraph = createGraph;

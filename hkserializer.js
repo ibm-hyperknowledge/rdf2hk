@@ -218,12 +218,13 @@ HKSerializer.prototype.serialize = function(entity)
 
 function compressRoleInUri(role)
 {
-    return `<hkrole://h/${encodeURIComponent(role)}>`;
+    return `<${Constants.HK_ROLE_PREFIX}/${encodeURIComponent(role)}>`;
 }
 
 function compressAnchorInUri(entityId, key)
 {
 	let hash = new MD5().update(`${encodeURIComponent(entityId)}/${encodeURIComponent(key)}`).digest("hex");
+
     return `<${Constants.HK_ANCHOR_PREFIX}/${hash}>`;
 }
 
@@ -236,7 +237,7 @@ function _serializeAnchors(uri, entity, parentUri, graph)
 
 			let interf = entity.interfaces[k];
 			let key = interf.key || k;
-			let interfaceNode = compressAnchorInUri(entity, key);
+			let interfaceNode = compressAnchorInUri(entity.id, key);
 
 			if(key)
 			{

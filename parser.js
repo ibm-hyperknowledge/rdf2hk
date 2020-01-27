@@ -37,23 +37,6 @@ RELATION_QUALIFIER_URIS.add(owl.INVERSE_OF_URI);
 RELATION_QUALIFIER_URIS.add(rdfs.SUBPROPERTYOF_URI);
 
 
-const DATA_TYPES = new Set();
-DATA_TYPES.add(xml.STRING_URI);
-DATA_TYPES.add(xml.INTEGER_URI);
-DATA_TYPES.add(xml.DECIMAL_URI);
-DATA_TYPES.add(xml.BOOLEAN_URI);
-DATA_TYPES.add(xml.DATETIME_URI);
-DATA_TYPES.add(xml.DATE_URI);
-DATA_TYPES.add(xml.TIME_URI);
-
-const NUMBER_DATATYPES = new Set();
-NUMBER_DATATYPES.add(xml.INTEGER_URI);
-NUMBER_DATATYPES.add(xml.NONNEGATIVEINTEGER_URI);
-NUMBER_DATATYPES.add(xml.DECIMAL_URI);
-NUMBER_DATATYPES.add(xml.DOUBLE_URI);
-NUMBER_DATATYPES.add(xml.FLOAT_URI);
-
-
 const isUriOrBlankNode = Utils.isUriOrBlankNode;
 
 /**
@@ -381,34 +364,21 @@ function parseGraph(graph, options)
 function _setPropertyFromLiteral(node, p, o)
 {
 	let typeInfo = {};
-	let value = Utils.getValueFromLiteral(o, typeInfo);
+	let value = Utils.getValueFromLiteral(o, typeInfo, true);
 
-	let literalSlices = value.split(`^^`);
-	if (literalSlices[0] === `"<${Constants.HK_NULL}>"`)
+	if(typeof value === "string")
 	{
-		if (literalSlices[1] !== null)
+		let literalSlices = value.split(`^^`);
+		if (literalSlices[0] === `"<${Constants.HK_NULL}>"`)
 		{
-			node.setMetaProperty(Utils.getIdFromResource(p), Utils.getIdFromResource(literalSlices[1]));
+			if (literalSlices[1] !== null)
+			{
+				node.setMetaProperty(Utils.getIdFromResource(p), Utils.getIdFromResource(literalSlices[1]));
+			}
+			return;
 		}
-		return;
 	}
 
-	// // Convert to number if needed
-	if (NUMBER_DATATYPES.has(typeInfo.type))
-	{
-		let numberValue = Number(value);
-		if (!isNaN(numberValue))
-		{
-			value = numberValue;
-		}
-	}
-	else if (typeInfo.type === xml.BOOLEAN_URI)
-	{
-		if (value === "false" || value === "true")
-		{
-			value = JSON.parse(value);
-		}
-	}
 
 	let propertyName = Utils.getIdFromResource(p);
 

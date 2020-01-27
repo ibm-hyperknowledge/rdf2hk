@@ -39,8 +39,10 @@ HYPERKNOWLEDGE_URIS.add(HKUris.ANCHOR_TYPE_URI);
 
 const NUMBER_DATATYPES = new Set();
 NUMBER_DATATYPES.add(xml.INTEGER_URI);
+NUMBER_DATATYPES.add(xml.NONNEGATIVEINTEGER_URI);
 NUMBER_DATATYPES.add(xml.DECIMAL_URI);
 NUMBER_DATATYPES.add(xml.DOUBLE_URI);
+NUMBER_DATATYPES.add(xml.FLOAT_URI);
 
 
 function HKParser(sharedEntities, sharedBlankNodeMap, onlyHK)
@@ -304,7 +306,9 @@ HKParser.prototype.setIntrisecsProperties = function(s, p, o, g, spo)
                     {
                         let properties = interf.properties;
                         
-                        properties[Utils.getIdFromResource(p)] = Utils.getValueFromLiteral(o);
+						let value = Utils.getValueFromLiteral(o, null, true);
+
+                        properties[Utils.getIdFromResource(p)] = value;
                     }
                 }
                 break;
@@ -484,7 +488,8 @@ function isCompressedRoleUri(uri)
 {
 	if(typeof uri === "string")
 	{
-    	return uri.startsWith("<hkrole://h/");
+    	// return uri.startsWith("<hkrole://h/");
+		return uri.startsWith(`<${Constants.HK_ROLE_PREFIX}`);
 	}
     return false;
 }
@@ -500,7 +505,7 @@ function isCompressedAnchor(uri)
 
 function decompressRoleUri(uri)
 {
-    return decodeURIComponent(uri.slice(12, -1));
+    return decodeURIComponent(uri.slice(Constants.HK_ROLE_PREFIX.length + 2, -1));
 }
 
 
