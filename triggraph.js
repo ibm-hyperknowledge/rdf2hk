@@ -92,6 +92,17 @@ TriGGraph.prototype.fromBGP = function(s = null, p = null, o = null, g = null) {
 	return new TriGGraph(newGraph, this.baseUri, this.mimeType);
 };
 
+TriGGraph.prototype.getEntitiesId = function ()
+{
+	let entitiesObjects = this.graph.getObjects().map(e => e.id);
+	let entitiesSubjects = this.graph.getSubjects().map(e => e.id);
+	let entitiesGraphs = this.graph.getGraphs().map(e => e.id);
+
+	let result = [...new Set([...entitiesObjects, ...entitiesSubjects, ...entitiesGraphs])];
+
+	return result;
+}
+
 function getValue (term, baseUri) {
 	if (term.termType === "NamedNode") {
 		return `<${term.id}>`;
@@ -118,9 +129,6 @@ function createResource (id, forceUri = true) {
 	} else if (Utils.isBlankNode(id)) {
 		return blankNode(id.substr(2, id.length - 2));
 	} else if (Utils.isLiteral(id)) {
-		// let t = {};
-		// let v = Utils.getValueFromLiteral(id, t);
-		// return literal(v, t.lang || t.type);
 		return literal(v);
 	} else if (forceUri) {
 		return namedNode(Utils.generateResourceFromId(id));

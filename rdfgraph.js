@@ -16,7 +16,6 @@ function RDFGraph(storedGraph, baseUri, mimeType) {
 }
 
 RDFGraph.prototype.add = function (s, p, o, g) {
-
 	s = createResource(s);
 	p = createResource(p);
 	o = createResource(o);
@@ -109,7 +108,6 @@ function createResource(id, forceUri = true)
 			{
 				return DataFactory.literal(v);
 			}
-			// return 
 		} else if (forceUri) {
 			return DataFactory.namedNode(Utils.generateResourceFromId(id));
 		} else {
