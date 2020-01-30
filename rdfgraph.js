@@ -157,4 +157,16 @@ RDFGraph.prototype.fromBGP = function (s = null, p = null, o = null, g = null) {
 	return new RDFGraph(newGraph, this.mimeType);
 };
 
+RDFGraph.prototype.getEntitiesId = function ()
+{	
+	let entitiesSubjects = this.graph.map(e => e.subject.value);
+	let entitiesObjects = this.graph.filter(e => e.object.constructor.name !== "Literal");
+	entitiesObjects = entitiesObjects.map(e => e.object.value);
+	let entitiesGraphs = this.graph.map(e => e.graph.value);
+
+	let result = [...new Set([...entitiesObjects, ...entitiesSubjects, ...entitiesGraphs])];
+
+	return result;
+}
+
 module.exports = RDFGraph;
