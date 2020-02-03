@@ -4,7 +4,6 @@
  */
 "use strict";
 
-
 exports.HK_PROTOCOL							= "hk";
 exports.DEFAULT_SUBJECT_ROLE 	            = "subject";
 exports.DEFAULT_OBJECT_ROLE 	            = "object";
