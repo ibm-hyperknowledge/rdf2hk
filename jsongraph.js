@@ -89,9 +89,4 @@ JSONGraph.prototype.fromBGP = function (s = null, p = null, o = null, g = null)
 	return new JSONGraph(out, this.mimeType);
 }
 
-function creteResource()
-{
-
-}
-
 module.exports = JSONGraph;

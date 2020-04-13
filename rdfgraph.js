@@ -16,7 +16,6 @@ function RDFGraph(storedGraph, baseUri, mimeType) {
 }
 
 RDFGraph.prototype.add = function (s, p, o, g) {
-
 	s = createResource(s);
 	p = createResource(p);
 	o = createResource(o);
@@ -109,7 +108,6 @@ function createResource(id, forceUri = true)
 			{
 				return DataFactory.literal(v);
 			}
-			// return 
 		} else if (forceUri) {
 			return DataFactory.namedNode(Utils.generateResourceFromId(id));
 		} else {
@@ -158,5 +156,17 @@ RDFGraph.prototype.fromBGP = function (s = null, p = null, o = null, g = null) {
 	}
 	return new RDFGraph(newGraph, this.mimeType);
 };
+
+RDFGraph.prototype.getEntitiesId = function ()
+{	
+	let entitiesSubjects = this.graph.map(e => e.subject.value);
+	let entitiesObjects = this.graph.filter(e => e.object.constructor.name !== "Literal");
+	entitiesObjects = entitiesObjects.map(e => e.object.value);
+	let entitiesGraphs = this.graph.map(e => e.graph.value);
+
+	let result = [...new Set([...entitiesObjects, ...entitiesSubjects, ...entitiesGraphs])];
+
+	return result;
+}
 
 module.exports = RDFGraph;

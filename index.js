@@ -9,9 +9,11 @@ const Serializer 	= require("./serializer");
 const Utils 		= require("./utils");
 const Constants 	= require("./constants");
 const GraphFactory 	= require("./graphfactory");
+const HK            = require("./hk");
 
 exports.Parser = Parser;
 exports.Utils = Utils;
 exports.Constants = Constants;
 exports.GraphFactory = GraphFactory;
+exports.HK = HK;
 exports.Serializer = Serializer;

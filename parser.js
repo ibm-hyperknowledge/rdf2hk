@@ -40,10 +40,9 @@ RELATION_QUALIFIER_URIS.add(rdfs.SUBPROPERTYOF_URI);
 const isUriOrBlankNode = Utils.isUriOrBlankNode;
 
 /**
- * @deprecated This method will be deleted in next vesions. Use parseGraph instead.
- * Parse rdf triples to Hyperknowledge entities
+ * Parse rdf to Hyperknowledge entities.
  * 
- * @param {Array} triples The triples (quads, if it contains named graph) to be parsed and converted to Hyperknowledge entities. It can be a vector of vector or a vector of rdflib.js statements.
+ * @param {object} graph The graph (quads, if it contains named graph) to be parsed and converted to Hyperknowledge entities.
  * @param {boolean|object} [options] Parsing options, if it is a boolean, is equivalent to {createContext: true} which means it will generate context for each named graph.
  * @param {boolean} [options.createContext] Create the context entity for each named graph. Default is false.
  * @param {boolean} [options.subjectLabel] Set the subject role name `subject`
