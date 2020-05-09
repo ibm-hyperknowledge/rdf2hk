@@ -35,6 +35,7 @@ const HKParser = require("./hkparser");
 const RELATION_QUALIFIER_URIS = new Set();
 RELATION_QUALIFIER_URIS.add(owl.INVERSE_OF_URI);
 RELATION_QUALIFIER_URIS.add(rdfs.SUBPROPERTYOF_URI);
+const HK_NULL_URI = `<${Constants.HK_NULL}>`;
 
 
 const isUriOrBlankNode = Utils.isUriOrBlankNode;
@@ -79,6 +80,8 @@ function parseGraph(graph, options)
 
 	let setNodeContext = options.setNodeContext && true;
 
+	let rootContext = options.context;
+
 	let convertHK = options.convertHK && true;
 
 	let onlyHK = options.onlyHK || false;
@@ -100,33 +103,38 @@ function parseGraph(graph, options)
 
 	let hkParser = new HKParser(entities, blankNodesMap, onlyHK);
 
+	let getParent = (g) => 
+	{
+		return ((g === HK_NULL_URI || g === null) && rootContext) ? rootContext : g;
+	}
+
 	let createReference = (s, g) =>
 	{
+		const parent = getParent(g);
 		let ref = new Reference();
-
-		ref.id = Utils.createRefUri(s, g);
+		ref.id = Utils.createRefUri(s, parent);
 		ref.ref = s;
-		ref.parent = g || null;
+		ref.parent = parent;
 
 		entities[ref.id] = ref;
 
 		return ref;
 	}
 
-
 	// FIRST LOOP
 	// Collect basic connectors
 	// Collect contexts
 	graph.forEachStatement((s, p, o, g) =>
 	{
-		if (convertHK && hkParser.shouldConvert(s, p, o, g))
+		const parent = getParent(g);
+		if (convertHK && hkParser.shouldConvert(s, p, o, parent))
 		{
-			hkParser.createEntities(s, p, o, g);
+			hkParser.createEntities(s, p, o, parent);
 			return;
 		}
-		else if (convertOwl && owlParser.shouldConvert(s, p, o, g))
+		else if (convertOwl && owlParser.shouldConvert(s, p, o, parent))
 		{
-			owlParser.createConnectors(s, p, o, g);
+			owlParser.createConnectors(s, p, o, parent);
 			return;
 		}
 		// Create connector?
@@ -142,14 +150,14 @@ function parseGraph(graph, options)
 			entities[connector.id] = connector;
 		}
 
-		if (createContext && g)
+		if (createContext && parent)
 		{
 			// Create context
-			if (!entities.hasOwnProperty(g))
+			if (!entities.hasOwnProperty(parent))
 			{
 				let context = new Context();
-				context.id = g;
-				entities[g] = context;
+				context.id = parent;
+				entities[parent] = context;
 			}
 		}
 	});
@@ -158,6 +166,7 @@ function parseGraph(graph, options)
 	// Create nodes
 	graph.forEachStatement((s, p, o, g) =>
 	{
+		const parent = getParent(g);
 		// console.log(s, p, o);
 		// Replace the blank node identitier to uuid
 		// In order to make this id more robust along the base
@@ -174,11 +183,11 @@ function parseGraph(graph, options)
 			}
 		}
 
-		if (onlyHK || (convertHK && hkParser.shouldConvert(s, p, o, g)))
+		if (onlyHK || (convertHK && hkParser.shouldConvert(s, p, o, parent)))
 		{
 			return;
 		}
-		else if (convertOwl && owlParser.shouldConvert(s, p, o, g))
+		else if (convertOwl && owlParser.shouldConvert(s, p, o, parent))
 		{
 			return;
 		}
@@ -191,9 +200,9 @@ function parseGraph(graph, options)
 			entities[node.id] = node;
 
 			// Set the context to the graph name
-			if (setNodeContext && g)
+			if (setNodeContext && parent)
 			{
-				node.parent = Utils.getIdFromResource(g);
+				node.parent = Utils.getIdFromResource(parent);
 			}
 		}
 
@@ -205,9 +214,9 @@ function parseGraph(graph, options)
 			entities[node.id] = node;
 
 			// Set the context to the graph name
-			if (setNodeContext && g)
+			if (setNodeContext && parent)
 			{
-				node.parent = Utils.getIdFromResource(g);
+				node.parent = Utils.getIdFromResource(parent);
 			}
 		}
 
@@ -217,14 +226,15 @@ function parseGraph(graph, options)
 	// Create attributes and relations and ref nodes if need
 	graph.forEachStatement((s, p, o, g) =>
 	{
-		if (convertHK && hkParser.shouldConvert(s, p, o, g))
+		const parent = getParent(g);
+		if (convertHK && hkParser.shouldConvert(s, p, o, parent))
 		{
-			hkParser.setIntrisecsProperties(s, p, o, g);
+			hkParser.setIntrisecsProperties(s, p, o, parent);
 			return;
 		}
-		else if (convertOwl && owlParser.shouldConvert(s, p, o, g))
+		else if (convertOwl && owlParser.shouldConvert(s, p, o, parent))
 		{
-			owlParser.createRelationships(s, p, o, g);
+			owlParser.createRelationships(s, p, o, parent);
 			return;
 		}
 
@@ -259,12 +269,12 @@ function parseGraph(graph, options)
 				}
 
 				// console.log(s, p, o);
-				link.id = Utils.createSpoUri(s, p, o, g);
+				link.id = Utils.createSpoUri(s, p, o, parent);
 
 				link.connector = connectorId;
 				if (g)
 				{
-					link.parent = Utils.getIdFromResource(g);
+					link.parent = Utils.getIdFromResource(parent);
 				}
 				entities[link.id] = link;
 			}
@@ -283,7 +293,7 @@ function parseGraph(graph, options)
 			}
 			let subjectId = Utils.getIdFromResource(s);
 
-			if (!Utils.getIdFromResource(g))
+			if (!Utils.getIdFromResource(parent))
 			{
 				node = entities[subjectId]; // we assume the entity must have been created
 			}
@@ -293,7 +303,7 @@ function parseGraph(graph, options)
 
 				if(node !== null)
 				{
-					if (node.type !== Connector.type && node.parent !== Utils.getIdFromResource(g))
+					if (node.type !== Connector.type && node.parent !== Utils.getIdFromResource(parent))
 					{
 						// The node already exists and it belongs to another context
 						// This assign will force to look for a reference node
@@ -304,7 +314,7 @@ function parseGraph(graph, options)
 				// Check if there is a reference to the resource
 				if (!node)
 				{
-					let refId = Utils.createRefUri(s, g);
+					let refId = Utils.createRefUri(s, parent);
 
 					node = entities[refId] || null;
 				}
@@ -321,7 +331,7 @@ function parseGraph(graph, options)
 					// hyperknowledge entities
 					return;
 				}
-				node = createReference(s, g);
+				node = createReference(s, parent);
 			}
 
 			// Convert the literal
@@ -368,7 +378,7 @@ function _setPropertyFromLiteral(node, p, o)
 	if(typeof value === "string")
 	{
 		let literalSlices = value.split(`^^`);
-		if (literalSlices[0] === `"<${Constants.HK_NULL}>"`)
+		if (literalSlices[0] === `"${HK_NULL_URI}"`)
 		{
 			if (literalSlices[1] !== null)
 			{
