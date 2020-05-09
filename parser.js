@@ -150,7 +150,7 @@ function parseGraph(graph, options)
 			entities[connector.id] = connector;
 		}
 
-		if (createContext && parent)
+		if (createContext && parent && parent !== HK_NULL_URI)
 		{
 			// Create context
 			if (!entities.hasOwnProperty(parent))
