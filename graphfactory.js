@@ -89,6 +89,8 @@ function serializeGraph(aGraph, callback)
 		case "text/turtle":
 			n3Serialize(aGraph, callback);
 			break;
+		default:
+			callback(`The mimeType ${mimeType} is not currently supported for serialization.`);
 	}
 	return out;
 }
