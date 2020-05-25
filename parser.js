@@ -234,8 +234,10 @@ function parseGraph(graph, options)
 		}
 		else if (convertOwl && owlParser.shouldConvert(s, p, o, parent))
 		{
-			owlParser.createRelationships(s, p, o, parent);
-			return;
+			if (owlParser.createRelationships(s, p, o, parent)) 
+			{
+				return;
+			}
 		}
 
 		// Set relationship

@@ -72,8 +72,6 @@ class SimpleOwlParser
 				connector.addRole(this.subjectLabel, RoleTypes.SUBJECT);
 				connector.addRole(this.objectLabel, RoleTypes.OBJECT);
 
-				connector.setOrAppendToProperty(rdfs.TYPE_URI, o);
-
 				this.entities[s] = connector;
 			}
 		}
@@ -111,7 +109,10 @@ class SimpleOwlParser
 			{
 				ref.setOrAppendToProperty(p, o);
 			}
+
+			return true;
 		}
+		return false;
 
 	}
 
