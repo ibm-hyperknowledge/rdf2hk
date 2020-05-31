@@ -92,6 +92,7 @@ function parseGraph(graph, options)
 
 	const subjectLabel = options.subjectLabel || Constants.DEFAULT_SUBJECT_ROLE;
 	const objectLabel = options.objectLabel || Constants.DEFAULT_OBJECT_ROLE;
+	const hierarchyConnectorIDs = options.hierarchyConnectorIDs || [rdfs.TYPE_URI, rdfs.SUBCLASSOF_URI, rdfs.SUBPROPERTYOF_URI];
 
 	let entities = {};
 	let connectors = {};
@@ -143,7 +144,7 @@ function parseGraph(graph, options)
 		{
 			let connector = new Connector();
 			connector.id = Utils.getIdFromResource(p);
-			connector.className = p === rdfs.TYPE_URI ? ConnectorClass.HIERARCHY : ConnectorClass.FACTS;
+			connector.className = hierarchyConnectorIDs.includes(p) ? ConnectorClass.HIERARCHY : ConnectorClass.FACTS;
 			connector.addRole(subjectLabel, RoleTypes.SUBJECT);
 			connector.addRole(objectLabel, RoleTypes.OBJECT);
 			connectors[connector.id] = connector;
