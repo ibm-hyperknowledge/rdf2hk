@@ -250,7 +250,7 @@ function serialize(entities, options = {}, graph = new TriGGraph())
     return graph;
 }
 
-function _addLiteral(id, graph, predicate, value, metaProperty, graphName)
+function _addLiteral(entity, graph, predicate, value, metaProperty, graphName)
 {
     let typeInfo = {};
 
@@ -275,13 +275,13 @@ function _addLiteral(id, graph, predicate, value, metaProperty, graphName)
     }
     let literal = Utils.createLiteralObject(v, lang, type);
 
-    if (id.hasOwnProperty('type')){
-        if (id.type === 'ref'){
+    if (entity.hasOwnProperty('type')){
+        if (entity.type === 'ref'){
             //we are dealing with a ref node, use reference for the triple 
-            graph.add(id.ref, predicate, literal, graphName);
+            graph.add(entity.ref, predicate, literal, graphName);
         }        
     }
-    graph.add(id.id, predicate, literal, graphName);
+    graph.add(entity.id, predicate, literal, graphName);
 
 }
 
