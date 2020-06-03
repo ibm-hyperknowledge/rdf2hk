@@ -276,7 +276,7 @@ function _addLiteral(entity, graph, predicate, value, metaProperty, graphName)
     let literal = Utils.createLiteralObject(v, lang, type);
 
     if (entity.hasOwnProperty('type')){
-        if (entity.type === 'ref'){
+        if (entity.type === Reference.type){
             //we are dealing with a ref node, use reference for the triple 
             graph.add(entity.ref, predicate, literal, graphName);
         }        
