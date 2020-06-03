@@ -250,7 +250,7 @@ function serialize(entities, options = {}, graph = new TriGGraph())
     return graph;
 }
 
-function _addLiteral(id, graph, predicate, value, metaProperty, graphName)
+function _addLiteral(entity, graph, predicate, value, metaProperty, graphName)
 {
     let typeInfo = {};
 
@@ -273,10 +273,16 @@ function _addLiteral(id, graph, predicate, value, metaProperty, graphName)
     {
         lang = typeInfo.lang;
     }
-    
     let literal = Utils.createLiteralObject(v, lang, type);
 
-    graph.add(id, predicate, literal, graphName);
+    if (entity.hasOwnProperty('type')){
+        if (entity.type === Reference.type){
+            //we are dealing with a ref node, use reference for the triple 
+            graph.add(entity.ref, predicate, literal, graphName);
+        }        
+    }
+    graph.add(entity.id, predicate, literal, graphName);
+
 }
 
 function _collectProperties(entity, graph, options)
@@ -302,7 +308,7 @@ function _collectProperties(entity, graph, options)
 			if(metaProperty !== null)
 			{
 				// Update only metaproperty
-				_addLiteral(entity.id, graph, key, null, metaProperty, graphName);
+				_addLiteral(entity, graph, key, null, metaProperty, graphName);
 			}
 			return;
 		}
@@ -327,12 +333,12 @@ function _collectProperties(entity, graph, options)
             {
                 if(metaProperty)
                 {
-                    _addLiteral(entity.id, graph, key, value[i], metaProperty, graphName);
+                    _addLiteral(entity, graph, key, value[i], metaProperty, graphName);
                 }
                 else
                 {
                     let currentMetaProperty = Utils.getTypeIfNumberOrBoolean(value[i]);
-                    _addLiteral(entity.id, graph, key, value[i], currentMetaProperty, graphName);
+                    _addLiteral(entity, graph, key, value[i], currentMetaProperty, graphName);
                 }
             }
         }
@@ -342,7 +348,7 @@ function _collectProperties(entity, graph, options)
             {
                 metaProperty = Utils.getTypeIfNumberOrBoolean(value);
             }
-            _addLiteral(entity.id, graph, key, value, metaProperty, graphName);
+            _addLiteral(entity, graph, key, value, metaProperty, graphName);
         }
     });
 }
