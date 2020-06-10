@@ -12,3 +12,5 @@ exports.DOMAIN_URI = "<http://www.w3.org/2000/01/rdf-schema#domain>";
 exports.SUBCLASSOF_URI = "<http://www.w3.org/2000/01/rdf-schema#subClassOf>";
 exports.SUBPROPERTYOF_URI = "<http://www.w3.org/2000/01/rdf-schema#subPropertyOf>";
 exports.LANG_STRING_URI = "<http://www.w3.org/1999/02/22-rdf-syntax-ns#langString>";
+exports.DATATYPE_URI = "<http://www.w3.org/2000/01/rdf-schema#Datatype>";
+exports.LITERAL_URI = "<http://www.w3.org/2000/01/rdf-schema#Literal>";
