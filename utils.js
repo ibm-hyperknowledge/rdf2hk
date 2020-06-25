@@ -322,22 +322,89 @@ function getTitleFromProperty(properties, key)
     }
 }
 
-function getEntityTitle(entity)
+
+function getTitlesByLanguageFromProperty(properties, key)
+{
+    if(!properties.hasOwnProperty(key))
+    {
+        return null;
+    }
+
+    let value = properties[key];
+   
+    const titlesByLanguage = {};
+    
+    if(Array.isArray(value))
+    {
+        for(let i = 0; i < value.length; i++)
+        {
+            const titleInfo = {lang: null};
+            const title = getValueFromLiteral(value[i], titleInfo) || value[i];
+            const titleLanguage = titleInfo.lang || 'unknown';
+            if(!titlesByLanguage.hasOwnProperty(titleLanguage))
+            {
+                titlesByLanguage[titleLanguage] = [];
+            }
+            titlesByLanguage[titleLanguage].push(title);
+        }
+    }
+    else
+    {
+        const titleInfo = {lang: null};
+        const title = getValueFromLiteral(value, titleInfo) || value;
+        const titleLanguage = titleInfo.lang || 'unknown';
+        titlesByLanguage[titleLanguage] = [title];
+    }
+
+    return titlesByLanguage;
+}
+
+function getEntityTitle(entity, languagePreference = null)
 {
     if(entity.properties)
     {
-        let out = null;
+    
+        // fetch all available titles
+        const orderedLangs = languagePreference || ['en', 'es'];
+        const titlesByLang = {
+            'en': [],
+            'es': []
+        };
         for(let i = 0; i < LIST_OF_PROPERTIES.length; i++)
         {
-            if(out = getTitleFromProperty(entity.properties, LIST_OF_PROPERTIES[i]))
+            const titlesByLangFromProperty = getTitlesByLanguageFromProperty(entity.properties, LIST_OF_PROPERTIES[i]);
+            
+            // handle title as a dictionary of titles by language
+            if(titlesByLangFromProperty != null)
             {
-				if(!isUriOrBlankNode(out))
-				{
-                	return out;
-				}
-				out = null;
+                for(const titleLang in titlesByLangFromProperty)
+                {
+                    if(!titlesByLang.hasOwnProperty(titleLang))
+                    {
+                        titlesByLang[titleLang] = [];
+                        orderedLangs.push(titleLang)
+                    }
+                    titlesByLang[titleLang] = titlesByLang[titleLang].concat(titlesByLangFromProperty[titleLang]);
+                }   
             }
         }
+
+        // Retrieve the first valid title following languange preference order
+        for(let i = 0; i < orderedLangs.length; i++)
+        {
+            const titles = titlesByLang[orderedLangs[i]];
+            for(let j = 0; j < titles.length; j++)
+            {
+                const title = titles[j];
+                if(!isUriOrBlankNode(title))
+                {
+                    return title;
+                }
+            }   
+        }
+
+        // retrieves null if no titles were found
+        return null;
     }
 
     if(entity.type === HKTypes.REFERENCE)
