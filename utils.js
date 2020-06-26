@@ -403,8 +403,6 @@ function getEntityTitle(entity, languagePreference = null)
             }   
         }
 
-        // retrieves null if no titles were found
-        return null;
     }
 
     if(entity.type === HKTypes.REFERENCE)
