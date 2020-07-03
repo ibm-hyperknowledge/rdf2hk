@@ -345,7 +345,10 @@ function getTitlesByLanguageFromProperty(properties, key)
             {
                 titlesByLanguage[titleLanguage] = [];
             }
-            titlesByLanguage[titleLanguage].push(title);
+            if(title !== null)
+            {
+                titlesByLanguage[titleLanguage].push(title);
+            }
         }
     }
     else
@@ -353,7 +356,10 @@ function getTitlesByLanguageFromProperty(properties, key)
         const titleInfo = {lang: null};
         const title = getValueFromLiteral(value, titleInfo) || value;
         const titleLanguage = titleInfo.lang || 'unknown';
-        titlesByLanguage[titleLanguage] = [title];
+        if(title !== null)
+        {
+            titlesByLanguage[titleLanguage] = [title];
+        }
     }
 
     return titlesByLanguage;
