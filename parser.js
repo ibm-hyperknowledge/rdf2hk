@@ -46,6 +46,7 @@ const isUriOrBlankNode = Utils.isUriOrBlankNode;
  * @param {object} graph The graph (quads, if it contains named graph) to be parsed and converted to Hyperknowledge entities.
  * @param {boolean|object} [options] Parsing options, if it is a boolean, is equivalent to {createContext: true} which means it will generate context for each named graph.
  * @param {boolean} [options.createContext] Create the context entity for each named graph. Default is false.
+ * @param {boolean} [options.namespaceContext] Contextualize entities based on their namespace.
  * @param {boolean} [options.subjectLabel] Set the subject role name `subject`
  * @param {boolean} [options.objectLabel] Set the object role name `object`
  * @param {boolean} [options.convertOwl] EXPERIMENTAL OWL rules. Default is false.
@@ -72,7 +73,9 @@ function parseGraph(graph, options)
 		options = {};
 	}
 
-	let createContext = options.createContext || false;
+	let namespaceContext = options.namespaceContext || false; 
+
+  let createContext = options.createContext || namespaceContext;
 
 	const preserveBlankNodes = options.preserveBlankNodes || false;
 
@@ -104,14 +107,19 @@ function parseGraph(graph, options)
 
 	let hkParser = new HKParser(entities, blankNodesMap, onlyHK);
 
-	let getParent = (g) => 
+	let getParent = (iri, g) => 
 	{
+		if (namespaceContext) {
+			if (iri.includes("#")) {
+				return `<${iri.split('#')[0].replace('<', '')}>`
+			}
+		}
 		return ((g === HK_NULL_URI || g === null) && rootContext) ? rootContext : g;
 	}
 
 	let createReference = (s, g) =>
 	{
-		const parent = getParent(g);
+		const parent = getParent(s, g);
 		let ref = new Reference();
 		ref.id = Utils.createRefUri(s, parent);
 		ref.ref = s;
@@ -127,7 +135,7 @@ function parseGraph(graph, options)
 	// Collect contexts
 	graph.forEachStatement((s, p, o, g) =>
 	{
-		const parent = getParent(g);
+		const parent = getParent(s, g);
 		if (convertHK && hkParser.shouldConvert(s, p, o, parent))
 		{
 			hkParser.createEntities(s, p, o, parent);
@@ -167,7 +175,7 @@ function parseGraph(graph, options)
 	// Create nodes
 	graph.forEachStatement((s, p, o, g) =>
 	{
-		const parent = getParent(g);
+		const parent = getParent(s, g);
 		// console.log(s, p, o);
 		// Replace the blank node identitier to uuid
 		// In order to make this id more robust along the base
@@ -227,7 +235,7 @@ function parseGraph(graph, options)
 	// Create attributes and relations and ref nodes if need
 	graph.forEachStatement((s, p, o, g) =>
 	{
-		const parent = getParent(g);
+		const parent = getParent(s, g);
 		if (convertHK && hkParser.shouldConvert(s, p, o, parent))
 		{
 			hkParser.setIntrisecsProperties(s, p, o, parent);
