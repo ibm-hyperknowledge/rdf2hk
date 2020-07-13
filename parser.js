@@ -73,9 +73,9 @@ function parseGraph(graph, options)
 		options = {};
 	}
 
-	let createContext = options.createContext || false;
-
 	let namespaceContext = options.namespaceContext || false; 
+
+  let createContext = options.createContext || namespaceContext;
 
 	const preserveBlankNodes = options.preserveBlankNodes || false;
 
