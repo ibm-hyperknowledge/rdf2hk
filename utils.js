@@ -106,7 +106,7 @@ function getIdFromResource(uri)
                 return null;
             }
         }
-		else if(uri.startsWith(`<${Constants.HK_BLANK_NODE_PREFIX}`))
+		else if(uri.startsWith(`<${Constants.HK_BLANK_NODE_PREFIX}/`))
         {
             let id = uri.slice(BlankIdProtocolLength + 2, -1);
 
