@@ -4,41 +4,72 @@
  */
 "use strict";
 
-exports.CLASS_URI = "<http://www.w3.org/2002/07/owl#Class>";
-exports.THING_URI = "<http://www.w3.org/2002/07/owl#Thing>";
-exports.OBJECT_PROPERTY_URI =  "<http://www.w3.org/2002/07/owl#ObjectProperty>";
-exports.TOP_OBJECT_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#topObjectProperty>";
-exports.NAMED_INDIVIDUAL_URI = "<http://www.w3.org/2002/07/owl#NamedIndividual>";
-exports.IMPORTS_URI = "<http://www.w3.org/2002/07/owl#imports>";
-exports.ONTOLOGY_URI = "<http://www.w3.org/2002/07/owl#Ontology>";
-exports.FUNCTIONAL_PROPERTY = "<http://www.w3.org/2002/07/owl#FunctionalProperty>";
-exports.INVERSE_FUNCTIONAL_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#InverseFunctionalProperty>";
-exports.DATATYPE_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#DatatypeProperty>";
-exports.TOP_DATA_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#topDataProperty>";
-exports.INVERSE_OF_URI = "<http://www.w3.org/2002/07/owl#inverseOf>";
-exports.TRANSITIVE_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#TransitiveProperty>";
-exports.ASYMETRIC_PROPERY_URI = "<http://www.w3.org/2002/07/owl#AsymmetricProperty>";
-exports.SIMMETRIC_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#SymmetricProperty>";
-exports.IRREFLEXIVE_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#IrreflexiveProperty>";
-exports.REFLEXIVE_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#ReflexiveProperty>";
-exports.RESTRICTION_URI = "<http://www.w3.org/2002/07/owl#Restriction>";
-exports.ON_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#onProperty>";
-exports.SOME_VALUES_FROM_URI = "<http://www.w3.org/2002/07/owl#someValuesFrom>";
-exports.ALL_VALUES_FROM_URI = "<http://www.w3.org/2002/07/owl#allValuesFrom>";
-exports.HAS_VALUES_URI =  "<http://www.w3.org/2002/07/owl#hasValue>";
-exports.ANNOTATION_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#AnnotationProperty>";
-exports.TOP_ANNOTATION_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#topAnnotationProperty>";
-// "<http://www.w3.org/2002/07/owl#versionIRI>",
-//  "<http://www.w3.org/2000/01/rdf-schema#subClassOf>",
-//   "<http://www.w3.org/2002/07/owl#onProperty>",
-//   "<http://www.w3.org/2002/07/owl#someValuesFrom>", 
-//   "<http://www.w3.org/2002/07/owl#allValuesFrom>", 
-//   "<http://www.w3.org/2002/07/owl#unionOf>", 
-//   "<http://www.w3.org/2002/07/owl#disjointWith>",
-//    "<http://www.w3.org/2002/07/owl#equivalentClass>", 
-//    "<http://www.w3.org/2002/07/owl#intersectionOf>", 
-//    "<http://www.w3.org/2002/07/owl#oneOf>",
-//     "<http://www.w3.org/2002/07/owl#complementOf>",
-//      "<http://www.w3.org/2000/01/rdf-schema#seeAlso>", 
-//      "<http://www.w3.org/2002/07/owl#members>", 
-//      "<http://www.w3.org/2002/07/owl#distinctMembers>"]
+const CLASS_URI = "<http://www.w3.org/2002/07/owl#Class>";
+const THING_URI = "<http://www.w3.org/2002/07/owl#Thing>";
+const OBJECT_PROPERTY_URI =  "<http://www.w3.org/2002/07/owl#ObjectProperty>";
+const TOP_OBJECT_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#topObjectProperty>";
+const NAMED_INDIVIDUAL_URI = "<http://www.w3.org/2002/07/owl#NamedIndividual>";
+const IMPORTS_URI = "<http://www.w3.org/2002/07/owl#imports>";
+const ONTOLOGY_URI = "<http://www.w3.org/2002/07/owl#Ontology>";
+const FUNCTIONAL_PROPERTY = "<http://www.w3.org/2002/07/owl#FunctionalProperty>";
+const INVERSE_FUNCTIONAL_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#InverseFunctionalProperty>";
+const DATATYPE_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#DatatypeProperty>";
+const TOP_DATA_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#topDataProperty>";
+const INVERSE_OF_URI = "<http://www.w3.org/2002/07/owl#inverseOf>";
+const TRANSITIVE_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#TransitiveProperty>";
+const ASYMETRIC_PROPERY_URI = "<http://www.w3.org/2002/07/owl#AsymmetricProperty>";
+const SIMMETRIC_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#SymmetricProperty>";
+const IRREFLEXIVE_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#IrreflexiveProperty>";
+const REFLEXIVE_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#ReflexiveProperty>";
+const RESTRICTION_URI = "<http://www.w3.org/2002/07/owl#Restriction>";
+const ON_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#onProperty>";
+const SOME_VALUES_FROM_URI = "<http://www.w3.org/2002/07/owl#someValuesFrom>";
+const ALL_VALUES_FROM_URI = "<http://www.w3.org/2002/07/owl#allValuesFrom>";
+const HAS_VALUES_URI =  "<http://www.w3.org/2002/07/owl#hasValue>";
+const ANNOTATION_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#AnnotationProperty>";
+const TOP_ANNOTATION_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#topAnnotationProperty>";
+
+const CLASSES_URIS = [THING_URI, CLASS_URI];
+const OBJECT_PROPERTY_URIS = [ 
+    OBJECT_PROPERTY_URI, TOP_OBJECT_PROPERTY_URI, 
+    SIMMETRIC_PROPERTY_URI, ASYMETRIC_PROPERY_URI, 
+    REFLEXIVE_PROPERTY_URI, IRREFLEXIVE_PROPERTY_URI, 
+    FUNCTIONAL_PROPERTY, INVERSE_FUNCTIONAL_PROPERTY_URI,
+    TRANSITIVE_PROPERTY_URI
+];
+const TOP_OBJECT_PROPERTIES_URIS = [TOP_OBJECT_PROPERTY_URI, OBJECT_PROPERTY_URI];
+const DATA_PROPERTY_URIS = [DATATYPE_PROPERTY_URI, TOP_DATA_PROPERTY_URI];
+const ANNOTATION_PROPERTY_URIS = [ANNOTATION_PROPERTY_URI, TOP_ANNOTATION_PROPERTY_URI];
+const ONTOLOGY_URIS = [ONTOLOGY_URI];
+
+
+exports.CLASS_URI = CLASS_URI;
+exports.THING_URI = THING_URI;
+exports.OBJECT_PROPERTY_URI =  OBJECT_PROPERTY_URI;
+exports.TOP_OBJECT_PROPERTY_URI = TOP_OBJECT_PROPERTY_URI;
+exports.NAMED_INDIVIDUAL_URI = NAMED_INDIVIDUAL_URI;
+exports.IMPORTS_URI = IMPORTS_URI;
+exports.ONTOLOGY_URI = ONTOLOGY_URI;
+exports.FUNCTIONAL_PROPERTY =FUNCTIONAL_PROPERTY;
+exports.INVERSE_FUNCTIONAL_PROPERTY_URI = INVERSE_FUNCTIONAL_PROPERTY_URI;
+exports.DATATYPE_PROPERTY_URI = DATATYPE_PROPERTY_URI;
+exports.TOP_DATA_PROPERTY_URI = TOP_DATA_PROPERTY_URI;
+exports.INVERSE_OF_URI = INVERSE_OF_URI;
+exports.TRANSITIVE_PROPERTY_URI = TRANSITIVE_PROPERTY_URI;
+exports.ASYMETRIC_PROPERY_URI = ASYMETRIC_PROPERY_URI;
+exports.SIMMETRIC_PROPERTY_URI = SIMMETRIC_PROPERTY_URI;
+exports.IRREFLEXIVE_PROPERTY_URI = IRREFLEXIVE_PROPERTY_URI;
+exports.REFLEXIVE_PROPERTY_URI = REFLEXIVE_PROPERTY_URI;
+exports.RESTRICTION_URI = RESTRICTION_URI;
+exports.ON_PROPERTY_URI = ON_PROPERTY_URI;
+exports.SOME_VALUES_FROM_URI = SOME_VALUES_FROM_URI;
+exports.ALL_VALUES_FROM_URI = ALL_VALUES_FROM_URI;
+exports.HAS_VALUES_URI =  HAS_VALUES_URI;
+exports.ANNOTATION_PROPERTY_URI = ANNOTATION_PROPERTY_URI;
+exports.TOP_ANNOTATION_PROPERTY_URI = TOP_ANNOTATION_PROPERTY_URI;
+exports.CLASSES_URIS = CLASSES_URIS;
+exports.OBJECT_PROPERTY_URIS = OBJECT_PROPERTY_URIS;
+exports.DATA_PROPERTY_URIS = DATA_PROPERTY_URIS;
+exports.ANNOTATION_PROPERTY_URIS = ANNOTATION_PROPERTY_URIS;
+exports.ONTOLOGY_URIS = ONTOLOGY_URIS;
+exports.TOP_OBJECT_PROPERTIES_URIS = TOP_OBJECT_PROPERTIES_URIS;

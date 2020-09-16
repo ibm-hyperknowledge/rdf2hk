@@ -136,7 +136,7 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
 					}
 
 					// Generate literal triples to the resource from the ref
-                    if(!options.convertHK)
+                    if(!options.convertHK || options.compressReification)
                     {
 						let refObj = {
 							id: entity.ref, 

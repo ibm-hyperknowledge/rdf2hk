@@ -24,6 +24,7 @@ const Constants         = require("./constants");
 let owlVocabulary = new Set(Object.values(owl));
 owlVocabulary.add(rdfs.DOMAIN_URI);
 owlVocabulary.add(rdfs.RANGE_URI);
+owlVocabulary.add(rdfs.SUBPROPERTYOF_URI);
 
 
 class SimpleOwlParser
@@ -42,7 +43,7 @@ class SimpleOwlParser
 		{
 			return false;
 		}
-		else if(p === rdf.TYPE_URI && o === owl.OBJECT_PROPERTY_URI)
+		else if(p === rdf.TYPE_URI && owl.OBJECT_PROPERTY_URIS.includes(o))
     	{
 			return true;
 		}
@@ -61,7 +62,7 @@ class SimpleOwlParser
 
 	createConnectors (s, p, o, g, spo)
 	{
-		if(p === rdf.TYPE_URI && o === owl.OBJECT_PROPERTY_URI)
+		if(p === rdf.TYPE_URI && owl.OBJECT_PROPERTY_URIS.includes(o))
     	{
 			if(!this.entities.hasOwnProperty(s))
 			{
@@ -79,7 +80,7 @@ class SimpleOwlParser
 
 	createRelationships (s, p, o, g)
 	{
-		if((p === rdf.TYPE_URI && o !== owl.OBJECT_PROPERTY_URI) ||
+		if((p === rdf.TYPE_URI && !owl.OBJECT_PROPERTY_URIS.includes(o)) ||
 		   (owlVocabulary.has(p)) )
     	{
 			let refID = Utils.createRefUri(s, g);
