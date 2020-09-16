@@ -42,10 +42,11 @@ const hk                = require("./hk");
  * @param {boolean} [options.convertNumber] Convert the number/boolean to xsd schema
  * @param {boolean} [options.reifyArray] Reify the arrays, default is false.
  * @param {boolean} [options.defaultGraph] The uri to set when the parent of a entity is null
+ * @param {object} referenceMap A string indexed map. Where the index is a refnode id and the value is the refnode itself.
  * @returns An instance of rdflib.js graph.
  */
 
-function serialize(entities, options = {}, graph = new TriGGraph())
+function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap = {}) 
 {
     if(!entities)
     {
@@ -53,8 +54,6 @@ function serialize(entities, options = {}, graph = new TriGGraph())
     }
 
     let connectors = {};
-
-    let referenceMap = {};
 
     let defaultGraph = options.defaultGraph || null;
 
