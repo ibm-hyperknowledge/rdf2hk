@@ -29,7 +29,7 @@ const HAS_VALUES_URI =  "<http://www.w3.org/2002/07/owl#hasValue>";
 const ANNOTATION_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#AnnotationProperty>";
 const TOP_ANNOTATION_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#topAnnotationProperty>";
 
-const CLASSES_URIS = [THING_URI];
+const CLASSES_URIS = [THING_URI, CLASS_URI];
 const OBJECT_PROPERTY_URIS = [ 
     OBJECT_PROPERTY_URI, TOP_OBJECT_PROPERTY_URI, 
     SIMMETRIC_PROPERTY_URI, ASYMETRIC_PROPERY_URI, 
