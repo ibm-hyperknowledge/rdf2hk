@@ -264,7 +264,10 @@ function _serializeAnchors(uri, entity, parentUri, graph)
                         {
                             this.owlTimeSerializer.serializeTemporalAnchorProperty(interfaceNode, p, prop, parentUri);
                         }
-                        graph.add(interfaceNode, p, Utils.createLiteralObject(prop), parentUri);
+                        else
+                        {
+                            graph.add(interfaceNode, p, Utils.createLiteralObject(prop), parentUri);
+                        }
                     }
 				}
 			}
