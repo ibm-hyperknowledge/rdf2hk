@@ -134,7 +134,8 @@ HKParser.prototype.setIntrisecsProperties = function(s, p, o, g, spo)
 			entity = entities[entityId];
 		}
 
-		if(!isCompressedAnchor(s) && !entity && !this.binds.hasOwnProperty(s))
+        const isAnchor = isCompressedAnchor(s) || this.interfaces.hasOwnProperty(s);
+		if(!entity && !this.binds.hasOwnProperty(s) && !isAnchor)
         {
             return;
         }
@@ -306,7 +307,7 @@ HKParser.prototype.setIntrisecsProperties = function(s, p, o, g, spo)
                     {
                         let properties = interf.properties;
                         
-						let value = Utils.getValueFromLiteral(o, null, true);
+						let value = Utils.isUri(o) ? o : Utils.getValueFromLiteral(o, null, true);
 
                         properties[Utils.getIdFromResource(p)] = value;
                     }
@@ -348,10 +349,12 @@ HKParser.prototype.finish = function()
     for(let l of this.linksWithCompressedBinds)
     {
         let link = entities[l];
+        let isLinkBindedWithParent = false;
 
         for(let role in link.binds)
         {
             let linkRoles = link.binds[role];
+            let nonParentBindings = [];
             for(let comp in linkRoles)
             {
                 let anchors = linkRoles[comp];
@@ -360,7 +363,26 @@ HKParser.prototype.finish = function()
                 {
                     linkRoles[comp] = [LAMBDA];
                 }
+
+                if(comp === link.parent)
+                {
+                    isLinkBindedWithParent = true;
+                }
+                else
+                {
+                    nonParentBindings.push(comp);
+                }
             }
+
+            // replace nonParentBind by parent anchor
+            if(isLinkBindedWithParent && nonParentBindings.length === 1 &&
+                linkRoles[link.parent].length === 1 && linkRoles[nonParentBindings[0]].length === 1 &&
+                linkRoles[link.parent][0] === LAMBDA && linkRoles[nonParentBindings[0]][0] === LAMBDA)
+            {
+                delete linkRoles[nonParentBindings[0]];
+                linkRoles[link.parent] = [nonParentBindings[0]];
+            }
+            
         }
     }
 
