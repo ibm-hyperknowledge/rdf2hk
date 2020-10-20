@@ -30,6 +30,7 @@ const uuidv1 			= require('uuid/v1');
 
 // Sub Parsers
 const OWLParser = require("./simpleowlparser");
+const OWLTimeParser = require("./owltimeparser");
 const HKParser = require("./hkparser");
 
 const RELATION_QUALIFIER_URIS = new Set();
@@ -50,6 +51,8 @@ const isUriOrBlankNode = Utils.isUriOrBlankNode;
  * @param {boolean} [options.subjectLabel] Set the subject role name `subject`
  * @param {boolean} [options.objectLabel] Set the object role name `object`
  * @param {boolean} [options.convertOwl] EXPERIMENTAL OWL rules. Default is false.
+ * @param {boolean} [options.convertOwlTime] EXPERIMENTAL OWL Time rules. Default is false.
+ * @param {boolean} [options.timeContext] Context for OWL Time entities and relationships, if convertOwlTime is true.
  * @param {boolean} [options.preserveBlankNodes] Preserve the blank node ids if true, otherwise replace it by a uuid inteded to be unique in the database. Default is false.
  * @param {boolean} [options.serialize] Serialize output, i. e. remove unnecessary methods and fields from the intances.
  * @param {boolean} [options.convertHK] If set, it will read the Hyperknowledge vocabulary and make special conversion. Default is true.
@@ -75,15 +78,19 @@ function parseGraph(graph, options)
 
 	let namespaceContext = options.namespaceContext || false; 
 
-  let createContext = options.createContext || namespaceContext;
+	let createContext = options.createContext || namespaceContext;
 
 	const preserveBlankNodes = options.preserveBlankNodes || false;
 
 	let convertOwl = options.convertOwl || false;
+	
+	let convertOwlTime = options.convertOwlTime || false;
 
 	let setNodeContext = options.setNodeContext && true;
 
 	let rootContext = options.context;
+	
+	let timeContext = options.timeContext;
 
 	let convertHK = options.convertHK && true;
 
@@ -101,9 +108,10 @@ function parseGraph(graph, options)
 	let connectors = {};
 
 	let blankNodesMap = {};
-	let referencedBlankNode = {};
 
 	let owlParser = new OWLParser(entities, options);
+
+	let owlTimeParser = new OWLTimeParser(entities, options);
 
 	let hkParser = new HKParser(entities, blankNodesMap, onlyHK);
 
@@ -145,6 +153,10 @@ function parseGraph(graph, options)
 		{
 			owlParser.createConnectors(s, p, o, parent);
 			return;
+		}
+		else if (convertOwlTime && owlTimeParser.shouldConvert(s, p, o, timeContext))
+		{
+			owlTimeParser.createContextAnchor(s, timeContext);
 		}
 		// Create connector?
 
@@ -200,6 +212,10 @@ function parseGraph(graph, options)
 		{
 			return;
 		}
+		else if (convertOwlTime && owlTimeParser.shouldConvert(s, p, o, timeContext))
+		{
+			return;
+		}
 
 		let subjectId = Utils.getIdFromResource(s);
 		if ( isUriOrBlankNode(s) && !entities.hasOwnProperty(subjectId))
@@ -232,7 +248,7 @@ function parseGraph(graph, options)
 	});
 
 	// LAST LOOP
-	// Create attributes and relations and ref nodes if need
+	// Create attributes, relations and ref nodes if needed
 	graph.forEachStatement((s, p, o, g) =>
 	{
 		const parent = getParent(s, g);
@@ -244,6 +260,13 @@ function parseGraph(graph, options)
 		else if (convertOwl && owlParser.shouldConvert(s, p, o, parent))
 		{
 			if (owlParser.createRelationships(s, p, o, parent)) 
+			{
+				return;
+			}
+		}
+		else if (convertOwlTime && owlTimeParser.shouldConvert(s, p, o, timeContext))
+		{
+			if (owlTimeParser.createTimeRelationships(s, p, o, timeContext)) 
 			{
 				return;
 			}
@@ -367,6 +390,11 @@ function parseGraph(graph, options)
 	if (convertOwl)
 	{
 		owlParser.finish(entities);
+	}
+
+	if (convertOwlTime)
+	{
+		owlTimeParser.finish(entities);
 	}
 
 	// Serialize entities

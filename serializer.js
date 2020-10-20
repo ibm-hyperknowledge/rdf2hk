@@ -22,6 +22,7 @@ const xml               = require("./xmlschema");
 const TriGGraph			= require("./triggraph");
 const HKSerializer      = require("./hkserializer");
 const OWLSerializer		= require("./simpleowlserializer");
+const OLWTimeSerializer = require("./owltimeserializer");
 const hk                = require("./hk");
 
 
@@ -36,6 +37,8 @@ const hk                = require("./hk");
  * @param {boolean} [options.objectLabel] Set the object role name `object`, can be null
  * @param {boolean} [options.convertHK] Generate additional triples to build hyperknowledge entities
  * @param {boolean} [options.convertOwl] Uses owl rules to convert entities 
+ * @param {boolean} [options.convertOwlTime] Uses owl Time rules to convert entities
+ * @param {boolean} [options.timeContext] Context for owl Time conversion generated entities and relationships.
  * @param {boolean} [options.skipRefNodes] Skip extra reference nodes in case convertHK is true. Default is false.
  * @param {boolean} [options.inverseRefNode] When convertHK is true, the triple of ref nodes are inversed. That is, generates 'uri isReferenceBy refId' instead of 'refId references uri', . This promotes rdf view of data.
  * @param {boolean} [options.compressReification] If convertHK is true, links will be reificated, the compress mode will generate the minimum of triples, default is false
@@ -70,8 +73,9 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
     let subjectLabel = null;
     let objectLabel = null;
 
-    let hkSerializer = new HKSerializer(graph, options);
 	options.owlSerializer = new OWLSerializer(graph, options);
+    options.owlTimeSerializer = new OLWTimeSerializer(graph, options);
+    let hkSerializer = new HKSerializer(graph, options);
 
     // We can set subjectLabel and objectLabel as null
     if(options.hasOwnProperty("subjectLabel"))
@@ -213,8 +217,15 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
 							{
 								context = defaultGraph;
 							}
-    
-                            graph.add(subjId, entity.connector, objId, context);
+                            
+                            if(options.convertOwlTime)
+                            {
+                                options.owlTimeSerializer.serializeTemporalAnchorBind(entity, entities, subjectLabel, objectLabel, subjId, objId, defaultGraph, context);
+                            }
+                            else
+                            {
+                                graph.add(subjId, entity.connector, objId, context);
+                            }
                         });
                     }
 

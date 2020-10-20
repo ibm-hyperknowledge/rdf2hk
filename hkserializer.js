@@ -55,7 +55,10 @@ function HKSerializer(sharedGraph, options)
 	// compressReification = false
 
     this.compressReification = options.compressReification || false;
-	this.inverseRefNode = options.inverseRefNode || false;
+    this.inverseRefNode = options.inverseRefNode || false;
+    this.preserveAnchorIds = options.convertOwlTime || false;
+    this.reifyAnchorProperties = options.convertOwlTime || false;
+    this.owlTimeSerializer = options.owlTimeSerializer;
 }
 
 HKSerializer.prototype.serialize = function(entity)
@@ -152,11 +155,11 @@ HKSerializer.prototype.serialize = function(entity)
                 {
                 	let bnode = `_:${uuid()}`;
                     let roleLiteral = Utils.createLiteralObject(role);
-                    let anchorLiteral = Utils.createLiteralObject(anchor);
+                    let anchorId = this.preserveAnchorIds ? anchor : Utils.createLiteralObject(anchor);
                     graph.add(entityUri, this.hasBind, bnode, parentUri);
                     graph.add(bnode, this.boundRole, roleLiteral, parentUri);
                     graph.add(bnode, this.boundComponent, compNode, parentUri);
-                    graph.add(bnode, this.boundAnchor, anchorLiteral, parentUri);
+                    graph.add(bnode, this.boundAnchor, anchorId, parentUri);
                 }
                 else
                 {
@@ -165,8 +168,8 @@ HKSerializer.prototype.serialize = function(entity)
 
                     if(anchor !== HKConstants.LAMBDA)
                     {
-                        let anchorLiteral = Utils.createLiteralObject(`${comp}#${anchor}`);
-                        graph.add(entityUri, roleUri, anchorLiteral, parentUri);
+                        let anchorId = this.preserveAnchorIds ? anchor : Utils.createLiteralObject(`${comp}#${anchor}`);
+                        graph.add(entityUri, roleUri, anchorId, parentUri);
                     }
                 }
             });
@@ -237,12 +240,13 @@ function _serializeAnchors(uri, entity, parentUri, graph)
 
 			let interf = entity.interfaces[k];
 			let key = interf.key || k;
-			let interfaceNode = compressAnchorInUri(entity.id, key);
+			let interfaceNode = this.preserveAnchorIds ? key : compressAnchorInUri(entity.id, key);
 
 			if(key)
 			{
-				graph.add(uri, this.hasAnchor, interfaceNode, parentUri);
-				graph.add(interfaceNode, this.anchorKey, Utils.createLiteralObject(key), parentUri);
+                graph.add(uri, this.hasAnchor, interfaceNode, parentUri);
+                const keyLabel = Utils.isUri(key) ? Utils.getLabelFromUri(key) : key;
+				graph.add(interfaceNode, this.anchorKey, Utils.createLiteralObject(keyLabel), parentUri);
 
 				if(interf.type)
 				{
@@ -256,8 +260,15 @@ function _serializeAnchors(uri, entity, parentUri, graph)
 					let prop = properties[p];
 					if(prop !== null && prop !== undefined)
 					{
-						graph.add(interfaceNode, p, Utils.createLiteralObject(prop), parentUri);
-					}
+                        if(this.reifyAnchorProperties && this.owlTimeSerializer)
+                        {
+                            this.owlTimeSerializer.serializeTemporalAnchorProperty(interfaceNode, p, prop, parentUri);
+                        }
+                        else
+                        {
+                            graph.add(interfaceNode, p, Utils.createLiteralObject(prop), parentUri);
+                        }
+                    }
 				}
 			}
         }
