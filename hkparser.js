@@ -376,6 +376,7 @@ HKParser.prototype.finish = function()
 
             // replace nonParentBind by parent anchor
             if(isLinkBindedWithParent && nonParentBindings.length === 1 &&
+                link.parent !== undefined && linkRoles.hasOwnProperty(link.parent) &&
                 linkRoles[link.parent].length === 1 && linkRoles[nonParentBindings[0]].length === 1 &&
                 linkRoles[link.parent][0] === LAMBDA && linkRoles[nonParentBindings[0]][0] === LAMBDA)
             {
