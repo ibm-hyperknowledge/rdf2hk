@@ -23,6 +23,7 @@ class OwlTimeParser
 		this.objectLabel = options.objectLabel || Constants.DEFAULT_OBJECT_ROLE;
 		this.timeContext = null;
 		this.anchors = null;
+		this.instantDatetimeMap = {}; // {instantId: datetime}
 	}
 
 	shouldConvert (s, p, o, context)
@@ -30,7 +31,7 @@ class OwlTimeParser
 		this.timeContext = this.entities[context] || {};
 		this.anchors = this.timeContext.interfaces || {};
 
-		if(o === time.INSTANT_URI || o === time.PROPER_INTERVAL_URI 
+		if(o === time.INSTANT_URI || time.INTERVAL_URIS.includes(o) 
 			|| p === time.HAS_BEGINNING_URI || p === time.HAS_END_URI 
 			|| p === time.DATE_TIME_URI || this.anchors.hasOwnProperty(s))
 		{
@@ -39,11 +40,16 @@ class OwlTimeParser
 		return false;
     }
     
-    createContextAnchor(s, context)
+    createContextAnchor(s, p, o, context)
     {
 		this.timeContext = this.entities[context] ||  new Context(context) ;
 		this.timeContext.addInterface(s, 'temporal', {});
 		this.entities[context] = this.timeContext;
+		if(p === time.DATE_TIME_URI)
+		{
+			const literal = Utils.getValueFromLiteral(o, {}, true);
+			this.instantDatetimeMap[s] = literal;
+		}
 	}
 
 	convertToContextAnchor(id)
@@ -61,7 +67,7 @@ class OwlTimeParser
 
 	createTimeRelationships (s, p, o, context)
 	{
-		if(p === rdf.TYPE_URI && (o === time.PROPER_INTERVAL_URI || o === time.INSTANT_URI || this.anchors.hasOwnProperty(s)))
+		if(p === rdf.TYPE_URI && (time.INTERVAL_URIS.includes(o) || o === time.INSTANT_URI || this.anchors.hasOwnProperty(s)))
 		{
 			const anchor = this.convertToContextAnchor(s);
 			
@@ -73,17 +79,36 @@ class OwlTimeParser
 		}
 		else if (p === time.HAS_BEGINNING_URI || p === time.HAS_END_URI)
 		{
-			this.convertToContextAnchor(s)
-			this.convertToContextAnchor(o);
+			const anchor = this.convertToContextAnchor(s)
 
-			// create link between s and o in context
-			const anchorLink = new Link();
-			anchorLink.addBind(this.subjectLabel, context, s);
-			anchorLink.addBind(this.objectLabel, context, o);
-			anchorLink.connector = p;
-			anchorLink.parent = context;
-			anchorLink.id = Utils.createSpoUri(s, p, o, context);
-			this.entities[anchorLink.id] = anchorLink;
+			// if instant is indefinite, set its URI as begin or end of the interval
+			// otherwise, set its begin and end (which should be the same date) as begin or end of the interval
+			if(!this.instantDatetimeMap.hasOwnProperty(o))
+			{
+				if(p === time.HAS_BEGINNING_URI)
+				{
+					anchor.properties.begin = o;
+				}
+				else if(p === time.HAS_END_URI)
+				{
+					anchor.properties.end = o;	
+				}
+			}
+			else
+			{
+				if(p === time.HAS_BEGINNING_URI)
+				{
+					anchor.properties.begin = this.instantDatetimeMap[o];
+				}
+				else if(p === time.HAS_END_URI)
+				{
+					anchor.properties.end = this.instantDatetimeMap[o];	
+				}
+			}
+
+			// add instant identifier as a property
+			anchor.properties[p] = o;
+			
 			return true;
 		}
 		else if(p === time.DATE_TIME_URI)

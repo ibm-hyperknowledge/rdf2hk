@@ -262,7 +262,7 @@ function _serializeAnchors(uri, entity, parentUri, graph)
 					{
                         if(this.reifyAnchorProperties && this.owlTimeSerializer)
                         {
-                            this.owlTimeSerializer.serializeTemporalAnchorProperty(interfaceNode, p, prop, parentUri);
+                            this.owlTimeSerializer.serializeTemporalAnchorProperty(interfaceNode, p, prop, parentUri, properties);
                         }
                         else
                         {

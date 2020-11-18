@@ -33,25 +33,38 @@ class OwlTimeSerializer
         }
     }
     
-    serializeTemporalAnchorProperty(interfaceNode, p, prop, parentUri)
+    serializeTemporalAnchorProperty(interfaceNode, p, prop, parentUri, interfaceProperties)
     {
+        const hasTypeArray = interfaceProperties.hasOwnProperty(rdf.TYPE_URI) && Array.isArray(interfaceProperties[rdf.TYPE_URI]);
+        const typeArray = hasTypeArray ? interfaceProperties[rdf.TYPE_URI] : [];
+        
+        const isInstant = typeArray.includes(owltime.INSTANT_URI);
+        let isInterval = false;
+        owltime.INTERVAL_URIS.forEach((uri) => isInterval = isInterval || interfaceProperties[rdf.TYPE_URI].includes(uri));
+        
         if(p === rdf.TYPE_URI && Array.isArray(prop))
         {
             for(let i = 0; i < prop.length; i++)
             {
                 this.graph.add(interfaceNode, p, prop[i], parentUri);
             }
-            return;
         }
-        else if(p === 'begin')
+        else if((p === 'begin' || p === 'end') && (isInstant || isInterval))
         {
-            this.graph.add(interfaceNode, owltime.DATE_TIME_URI, Utils.createLiteralObject(prop, null, xml.DATETIME_URI), parentUri);
+            if(isInstant)
+            {
+                this.graph.add(interfaceNode, owltime.DATE_TIME_URI, Utils.createLiteralObject(prop, null, xml.DATETIME_URI), parentUri);
+            }
+            this.graph.add(interfaceNode, p, Utils.createLiteralObject(prop), parentUri);
         }
-        else if(p === 'end')
+        else if(p === owltime.HAS_BEGINNING_URI || owltime.HAS_END_URI)
         {
-            this.graph.add(interfaceNode, owltime.DATE_TIME_URI, Utils.createLiteralObject(prop, null, xml.DATETIME_URI), parentUri);
+            this.graph.add(interfaceNode, p, prop, parentUri);    
         }
-        this.graph.add(interfaceNode, p, Utils.createLiteralObject(prop), parentUri);
+        else
+        {
+            this.graph.add(interfaceNode, p, Utils.createLiteralObject(prop), parentUri);
+        }
     }
 
 
