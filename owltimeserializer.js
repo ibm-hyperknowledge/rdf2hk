@@ -8,7 +8,6 @@ const rdf               = require("./rdf");
 const xml               = require("./xmlschema");
 const owltime           = require("./owltime");
 const Utils             = require("./utils");
-const { type } = require("hklib/context");
 
 class OwlTimeSerializer
 {
