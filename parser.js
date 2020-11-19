@@ -156,7 +156,7 @@ function parseGraph(graph, options)
 		}
 		else if (convertOwlTime && owlTimeParser.shouldConvert(s, p, o, timeContext))
 		{
-			owlTimeParser.createContextAnchor(s, timeContext);
+			owlTimeParser.createContextAnchor(s, p, o, timeContext);
 		}
 		// Create connector?
 
