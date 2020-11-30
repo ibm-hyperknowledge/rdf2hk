@@ -242,7 +242,7 @@ function parseGraph(graph, options)
 			if (setNodeContext && parent)
 			{
 				const parentId = Utils.getIdFromResource(parent);
-				node.parent = parentId !== node.id ? parentId : node.parent;
+				node.parent = parentId !== node.id ? parentId : null;
 			}
 		}
 
