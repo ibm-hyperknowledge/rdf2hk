@@ -241,7 +241,8 @@ function parseGraph(graph, options)
 			// Set the context to the graph name
 			if (setNodeContext && parent)
 			{
-				node.parent = Utils.getIdFromResource(parent);
+				const parentId = Utils.getIdFromResource(parent);
+				node.parent = parentId !== node.id ? parentId : node.parent;
 			}
 		}
 
