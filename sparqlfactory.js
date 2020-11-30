@@ -304,6 +304,13 @@ function filterEntitiesSelect (filters)
 						builder.append(`?n ${HKUris.HAS_ANCHOR_URI} ?s .`);
 						builder.append("GRAPH ?g { ?s ?p ?o } .");	
 					});
+
+					builder.appendUnion();
+
+					builder.closure(() =>
+					{
+						appendUnionFilters(builder, andFilters);	
+					});
 					
 				}
 			});
@@ -1207,14 +1214,26 @@ function _filterForParent(builder, parent) {
 		const parentId = parent.parentId;
 		const includeNestedContexts = parent.includeNestedContexts;
 		if (includeNestedContexts) {
+			let parentIds = [];
 			if (Array.isArray(parentId)) {
-				builder.addValues("g_root", parentId, true);
+				parentIds = parentId;
 			}
 			else
 			{
-				builder.bindVar(_convertToUri(parentId), "g_root", true);
+				parentIds = [parentId];
 			}
-			builder.append(`?g ${HKUris.HAS_PARENT_URI}* ?g_root .`);
+			parentIds.forEach((g_root, index) =>
+			{
+				builder.closure(() =>
+				{
+					builder.append(`?g ${HKUris.HAS_PARENT_URI}* ${_convertToUri(g_root)} .`);
+				});
+				if(index + 1 < parentIds.length)
+				{
+					builder.appendUnion();
+				}
+			})
+			
 		}
 
 		else {
