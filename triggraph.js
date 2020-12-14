@@ -130,7 +130,7 @@ function createResource (id, forceUri = true) {
 	} else if (Utils.isBlankNode(id)) {
 		return blankNode(id.substr(2, id.length - 2));
 	} else if (Utils.isLiteral(id)) {
-		return literal(v);
+		return literal(id);
 	} else if (forceUri) {
 		return namedNode(Utils.generateResourceFromId(id));
 	} else {
