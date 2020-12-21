@@ -22,7 +22,8 @@ const xml               = require("./xmlschema");
 const TriGGraph			= require("./triggraph");
 const HKSerializer      = require("./hkserializer");
 const OWLSerializer		= require("./simpleowlserializer");
-const OLWTimeSerializer = require("./owltimeserializer");
+const OWLTimeSerializer = require("./owltimeserializer");
+const WordnetSerializer  = require("./wordnetserializer");
 const hk                = require("./hk");
 
 
@@ -38,6 +39,7 @@ const hk                = require("./hk");
  * @param {boolean} [options.convertHK] Generate additional triples to build hyperknowledge entities
  * @param {boolean} [options.convertOwl] Uses owl rules to convert entities 
  * @param {boolean} [options.convertOwlTime] Uses owl Time rules to convert entities
+ * @param {boolean} [options.convertWordnet] Uses Wordnet rules to convert entities
  * @param {boolean} [options.timeContext] Context for owl Time conversion generated entities and relationships.
  * @param {boolean} [options.skipRefNodes] Skip extra reference nodes in case convertHK is true. Default is false.
  * @param {boolean} [options.inverseRefNode] When convertHK is true, the triple of ref nodes are inversed. That is, generates 'uri isReferenceBy refId' instead of 'refId references uri', . This promotes rdf view of data.
@@ -74,7 +76,8 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
     let objectLabel = null;
 
 	options.owlSerializer = new OWLSerializer(graph, options);
-    options.owlTimeSerializer = new OLWTimeSerializer(graph, options);
+    options.owlTimeSerializer = new OWLTimeSerializer(graph, options);
+    options.wordnetSerializer = new WordnetSerializer(graph, options);
     let hkSerializer = new HKSerializer(graph, options);
 
     // We can set subjectLabel and objectLabel as null
@@ -124,6 +127,12 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
             switch(entity.type)
             {
                 case Context.type:
+                {
+                    if(options.convertWordnet)
+                    {
+                        options.wordnetSerializer.serializeConceptualAnchors(entity);
+                    }
+                }
                 case Node.type:
                 {
                     // Convert literals
@@ -132,6 +141,11 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
                 }
                 case Reference.type:
                 {
+                    if(options.convertWordnet)
+                    {
+                        if(options.wordnetSerializer.isLexicalConceptReference(entity, entities)) break;
+                    }
+
                     // Convert literals
 
 					if(options.convertHK && !options.skipRefNodes)
@@ -221,6 +235,10 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
                             if(options.convertOwlTime)
                             {
                                 options.owlTimeSerializer.serializeTemporalAnchorBind(entity, entities, subjectLabel, objectLabel, subjId, objId, defaultGraph, context);
+                            }
+                            else if(options.convertWordnet)
+                            {
+                                options.wordnetSerializer.serializeLexicalBind(entity, entities, subjectLabel, objectLabel, subjId, objId, defaultGraph, context);
                             }
                             else
                             {
@@ -327,7 +345,12 @@ function _collectProperties(entity, graph, options)
 		{
 			options.owlSerializer.convertProperty(entity.id, key, value, metaProperty, graphName);
 			return;
-		}
+        }
+        
+        if(options.convertWordnet && options.wordnetSerializer.shouldConvertProperty(entity.id, key, value, entity))
+        {
+            options.wordnetSerializer.convertProperty(entity.id, key, value, metaProperty, graphName, entity);
+        }
         
         if(reifyArray && Array.isArray(value))
         {

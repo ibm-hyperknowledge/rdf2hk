@@ -32,6 +32,7 @@ const uuidv1 			= require('uuid/v1');
 const OWLParser = require("./simpleowlparser");
 const OWLTimeParser = require("./owltimeparser");
 const HKParser = require("./hkparser");
+const WordnetParser = require("./wordnetparser");
 
 const RELATION_QUALIFIER_URIS = new Set();
 RELATION_QUALIFIER_URIS.add(owl.INVERSE_OF_URI);
@@ -52,6 +53,7 @@ const isUriOrBlankNode = Utils.isUriOrBlankNode;
  * @param {boolean} [options.objectLabel] Set the object role name `object`
  * @param {boolean} [options.convertOwl] EXPERIMENTAL OWL rules. Default is false.
  * @param {boolean} [options.convertOwlTime] EXPERIMENTAL OWL Time rules. Default is false.
+ * @param {boolean} [options.convertWordnet] EXPERIMENTAL Wordnet rules. Default is false.
  * @param {boolean} [options.timeContext] Context for OWL Time entities and relationships, if convertOwlTime is true.
  * @param {boolean} [options.preserveBlankNodes] Preserve the blank node ids if true, otherwise replace it by a uuid inteded to be unique in the database. Default is false.
  * @param {boolean} [options.serialize] Serialize output, i. e. remove unnecessary methods and fields from the intances.
@@ -86,6 +88,8 @@ function parseGraph(graph, options)
 	
 	let convertOwlTime = options.convertOwlTime || false;
 
+	let convertWordnet = options.convertWordnet || false;
+
 	let setNodeContext = options.setNodeContext && true;
 
 	let rootContext = options.context;
@@ -114,6 +118,8 @@ function parseGraph(graph, options)
 	let owlTimeParser = new OWLTimeParser(entities, options);
 
 	let hkParser = new HKParser(entities, blankNodesMap, onlyHK);
+
+	let wordnetParser = new WordnetParser(entities, options);
 
 	let getParent = (iri, g) => 
 	{
@@ -157,6 +163,10 @@ function parseGraph(graph, options)
 		else if (convertOwlTime && owlTimeParser.shouldConvert(s, p, o, timeContext))
 		{
 			owlTimeParser.createContextAnchor(s, p, o, timeContext);
+		}
+		else if (convertWordnet && wordnetParser.shouldConvert(s, p, o, parent))
+		{
+			wordnetParser.createEntities(s, p, o, parent);
 		}
 		// Create connector?
 
@@ -216,6 +226,10 @@ function parseGraph(graph, options)
 		{
 			return;
 		}
+		else if (convertWordnet && wordnetParser.shouldConvert(s, p, o, parent))
+		{
+			return;
+		}
 
 		let subjectId = Utils.getIdFromResource(s);
 		if ( isUriOrBlankNode(s) && !entities.hasOwnProperty(subjectId))
@@ -268,6 +282,13 @@ function parseGraph(graph, options)
 		else if (convertOwlTime && owlTimeParser.shouldConvert(s, p, o, timeContext))
 		{
 			if (owlTimeParser.createTimeRelationships(s, p, o, timeContext)) 
+			{
+				return;
+			}
+		}
+		else if (convertWordnet && wordnetParser.shouldConvert(s, p, o, parent))
+		{
+			if (wordnetParser.createRelationships(s, p, o, parent)) 
 			{
 				return;
 			}
@@ -396,6 +417,11 @@ function parseGraph(graph, options)
 	if (convertOwlTime)
 	{
 		owlTimeParser.finish(entities);
+	}
+
+	if (convertWordnet)
+	{
+		wordnetParser.finish(entities);
 	}
 
 	// Serialize entities
