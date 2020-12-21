@@ -33,7 +33,8 @@ class OwlTimeParser
 
 		if(o === time.INSTANT_URI || time.INTERVAL_URIS.includes(o) 
 			|| p === time.HAS_BEGINNING_URI || p === time.HAS_END_URI 
-			|| p === time.DATE_TIME_URI || this.anchors.hasOwnProperty(s))
+			|| p === time.IN_DATE_TIME_URI || p === time.HAS_TIME_URI
+			|| this.anchors.hasOwnProperty(s))
 		{
 			return true;
 		}
@@ -42,10 +43,18 @@ class OwlTimeParser
     
     createContextAnchor(s, p, o, context)
     {
-		this.timeContext = this.entities[context] ||  new Context(context) ;
-		this.timeContext.addInterface(s, 'temporal', {});
+		this.timeContext = this.entities[context] ||  new Context(context);
+		if(p !== time.HAS_TIME_URI)
+		{
+			this.timeContext.addInterface(s, 'temporal', {});
+		}
+		else
+		{
+			this.timeContext.addInterface(o, 'temporal', {});
+		}
+		
 		this.entities[context] = this.timeContext;
-		if(p === time.DATE_TIME_URI)
+		if(p === time.IN_DATE_TIME_URI)
 		{
 			const literal = Utils.getValueFromLiteral(o, {}, true);
 			this.instantDatetimeMap[s] = literal;
@@ -111,7 +120,7 @@ class OwlTimeParser
 			
 			return true;
 		}
-		else if(p === time.DATE_TIME_URI)
+		else if(p === time.IN_DATE_TIME_URI)
 		{
 			const anchor = this.convertToContextAnchor(s);
 
@@ -142,14 +151,24 @@ class OwlTimeParser
 				objectAnchor = o;
 			}
 
-			// create link with updated subject and object
-			const anchorLink = new Link();
-			anchorLink.addBind(this.subjectLabel, subjectEntity, subjectAnchor);
-			anchorLink.addBind(this.objectLabel, objectEntity, objectAnchor);
-			anchorLink.connector = p;
-			anchorLink.parent = context;
-			anchorLink.id = Utils.createSpoUri(s, p, o, context);
-			this.entities[anchorLink.id] = anchorLink;
+			if(time.DATE_TIME_URIS.includes(p) && Utils.isLiteral(o))
+			{
+				const anchor = this.convertToContextAnchor(s);
+				anchor.properties.begin = o;
+				anchor.properties.end = o;
+			}
+			else
+			{
+				// create link with updated subject and object
+				const anchorLink = new Link();
+				anchorLink.addBind(this.subjectLabel, subjectEntity, subjectAnchor);
+				anchorLink.addBind(this.objectLabel, objectEntity, objectAnchor);
+				anchorLink.connector = p;
+				anchorLink.parent = context;
+				anchorLink.id = Utils.createSpoUri(s, p, o, context);
+				this.entities[anchorLink.id] = anchorLink;
+			}
+
 			return true;
 		}
 		return false;
