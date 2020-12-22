@@ -27,6 +27,17 @@ class OwlTimeSerializer
             context = (entities.hasOwnProperty(entity.parent) ? entities[entity.parent].parent : defaultGraph) || defaultGraph;
             this.graph.add(subjId, entity.connector, objId, context);
         }
+        else if(this.timeContext === subjId)
+        {
+            subjId = entity.binds[subjectLabel][subjId][0];
+            this.graph.add(subjId, entity.connector, objId, context);
+        }
+        else if(this.timeContext === objId)
+        {
+            objId = entity.binds[objectLabel][objId][0];
+            context = (entities.hasOwnProperty(entity.parent) ? entities[entity.parent].parent : defaultGraph) || defaultGraph;
+            this.graph.add(subjId, entity.connector, objId, context);
+        }
         else
         {
             this.graph.add(subjId, entity.connector, objId, context);
@@ -42,7 +53,18 @@ class OwlTimeSerializer
         let isInterval = false;
         owltime.INTERVAL_URIS.forEach((uri) => isInterval = isInterval || interfaceProperties[rdf.TYPE_URI].includes(uri));
         
-        if(p === rdf.TYPE_URI && Array.isArray(prop))
+        if(p === owltime.HAS_DATE_TIME_DESCRIPTION_URI)
+        {
+            this.graph.add(interfaceNode, p, prop, parentUri);            
+        }
+        else if(owltime.GENERAL_DATE_TIME_DESCRIPTION_URIS.includes(p))
+        {
+            const descriptionId = interfaceProperties[owltime.HAS_DATE_TIME_DESCRIPTION_URI];
+            this.graph.add(interfaceNode, owltime.HAS_DATE_TIME_DESCRIPTION_URI, descriptionId, parentUri);
+            this.graph.add(descriptionId, rdf.TYPE_URI, owltime.DATE_TIME_DESCRIPTION_URI, parentUri);
+            this.graph.add(descriptionId, p, Utils.createLiteralObject(prop), parentUri);
+        }
+        else if(p === rdf.TYPE_URI && Array.isArray(prop))
         {
             for(let i = 0; i < prop.length; i++)
             {
@@ -57,7 +79,7 @@ class OwlTimeSerializer
             }
             this.graph.add(interfaceNode, p, Utils.createLiteralObject(prop), parentUri);
         }
-        else if(p === owltime.HAS_BEGINNING_URI || owltime.HAS_END_URI)
+        else if(p === owltime.HAS_BEGINNING_URI || p === owltime.HAS_END_URI)
         {
             this.graph.add(interfaceNode, p, prop, parentUri);    
         }
