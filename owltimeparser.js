@@ -210,7 +210,7 @@ class OwlTimeParser
 
 			for(let generalDescriptionPredicate of time.GENERAL_DATE_TIME_DESCRIPTION_URIS)
 			{
-				if(!dateTimeDescription.hasOwnProperty(generalDescriptionPredicate)) continue; // skip
+				if(!dateTimeDescription || !dateTimeDescription.hasOwnProperty(generalDescriptionPredicate)) continue; // skip
 				
 				const generalDescriptionValue = dateTimeDescription[generalDescriptionPredicate];
 				const generalDescriptionValueLiteral = Utils.getValueFromLiteral(generalDescriptionValue, {}, true);
@@ -248,7 +248,7 @@ class OwlTimeParser
 						anchor.properties[time.DAY_URI] = generalDescriptionValue;
 						break;
 					default:
-						console.error(`Parsing of ${generalDescriptionPredicate} not fully supported yet!`);
+						console.warn(`Parsing of ${generalDescriptionPredicate} not fully supported yet!`);
 						anchor.properties[generalDescriptionPredicate] = generalDescriptionValue;
 				}
 			}

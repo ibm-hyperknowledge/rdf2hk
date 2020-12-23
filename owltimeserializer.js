@@ -60,9 +60,11 @@ class OwlTimeSerializer
         else if(owltime.GENERAL_DATE_TIME_DESCRIPTION_URIS.includes(p))
         {
             const descriptionId = interfaceProperties[owltime.HAS_DATE_TIME_DESCRIPTION_URI];
+            let typeInfo = {};
+            let propValue = Utils.getValueFromLiteral(prop, typeInfo);
             this.graph.add(interfaceNode, owltime.HAS_DATE_TIME_DESCRIPTION_URI, descriptionId, parentUri);
             this.graph.add(descriptionId, rdf.TYPE_URI, owltime.DATE_TIME_DESCRIPTION_URI, parentUri);
-            this.graph.add(descriptionId, p, Utils.createLiteralObject(prop), parentUri);
+            this.graph.add(descriptionId, p, Utils.createLiteralObject(propValue, null, typeInfo.type), parentUri);
         }
         else if(p === rdf.TYPE_URI && Array.isArray(prop))
         {
