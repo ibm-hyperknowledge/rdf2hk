@@ -77,7 +77,7 @@ class OwlTimeSerializer
         {
             if(isInstant)
             {
-                this.graph.add(interfaceNode, owltime.DATE_TIME_URI, Utils.createLiteralObject(prop, null, xml.DATETIME_URI), parentUri);
+                this.graph.add(interfaceNode, owltime.IN_DATE_TIME_URI, Utils.createLiteralObject(prop, null, xml.DATETIME_URI), parentUri);
             }
             this.graph.add(interfaceNode, p, Utils.createLiteralObject(prop), parentUri);
         }
