@@ -297,6 +297,25 @@ function setHKFiltered(query)
 			query.where = query.where.concat(filteredQueryObject.where);
 		}
 
+		/**
+		 * Workaround to remove brackets that are automatically added by sparqljs lib in the group by clause.
+		 * This is necessary because triplestores such as Allegrograph do not support queries with brackets in the group by clause.
+		 * E.g.: from group by (?x) to group by ?x 
+		 */
+		if(sparqlObj.group)
+		{
+			if(sparqlObj.group.length > 0)
+			{
+				for(let group of sparqlObj.group )
+				{
+					if(group.expression.termType === "Variable" )
+					{
+						group.expression = `?${group.expression.value}`;
+					}
+				}
+			}
+		}
+
 		let outQuery = sparqlGenerator.stringify(sparqlObj);
 
 		// console.log(outQuery);
