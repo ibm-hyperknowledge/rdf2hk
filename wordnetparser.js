@@ -4,9 +4,9 @@
  */
 "use strict";
 
-const wordnet = require("./wordnet");
-const Constants = require("./constants");
-const Link = require("hklib/link");
+const wordnet	= require("./wordnetconstants");
+const Constants	= require("./constants");
+const Link 		= require("hklib/link");
 const { LAMBDA } = require("hklib/constants");
 const Context = require("hklib/context");
 const { createSpoUri, createRefUri, generateResourceFromId } = require("rdf2hk/utils");
@@ -15,36 +15,41 @@ const Node = require("hklib/node");
 const { TYPE_URI } = require("rdf2hk/rdf");
 const { CONTEXT } = require("hklib/types");
 
+const has = Object.prototype.hasOwnProperty;
+
 const LEXICAL_CONCEPTS_URI = generateResourceFromId('LexicalConcepts');
 
 class WordnetParser
 {
 
-    constructor(entities, options)
+    constructor(entities, wordnetDefaultContext, options)
 	{
+
 		this.entities = entities;
+		this.wordnetDefaultContext = wordnetDefaultContext;
 		this.subjectLabel = options.subjectLabel || Constants.DEFAULT_SUBJECT_ROLE;
         this.objectLabel = options.objectLabel || Constants.DEFAULT_OBJECT_ROLE;
         this.sensesMap = {};
         this.blankNodeMap = {};
         this.literalMap = {};
 	}
-
+	
     shouldConvert(s, p, o, parent)
     {
-        if(p === wordnet.SENSE_URI || 
-            p === wordnet.IS_LEXICALIZED_SENSE_OF_URI || 
-            p === wordnet.CANNONICAL_FORM_URI ||
-            p === wordnet.DEFINITION_URI ||
-            p === wordnet.DEFINITION_VALUE_URI ||
-            p === wordnet.WRITTEN_REP_URI ||
-            p === wordnet.PART_OF_SPEECH_URI ||
-            o === wordnet.LEXICAL_SENSE_URI || 
-            o === wordnet.LEXICAL_CONCEPT_URI ||
-            wordnet.SEMANTIC_RELATIONS_URIS.includes(p) ||
-            this.sensesMap.hasOwnProperty(s) || 
-            this.sensesMap.hasOwnProperty(o))
-		{
+        if(
+			p === wordnet.SENSE_URI
+			|| p === wordnet.IS_LEXICALIZED_SENSE_OF_URI 
+			|| p === wordnet.CANNONICAL_FORM_URI 
+			|| p === wordnet.DEFINITION_URI
+            || p === wordnet.DEFINITION_VALUE_URI
+            || p === wordnet.WRITTEN_REP_URI
+            || p === wordnet.PART_OF_SPEECH_URI
+            || o === wordnet.LEXICAL_SENSE_URI
+            || o === wordnet.LEXICAL_CONCEPT_URI
+            || wordnet.SEMANTIC_RELATIONS_URIS.includes(p)
+            || this.sensesMap.hasOwnProperty(s)
+			|| this.sensesMap.hasOwnProperty(o)
+		) {
 			return true;
 		}
 		return false;
@@ -54,9 +59,14 @@ class WordnetParser
     {
         let senseUri = null;
         let conceptUri = null;
-        let entryUri = null;
+		let entryUri = null;
+
+		if (!has.call(this.entities, this.wordnetDefaultContext))
+		{
+			this.entities[this.wordnetDefaultContext] = new Context(this.wordnetDefaultContext, parent);
+		}
         
-        if(p === wordnet.SENSE_URI || this.sensesMap.hasOwnProperty(o))
+        if(p === wordnet.SENSE_URI || has.call(this.sensesMap, o))
         {
             senseUri = o;
             entryUri = s;

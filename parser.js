@@ -89,6 +89,7 @@ function parseGraph(graph, options)
 	let convertOwlTime = options.convertOwlTime || false;
 
 	let convertWordnet = options.convertWordnet || false;
+	let wordnetDefaultContext = options.wordnetDefaultContext || 'WordnetTBox';
 
 	let setNodeContext = options.setNodeContext && true;
 
@@ -119,7 +120,7 @@ function parseGraph(graph, options)
 
 	let hkParser = new HKParser(entities, blankNodesMap, onlyHK);
 
-	let wordnetParser = new WordnetParser(entities, options);
+	let wordnetParser = new WordnetParser(entities, wordnetDefaultContext,  options);
 
 	let getParent = (iri, g) => 
 	{
@@ -168,8 +169,9 @@ function parseGraph(graph, options)
 		{
 			wordnetParser.createEntities(s, p, o, parent);
 		}
-		// Create connector?
 
+
+		// Create connector?
 		if (Utils.isUri(p) && Utils.isUriOrBlankNode(o))
 		{
 			let connector = new Connector();
