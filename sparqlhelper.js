@@ -322,14 +322,23 @@ function setHKFiltered(query)
 			{
 				for(let where of sparqlObj.where)
 				{
-					if(where.type === 'group')
+					if(where.patterns)
 					{
 						where.patterns.forEach(p => 
 						{
 							groupByResolver(p);
 						})
-					}
-					
+					}	
+				}
+			}
+			else if (sparqlObj.type === 'group')
+			{
+				if(sparqlObj.patterns)
+				{
+					sparqlObj.patterns.forEach(p => 
+					{
+						groupByResolver(p);
+					})
 				}
 			}
 		};
