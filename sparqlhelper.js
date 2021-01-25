@@ -176,9 +176,14 @@ function traverseQuery(query, out, state)
 
 function setHKFiltered(query)
 {
+	/**
+	 * Prefixes that Triplestores recognize although not passed in a query.
+	 */
+	const prefixes = { owl: 'http://www.w3.org/2002/07/owl#' };
+	
 	try
 	{
-		let sparqlParser = new SparqlJS.Parser();
+		let sparqlParser = new SparqlJS.Parser({prefixes});
 		let sparqlGenerator = new SparqlJS.Generator();
 
 		let sparqlObj = sparqlParser.parse(query);
