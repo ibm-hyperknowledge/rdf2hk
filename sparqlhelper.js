@@ -66,7 +66,6 @@ function traverseBGP(triples, out, state)
 			}
 		}
 
-		// console.log(t);
 	}
 
 }
@@ -161,7 +160,6 @@ function generalTraverse(parts, out, state)
 			default:
 				console.log("Unknown term?", n.type);
 				break;
-
 		}
 	}
 }
@@ -178,9 +176,14 @@ function traverseQuery(query, out, state)
 
 function setHKFiltered(query)
 {
+	/**
+	 * Prefixes that Triplestores recognize although not passed in a query.
+	 */
+	const prefixes = { owl: 'http://www.w3.org/2002/07/owl#' };
+	
 	try
 	{
-		let sparqlParser = new SparqlJS.Parser();
+		let sparqlParser = new SparqlJS.Parser({prefixes});
 		let sparqlGenerator = new SparqlJS.Generator();
 
 		let sparqlObj = sparqlParser.parse(query);
@@ -192,8 +195,6 @@ function setHKFiltered(query)
 				  objects: new Set(),
 				  graphs: new Set(),
 				  queries: []};
-
-		// console.log(sparqlObj);
 
 		traverseQuery(sparqlObj, out);
 
@@ -208,9 +209,6 @@ function setHKFiltered(query)
 				queries: []};
 
 			traverseQuery(query, queryTraversal);
-
-			// console.log(queryTraversal);
-			// console.log(queryTraversal.predicates);
 
 			let temp = {filters: ""}
 
@@ -228,21 +226,6 @@ function setHKFiltered(query)
 			}
 
 			let first = false;
-
-			// add filters for graph variables. 
-			// Only works properly if triples are not imported in hk://id/null
-			// for(let i = 0; i < graphs.length; i++)
-			// {
-			// 	let v = graphs[i];
-			// 	variables += `?${v} `;
-
-			// 	if( first )
-			// 	{
-			// 		temp.filters += " && ";
-			// 	}
-			// 	filterGraphsForHK(v, temp);
-			// 	first = true;
-			// }
 
 			let variables = new Set();
 
@@ -290,25 +273,67 @@ function setHKFiltered(query)
 
 			let filteredQuery = `select ${[...variables].join(' ')} where { filter(${temp.filters}) }`;
 
-			// console.log(filteredQuery);
-
 			let filteredQueryObject = filteredSparqlParser.parse(filteredQuery);
 
 			query.where = query.where.concat(filteredQueryObject.where);
 		}
 
-		let outQuery = sparqlGenerator.stringify(sparqlObj);
+		/**
+		 * Workaround to remove brackets that are automatically added by sparqljs lib in the group by clause.
+		 * This is necessary because triplestores such as Allegrograph do not support queries with round brackets in the group by clause.
+		 * E.g.: from group by (?x) to group by ?x 
+		 * 
+		 * Remove this workaround in case the issue #127 (https://github.com/RubenVerborgh/SPARQL.js/issues/127) is solved.
+		 */
 
-		// console.log(outQuery);
+		let groupByResolver = (sparqlObj) => {
+			if(sparqlObj.group)
+			{
+				if(sparqlObj.group.length > 0)
+				{
+					for(let g of sparqlObj.group )
+					{
+						if(g.expression.termType === "Variable" )
+						{
+							g.expression = `?${g.expression.value}`;
+						}
+					}
+				}
+			}
 
-		return outQuery;
+			if(sparqlObj.where)
+			{
+				for(let where of sparqlObj.where)
+				{
+					if(where.patterns)
+					{
+						where.patterns.forEach(p => 
+						{
+							groupByResolver(p);
+						})
+					}	
+				}
+			}
+			else if (sparqlObj.type === 'group')
+			{
+				if(sparqlObj.patterns)
+				{
+					sparqlObj.patterns.forEach(p => 
+					{
+						groupByResolver(p);
+					})
+				}
+			}
+		};
+
+		groupByResolver(sparqlObj);
+
+		return sparqlGenerator.stringify(sparqlObj);
+
 	}
-	catch(exp)
+	catch(err)
 	{
-		console.log(exp);
-		console.log("Warning: Failed to parse query to inject filters. Skipped.");
-		// console.log(query);
-		return query;
+		throw err;
 	}
 
 }
@@ -500,9 +525,6 @@ function optimizeFilter (filters)
 
 	let optimized = [];
 
-	// console.log(">>>>>>>");
-	// console.log(JSON.stringify(filters, null, 2));
-
 	let last = filters[0];
 
 	let willBreak = false;
@@ -654,13 +676,6 @@ function optimizeFilter (filters)
 	}
 	optimized.push(last);
 
-	// console.log(JSON.stringify(clusters, null, 2));
-
-	
-	// console.log("*******");
-	// console.log(JSON.stringify(optimized, null, 2));
-
-	// console.log("results", filters.length, optimized.length);
 	return optimized;
 }
 
@@ -691,44 +706,6 @@ function optimizeFilter2 (filters)
 
 				let keys = Object.keys(constraint);
 
-				// if(constraint.binds || constraint.connector)
-				// {
-				// 	for(let k in constraint)
-				// 	{
-				// 		let v = constraint[k];
-
-				// 		if(k === "binds")
-				// 		{
-				// 			for(let b in v)
-				// 			{
-				// 				let pair = `binds=${b}_${v[b]}`;
-				// 				if(!map.hasOwnProperty(pair))
-				// 				{
-				// 					map[pair] = 1;
-				// 				}	
-				// 				else
-				// 				{
-				// 					map[pair] = map[pair] +1;
-				// 				}
-				// 			}
-				// 		}
-				// 		else
-				// 		{
-				// 			let pair = `${k}=${v}`;
-				// 			if(!map.hasOwnProperty(pair))
-				// 			{
-				// 				map[pair] = 1;
-				// 			}	
-				// 			else
-				// 			{
-				// 				map[pair] = map[pair] +1;
-				// 			}
-				// 		}
-				// 	}
-
-				// 	bindsArray.push(constraint);
-
-				// }
 				if(keys.length === 2)
 				{
 					if(constraint.binds && constraint.connector && Object.keys(constraint.binds).length === 1)
@@ -801,55 +778,6 @@ function optimizeFilter2 (filters)
 			out.push(andFilters);
 		}
 	}
-
-	// console.log(map);
-
-	// bindsArray.sort((a, b) =>
-	// {
-	// 	let a1 = [];
-	// 	for(let k in a)
-	// 	{
-	// 		if(k === "binds")
-	// 		{
-	// 			for(let b in v)
-	// 			{
-	// 				let pair = `binds=${b}_${v[b]}`;
-	// 				a1.push(map[pair]);
-	// 			}
-	// 		}
-	// 		else
-	// 		{
-	// 			let pair = `${k}=${v}`;
-	// 			a1.push(pair);
-	// 		}
-	// 	}	
-	// 	let b1 = [];
-	// 	for(let k in b)
-	// 	{
-	// 		if(k === "binds")
-	// 		{
-	// 			for(let b in v)
-	// 			{
-	// 				let pair = `binds=${b}_${v[b]}`;
-	// 				b1.push(pair);
-	// 			}
-	// 		}
-	// 		else
-	// 		{
-	// 			let pair = `${k}=${v}`;
-	// 			b1.push(pair);
-	// 		}
-	// 	};
-
-	// 	let out = 0;
-	// 	for(let i of a1)
-	// 	{
-	// 		for(let j of b1)
-	// 		{
-
-	// 		}
-	// 	}
-	// })
 
 	if(Object.keys(clusters).length > 0)
 	{

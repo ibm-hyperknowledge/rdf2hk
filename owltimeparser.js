@@ -12,7 +12,7 @@ const Utils				= require("rdf2hk/utils");
 const Constants			= require("rdf2hk/constants");
 const { LAMBDA } 		= require("hklib/constants");
 const Context			= require("hklib/context");
-const Link			= require("hklib/link");
+const Link				= require("hklib/link");
 
 class OwlTimeParser
 {
@@ -24,6 +24,8 @@ class OwlTimeParser
 		this.timeContext = null;
 		this.anchors = null;
 		this.instantDatetimeMap = {}; // {instantId: datetime}
+		this.dateTimeDescriptionMap = {}; // {descriptionId: GeneralDateTimeDescription}
+		this.intervalDateTimeDescriptionMap = {}; // {intervalId: descriptionId}
 	}
 
 	shouldConvert (s, p, o, context)
@@ -33,7 +35,9 @@ class OwlTimeParser
 
 		if(o === time.INSTANT_URI || time.INTERVAL_URIS.includes(o) 
 			|| p === time.HAS_BEGINNING_URI || p === time.HAS_END_URI 
-			|| p === time.DATE_TIME_URI || this.anchors.hasOwnProperty(s))
+			|| p === time.IN_DATE_TIME_URI || p === time.HAS_TIME_URI 
+			|| p === time.HAS_DATE_TIME_DESCRIPTION_URI || time.GENERAL_DATE_TIME_DESCRIPTION_URIS.includes(p)
+			|| this.anchors.hasOwnProperty(s))
 		{
 			return true;
 		}
@@ -42,10 +46,18 @@ class OwlTimeParser
     
     createContextAnchor(s, p, o, context)
     {
-		this.timeContext = this.entities[context] ||  new Context(context) ;
-		this.timeContext.addInterface(s, 'temporal', {});
+		this.timeContext = this.entities[context] ||  new Context(context);
+		if(p !== time.HAS_TIME_URI)
+		{
+			this.timeContext.addInterface(s, 'temporal', {});
+		}
+		else
+		{
+			this.timeContext.addInterface(o, 'temporal', {});
+		}
+		
 		this.entities[context] = this.timeContext;
-		if(p === time.DATE_TIME_URI)
+		if(p === time.IN_DATE_TIME_URI)
 		{
 			const literal = Utils.getValueFromLiteral(o, {}, true);
 			this.instantDatetimeMap[s] = literal;
@@ -111,7 +123,7 @@ class OwlTimeParser
 			
 			return true;
 		}
-		else if(p === time.DATE_TIME_URI)
+		else if(p === time.IN_DATE_TIME_URI)
 		{
 			const anchor = this.convertToContextAnchor(s);
 
@@ -120,6 +132,22 @@ class OwlTimeParser
 			anchor.properties.begin = literal;
 			anchor.properties.end = literal;
 			return true;
+		}
+		else if(p === time.HAS_DATE_TIME_DESCRIPTION_URI)
+		{
+			if(!this.intervalDateTimeDescriptionMap.hasOwnProperty(o))
+			{
+				this.intervalDateTimeDescriptionMap[s] = o;
+			}
+			return true;
+		}
+		else if(time.GENERAL_DATE_TIME_DESCRIPTION_URIS.includes(p) || o === time.DATE_TIME_DESCRIPTION_URI )
+		{
+			if(!this.dateTimeDescriptionMap.hasOwnProperty(s))
+			{
+				this.dateTimeDescriptionMap[s] = {};
+			}
+			this.dateTimeDescriptionMap[s][p] = o;
 		}
 		else if(this.anchors.hasOwnProperty(s) || this.anchors.hasOwnProperty(o))
 		{
@@ -142,14 +170,24 @@ class OwlTimeParser
 				objectAnchor = o;
 			}
 
-			// create link with updated subject and object
-			const anchorLink = new Link();
-			anchorLink.addBind(this.subjectLabel, subjectEntity, subjectAnchor);
-			anchorLink.addBind(this.objectLabel, objectEntity, objectAnchor);
-			anchorLink.connector = p;
-			anchorLink.parent = context;
-			anchorLink.id = Utils.createSpoUri(s, p, o, context);
-			this.entities[anchorLink.id] = anchorLink;
+			if(time.DATE_TIME_URIS.includes(p) && Utils.isLiteral(o))
+			{
+				const anchor = this.convertToContextAnchor(s);
+				anchor.properties.begin = o;
+				anchor.properties.end = o;
+			}
+			else
+			{
+				// create link with updated subject and object
+				const anchorLink = new Link();
+				anchorLink.addBind(this.subjectLabel, subjectEntity, subjectAnchor);
+				anchorLink.addBind(this.objectLabel, objectEntity, objectAnchor);
+				anchorLink.connector = p;
+				anchorLink.parent = context;
+				anchorLink.id = Utils.createSpoUri(s, p, o, context);
+				this.entities[anchorLink.id] = anchorLink;
+			}
+
 			return true;
 		}
 		return false;
@@ -157,6 +195,73 @@ class OwlTimeParser
 
 	finish ()
 	{
+		// post process date time descriptions
+		for(let intervalId in this.intervalDateTimeDescriptionMap)
+		{
+			const descriptionId = this.intervalDateTimeDescriptionMap[intervalId];
+			const dateTimeDescription = this.dateTimeDescriptionMap[descriptionId];
+			const anchor = this.convertToContextAnchor(intervalId);
+			delete this.timeContext.interfaces[descriptionId];
+			
+			anchor.properties[time.HAS_DATE_TIME_DESCRIPTION_URI] = descriptionId;
+
+			let beginDate = null;
+			let endDate = null;
+
+			for(let generalDescriptionPredicate of time.GENERAL_DATE_TIME_DESCRIPTION_URIS)
+			{
+				if(!dateTimeDescription || !dateTimeDescription.hasOwnProperty(generalDescriptionPredicate)) continue; // skip
+				
+				const generalDescriptionValue = dateTimeDescription[generalDescriptionPredicate];
+				const generalDescriptionValueLiteral = Utils.getValueFromLiteral(generalDescriptionValue, {}, true);
+				
+				if(!beginDate)
+				{
+					beginDate = new Date(generalDescriptionValueLiteral);
+				}
+
+				if(!endDate)
+				{
+					endDate = new Date(generalDescriptionValueLiteral);
+				}
+
+				switch(generalDescriptionPredicate)
+				{
+					case time.YEAR_URI:
+						endDate.setFullYear(endDate.getFullYear() + 1);
+						endDate.setMilliseconds(-1);
+						anchor.properties[time.YEAR_URI] = generalDescriptionValue;
+						break;
+					case time.MONTH_URI:
+						beginDate.setMonth(generalDescriptionValueLiteral);
+						endDate.setFullYear(beginDate.getFullYear());
+						endDate.setMonth(beginDate.getMonth() + 1);
+						endDate.setMilliseconds(-1);
+						anchor.properties[time.MONTH_URI] = generalDescriptionValue;
+						break;
+					case time.DAY_URI:
+						beginDate.setDate(generalDescriptionValueLiteral);
+						endDate.setFullYear(beginDate.getFullYear());
+						endDate.setMonth(beginDate.getMonth());
+						endDate.setDate(beginDate.getDate() + 1);
+						endDate.setMilliseconds(-1);
+						anchor.properties[time.DAY_URI] = generalDescriptionValue;
+						break;
+					default:
+						console.warn(`Parsing of ${generalDescriptionPredicate} not fully supported yet!`);
+						anchor.properties[generalDescriptionPredicate] = generalDescriptionValue;
+				}
+			}
+
+			if(!anchor.properties.begin && beginDate)
+			{
+				anchor.properties.begin = beginDate.toLocaleString();
+			}
+			if(!anchor.properties.end && endDate)
+			{
+				anchor.properties.end = endDate.toLocaleString();
+			}
+		}
 
 	}
 }
