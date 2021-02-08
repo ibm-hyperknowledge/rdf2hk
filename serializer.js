@@ -44,7 +44,6 @@ const hk                = require("./hk");
  * @param {boolean} [options.compressReification] If convertHK is true, links will be reificated, the compress mode will generate the minimum of triples, default is false
  * @param {boolean} [options.convertNumber] Convert the number/boolean to xsd schema
  * @param {boolean} [options.reifyArray] Reify the arrays, default is false.
- * @param {boolean} [options.reifyLinksToAnchorId] When reifying links as SPO, if they point to an anchor other than lambda, the SPO triple will point to the anchorId instead of the node id.
  * @param {boolean} [options.defaultGraph] The uri to set when the parent of a entity is null
  * @param {object} referenceMap A string indexed map. Where the index is a refnode id and the value is the refnode itself.
  * @returns An instance of rdflib.js graph.
@@ -193,39 +192,12 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
 
                     if(roles)
                     {
-                        if(options.reifyLinksToAnchorId)
-                        {
-                            this._roles = roles;
-                        }
                         Link.prototype.forEachCrossBind.call(entity, roles, (s, o) =>
                         {
                             
                             let subjId = s;
                             let objId = o;
-                            
-                            if(options.reifyLinksToAnchorId)
-                            {
-                                let binds = entity.binds;
-                                const subjRole = this._roles[0];
-                                const objRole = this._roles[1];
-                                const subjBindedAnchors = binds[subjRole][subjId];
-                                const objBindedAnchors = binds[objRole][objId];
-                            
-                                if(Array.isArray(subjBindedAnchors) && subjBindedAnchors.length === 1 && subjBindedAnchors[0] !== LAMBDA)
-                                {
-                                    const entityId = subjId;
-                                    const key = subjBindedAnchors[0];
-                                    subjId = hkSerializer.compressAnchorInUri(entityId, key);
-                                }
-
-                                if(Array.isArray(objBindedAnchors) && objBindedAnchors.length === 1 && objBindedAnchors[0] !== LAMBDA)
-                                {
-                                    const entityId = objId;
-                                    const key =objBindedAnchors[0];
-                                    objId = hkSerializer.compressAnchorInUri(entityId, key);
-                                }
-                            }
-
+    
                             //in case we are still using reference nodes
                             if(referenceMap.hasOwnProperty(s))
                             {
