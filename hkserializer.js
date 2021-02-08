@@ -264,10 +264,6 @@ function _serializeAnchors(uri, entity, parentUri, graph)
                         {
                             this.owlTimeSerializer.serializeTemporalAnchorProperty(interfaceNode, p, prop, parentUri, properties);
                         }
-                        else if(Utils.isUri(p) && Utils.isUri(prop))
-                        {
-                            graph.add(interfaceNode, p, prop, parentUri);                            
-                        }
                         else
                         {
                             graph.add(interfaceNode, p, Utils.createLiteralObject(prop), parentUri);
@@ -280,6 +276,5 @@ function _serializeAnchors(uri, entity, parentUri, graph)
 }
 
 HKSerializer.compressRoleInUri = compressRoleInUri;
-HKSerializer.compressAnchorInUri = compressAnchorInUri;
 
 module.exports = HKSerializer;
