@@ -1,6 +1,6 @@
 {
 	"name": "rdf2hk",
-	"version": "1.3.11",
+	"version": "1.3.10",
 	"description": "This library converts RDF to Hyperknowledge Description",
 	"main": "index.js",
 	"author": "IBM Research",
