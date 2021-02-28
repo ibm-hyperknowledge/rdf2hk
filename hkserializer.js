@@ -56,9 +56,10 @@ function HKSerializer(sharedGraph, options)
 
     this.compressReification = options.compressReification || false;
     this.inverseRefNode = options.inverseRefNode || false;
-    this.preserveAnchorIds = options.convertOwlTime || false;
-    this.reifyAnchorProperties = options.convertOwlTime || false;
+    this.preserveAnchorIds = (options.convertOwlTime || options.convertDcat) || false;
+    this.reifyAnchorProperties = (options.convertOwlTime || options.convertDcat) || false;
     this.owlTimeSerializer = options.owlTimeSerializer;
+    this.dcatSerializer = options.dcatSerializer;
 }
 
 HKSerializer.prototype.serialize = function(entity)
@@ -260,9 +261,16 @@ function _serializeAnchors(uri, entity, parentUri, graph)
 					let prop = properties[p];
 					if(prop !== null && prop !== undefined)
 					{
-                        if(this.reifyAnchorProperties && this.owlTimeSerializer)
+                        if(this.reifyAnchorProperties)
                         {
-                            this.owlTimeSerializer.serializeTemporalAnchorProperty(interfaceNode, p, prop, parentUri, properties);
+                            if(this.owlTimeSerializer)
+                            {
+                                this.owlTimeSerializer.serializeTemporalAnchorProperty(interfaceNode, p, prop, parentUri, properties);
+                            }
+                            else if(this.dcatSerializer)
+                            {
+                                this.dcatSerializer.serializeAnchorProperty(interfaceNode, p, prop, parentUri, properties);
+                            }
                         }
                         else
                         {

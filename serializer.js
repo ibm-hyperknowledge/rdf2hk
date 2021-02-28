@@ -23,6 +23,7 @@ const TriGGraph			= require("./triggraph");
 const HKSerializer      = require("./hkserializer");
 const OWLSerializer		= require("./simpleowlserializer");
 const OLWTimeSerializer = require("./owltimeserializer");
+const DCATSerializer    = require("./dcatserializer");
 const hk                = require("./hk");
 
 
@@ -38,6 +39,7 @@ const hk                = require("./hk");
  * @param {boolean} [options.convertHK] Generate additional triples to build hyperknowledge entities
  * @param {boolean} [options.convertOwl] Uses owl rules to convert entities 
  * @param {boolean} [options.convertOwlTime] Uses owl Time rules to convert entities
+ * @param {boolean} [options.convertDcat] Uses DCAT rules to convert entities
  * @param {boolean} [options.timeContext] Context for owl Time conversion generated entities and relationships.
  * @param {boolean} [options.skipRefNodes] Skip extra reference nodes in case convertHK is true. Default is false.
  * @param {boolean} [options.inverseRefNode] When convertHK is true, the triple of ref nodes are inversed. That is, generates 'uri isReferenceBy refId' instead of 'refId references uri', . This promotes rdf view of data.
@@ -75,6 +77,7 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
 
 	options.owlSerializer = new OWLSerializer(graph, options);
     options.owlTimeSerializer = new OLWTimeSerializer(graph, options);
+    options.dcatSerializer = new DCATSerializer(graph, options);
     let hkSerializer = new HKSerializer(graph, options);
 
     // We can set subjectLabel and objectLabel as null
@@ -221,6 +224,10 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
                             if(options.convertOwlTime)
                             {
                                 options.owlTimeSerializer.serializeTemporalAnchorBind(entity, entities, subjectLabel, objectLabel, subjId, objId, defaultGraph, context);
+                            }
+                            else if(options.convertDcat)
+                            {
+                                options.dcatSerializer.serializeAnchorBind(entity, entities, subjectLabel, objectLabel, subjId, objId, defaultGraph, context);
                             }
                             else
                             {

@@ -18,6 +18,7 @@ const Constants 		= require("./constants");
 const Utils 			= require("./utils");
 
 const owl 				= require("./owl");
+const dcat				= require("./dcat");
 const rdfs 				= require("./rdfs");
 const xml 				= require("./xmlschema");
 const skos 				= require("./skos");
@@ -32,6 +33,7 @@ const uuidv1 			= require('uuid/v1');
 const OWLParser = require("./simpleowlparser");
 const OWLTimeParser = require("./owltimeparser");
 const HKParser = require("./hkparser");
+const DCATParser = require("./dcatparser");
 
 const RELATION_QUALIFIER_URIS = new Set();
 RELATION_QUALIFIER_URIS.add(owl.INVERSE_OF_URI);
@@ -53,6 +55,7 @@ const isUriOrBlankNode = Utils.isUriOrBlankNode;
  * @param {boolean} [options.convertOwl] EXPERIMENTAL OWL rules. Default is false.
  * @param {boolean} [options.convertOwlTime] EXPERIMENTAL OWL Time rules. Default is false.
  * @param {boolean} [options.timeContext] Context for OWL Time entities and relationships, if convertOwlTime is true.
+ * @param {boolean} [options.convertDcat] EXPERIMENTAL DCAT rules. Default is false.
  * @param {boolean} [options.preserveBlankNodes] Preserve the blank node ids if true, otherwise replace it by a uuid inteded to be unique in the database. Default is false.
  * @param {boolean} [options.serialize] Serialize output, i. e. remove unnecessary methods and fields from the intances.
  * @param {boolean} [options.convertHK] If set, it will read the Hyperknowledge vocabulary and make special conversion. Default is true.
@@ -85,6 +88,8 @@ function parseGraph(graph, options)
 	let convertOwl = options.convertOwl || false;
 	
 	let convertOwlTime = options.convertOwlTime || false;
+	
+	let convertDcat = options.convertDcat || false;
 
 	let setNodeContext = options.setNodeContext && true;
 
@@ -114,6 +119,8 @@ function parseGraph(graph, options)
 	let owlTimeParser = new OWLTimeParser(entities, options);
 
 	let hkParser = new HKParser(entities, blankNodesMap, onlyHK);
+
+	let dcatParser = new DCATParser(entities, options);
 
 	let getParent = (iri, g) => 
 	{
@@ -157,6 +164,10 @@ function parseGraph(graph, options)
 		else if (convertOwlTime && owlTimeParser.shouldConvert(s, p, o, timeContext))
 		{
 			owlTimeParser.createContextAnchor(s, p, o, timeContext);
+		}
+		else if (convertDcat && dcatParser.shouldConvert(s, p, o, parent))
+		{
+			dcatParser.createAnchors(s, p, o, parent);
 		}
 		// Create connector?
 
@@ -216,6 +227,10 @@ function parseGraph(graph, options)
 		{
 			return;
 		}
+		else if (convertDcat && dcatParser.shouldConvert(s, p, o, parent))
+		{
+			return;
+		}
 
 		let subjectId = Utils.getIdFromResource(s);
 		if ( isUriOrBlankNode(s) && !entities.hasOwnProperty(subjectId))
@@ -268,6 +283,13 @@ function parseGraph(graph, options)
 		else if (convertOwlTime && owlTimeParser.shouldConvert(s, p, o, timeContext))
 		{
 			if (owlTimeParser.createTimeRelationships(s, p, o, timeContext)) 
+			{
+				return;
+			}
+		}
+		else if (convertDcat && dcatParser.shouldConvert(s, p, o, parent))
+		{
+			if (dcatParser.createRelationships(s, p, o, parent)) 
 			{
 				return;
 			}
@@ -396,6 +418,11 @@ function parseGraph(graph, options)
 	if (convertOwlTime)
 	{
 		owlTimeParser.finish(entities);
+	}
+	
+	if (convertDcat)
+	{
+		dcatParser.finish(entities);
 	}
 
 	// Serialize entities
