@@ -167,7 +167,7 @@ function parseGraph(graph, options)
 		}
 		else if (convertDcat && dcatParser.shouldConvert(s, p, o, parent))
 		{
-			dcatParser.createAnchors(s, p, o, parent);
+			dcatParser.createConnectors(s, p, o, parent);
 		}
 		// Create connector?
 

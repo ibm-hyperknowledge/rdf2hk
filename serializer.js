@@ -225,10 +225,10 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
                             {
                                 options.owlTimeSerializer.serializeTemporalAnchorBind(entity, entities, subjectLabel, objectLabel, subjId, objId, defaultGraph, context);
                             }
-                            else if(options.convertDcat)
-                            {
-                                options.dcatSerializer.serializeAnchorBind(entity, entities, subjectLabel, objectLabel, subjId, objId, defaultGraph, context);
-                            }
+                            // else if(options.convertDcat)
+                            // {
+                            //     options.dcatSerializer.serializeAnchorBind(entity, entities, subjectLabel, objectLabel, subjId, objId, defaultGraph, context);
+                            // }
                             else
                             {
                                 graph.add(subjId, entity.connector, objId, context);
