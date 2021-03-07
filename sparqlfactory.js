@@ -1087,7 +1087,11 @@ function appendUnionFilters(builder, andFilters, idVar = "s")
 						builder.closure(() => 
 						{
 							builder.append('GRAPH ?g');
-							builder.closure(() => builder.append(`?s ${HKUris.REFERENCES_URI} ${_convertToUri(constraint[k])} .`));
+							builder.closure(() => 
+							{
+								builder.append(`?s ${HKUris.REFERENCES_URI} ${_convertToUri(constraint[k])} .`)
+								builder.append(`?s ?p ?o .`);
+							});
 						});	
 						
 						builder.appendUnion();
