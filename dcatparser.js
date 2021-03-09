@@ -19,6 +19,7 @@ function DCATParser(entities, options)
 {
 	this.entities = entities;
   this.linksBySubject = {};
+  this.linksByObject = {};
 	this.subjectLabel = options.subjectLabel || Constants.DEFAULT_SUBJECT_ROLE;
   this.objectLabel = options.objectLabel || Constants.DEFAULT_OBJECT_ROLE;
 }
@@ -44,6 +45,16 @@ DCATParser.prototype.createConnectors = function(s, p, o, g)
     connector.addRole(this.objectLabel, RoleTypes.OBJECT);
     this.entities[connector.id] = connector;
   }
+  
+  if(!this.entities.hasOwnProperty(dcat.IS_PART_OF_URI))
+  {
+    let connector = new Connector();
+    connector.id = dcat.IS_PART_OF_URI;
+    connector.className = ConnectorClass.FACTS;
+    connector.addRole(this.subjectLabel, RoleTypes.SUBJECT);
+    connector.addRole(this.objectLabel, RoleTypes.OBJECT);
+    this.entities[connector.id] = connector;
+  }
 }
 
 DCATParser.prototype.createRelationships = function(s, p, o, g, spo)
@@ -51,11 +62,19 @@ DCATParser.prototype.createRelationships = function(s, p, o, g, spo)
   if(!this.linksBySubject.hasOwnProperty(s))
   {
     const linkId = uuidv1();
-    this.linksBySubject[s] = new Link(linkId, p, g);
+    this.linksBySubject[s] = new Link(linkId, dcat.HAS_PART_URI, g);
     this.linksBySubject[s].addBind(this.subjectLabel, s);
     this.entities[linkId] = this.linksBySubject[s];
   }
+  if(!this.linksByObject.hasOwnProperty(o))
+  {
+    const linkId = uuidv1();
+    this.linksByObject[o] = new Link(linkId, dcat.IS_PART_OF_URI, g);
+    this.linksByObject[o].addBind(this.subjectLabel, o);
+    this.entities[linkId] = this.linksByObject[o];
+  }
   this.linksBySubject[s].addBind(this.objectLabel, o);
+  this.linksByObject[o].addBind(this.objectLabel, s);
   return true;
 }
 
