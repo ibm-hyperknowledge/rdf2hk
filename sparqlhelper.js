@@ -15,6 +15,9 @@ const BOOLEAN_XSD_URI = "http://www.w3.org/2001/XMLSchema#boolean";
 
 const HKUris = require("rdf2hk/hk");
 
+/**
+ * @deprecated after https://github.com/RubenVerborgh/SPARQL.js/issues/92 get fixed. 
+ */
 function traverseValues(values, out)
 {
 	for(let k in values)
@@ -58,13 +61,13 @@ function traverseBGP(triples, out, state)
 			}
 		}
 
-		if(t.object.termType === "Literal") // Workaround to this bug: https://github.com/RubenVerborgh/SPARQL.js/issues/92
-		{
-			if(t.object.datatypeString === BOOLEAN_XSD_URI)
-			{
-				t.object = new t.object.constructor(`"${t.object.value.toLowerCase()}"^^${t.object.datatypeString}`);
-			}
-		}
+		// if(t.object.termType === "Literal") // Workaround to this bug: https://github.com/RubenVerborgh/SPARQL.js/issues/92
+		// {
+		// 	if(t.object.datatypeString === BOOLEAN_XSD_URI)
+		// 	{
+		// 		t.object = new t.object.constructor(`"${t.object.value.toLowerCase()}"^^${t.object.datatypeString}`);
+		// 	}
+		// }
 
 	}
 
@@ -76,17 +79,18 @@ function traverseOperation(operation, out)
 	{
 		let o = operation.args[i];
 
-		if(o.termType)
-		{
-			if(o.termType === "Literal")
-			{
-				if(o.datatypeString === BOOLEAN_XSD_URI)
-				{
-					operation.args[i] = new o.constructor(`"${o.value.toLowerCase()}"^^${o.datatypeString}`);
-				}
-			}
-		}
-		else if(o.type === "expression")
+		// if(o.termType)
+		// {
+		// 	if(o.termType === "Literal")
+		// 	{
+		// 		if(o.datatypeString === BOOLEAN_XSD_URI)
+		// 		{
+		// 			operation.args[i] = new o.constructor(`"${o.value.toLowerCase()}"^^${o.datatypeString}`);
+		// 		}
+		// 	}
+		// }
+		// else 
+		if(o.type === "expression")
 		{
 			traverseExpression(o, out);
 		}
@@ -127,8 +131,6 @@ function generalTraverse(parts, out, state)
 	{
 		let n = parts[i];
 
-		// console.log(n);
-
 		switch(n.type)
 		{
 			case "bgp":
@@ -146,7 +148,6 @@ function generalTraverse(parts, out, state)
 				traverseFilter(n, out, state);
 				break;
 			case "optional":
-				// console.log(n);
 				generalTraverse(n.patterns, out, {skipBgp: true});
 				break;
 			case "bind":
@@ -155,7 +156,7 @@ function generalTraverse(parts, out, state)
 				generalTraverse(n.patterns, out, state)
 				break;
 			case "values":
-				traverseValues(n.values, out, state);
+				//traverseValues(n.values, out, state);
 				break;
 			default:
 				console.log("Unknown term?", n.type);
@@ -169,7 +170,6 @@ function traverseQuery(query, out, state)
 	state = state || {skipBgp: false};
 	out.queries.push(query);
 	let parts = query.where;
-
 
 	generalTraverse(parts, out, state);
 }
@@ -220,7 +220,7 @@ function setHKFiltered(query)
 
 			let graphs = Array.from(queryTraversal.graphs);
 
-			if(subjects.length === 0 && predicates.length === 0 && objects.length === 0 && graphs.length === 0)
+			if((subjects.length +  predicates.length + objects.length + graphs.length) === 0)
 			{
 				continue;
 			}
@@ -361,23 +361,7 @@ function filterPredicatesForHK (variable, filters)
 
 function filterSubjectsForHK (variable, filters)
 {
-	if(!variable.startsWith("?"))
-	{
-		variable = "?" + variable;
-	}
-	const reservedURIFilters = `(${variable} != ${HKUris.ISA_URI} &&
-								${variable} != ${HKUris.USES_CONNECTOR_URI}  &&
-								${variable} != ${HKUris.CLASSNAME_URI} &&
-								${variable} != ${HKUris.REFERENCES_URI} &&
-								${variable} != ${HKUris.HAS_PARENT_URI} )`;
-	const stringBasedFilters =  `!( ISIRI(${variable}) && ( STRSTARTS(STR(${variable}), "hk://role") || STRSTARTS(STR(${variable}), "hk://link") || STRSTARTS(STR(${variable}), "hk://b/") ) )`;
-	const functionBasedFilters = `( isIRI(${variable}) || isBlank(${variable}) ||  datatype(${variable}) != ${HKUris.DATA_LIST_URI} )`;
-	filters.filters += `(
-		!BOUND(${variable}) ||
-		( 
-			${reservedURIFilters} && ${stringBasedFilters} && ${functionBasedFilters} 
-		)
-	)`;
+	filterObjectsForHK (variable, filters);
 }
 
 function filterObjectsForHK (variable, filters)
