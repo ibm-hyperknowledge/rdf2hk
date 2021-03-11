@@ -14,6 +14,8 @@ const SparqlJS = require("sparqljs");
 const BOOLEAN_XSD_URI = "http://www.w3.org/2001/XMLSchema#boolean";
 
 const HKUris = require("rdf2hk/hk");
+const stringify = require('csv-stringify');
+const fs = require('fs');
 
 /**
  * @deprecated after https://github.com/RubenVerborgh/SPARQL.js/issues/92 get fixed. 
@@ -186,7 +188,15 @@ function setHKFiltered(query)
 		let sparqlParser = new SparqlJS.Parser({prefixes});
 		let sparqlGenerator = new SparqlJS.Generator();
 
+		let timeElapsedArray = [];
+		let queryLength = query.length;
+		timeElapsedArray.push(queryLength);
+		let startDateQueryParse = new Date();
+
 		let sparqlObj = sparqlParser.parse(query);
+
+		let timeElapsedQueryParse = new Date() - startDateQueryParse;
+		timeElapsedArray.push(timeElapsedQueryParse);
 
 		let filteredSparqlParser = new SparqlJS.Parser();
 
@@ -196,6 +206,8 @@ function setHKFiltered(query)
 				  graphs: new Set(),
 				  queries: []};
 
+		let startDateQueryTraverse = new Date();
+		
 		traverseQuery(sparqlObj, out);
 
 		for(let i = 0; i < out.queries.length; i++)
@@ -270,12 +282,26 @@ function setHKFiltered(query)
 				first = true;
 			}
 
+			let timeElapsedQueryTraverse = new Date() - startDateQueryTraverse;
+			timeElapsedArray.push(timeElapsedQueryTraverse);
+
+			let startDateQueryInject = new Date();
 
 			let filteredQuery = `select ${[...variables].join(' ')} where { filter(${temp.filters}) }`;
 
 			let filteredQueryObject = filteredSparqlParser.parse(filteredQuery);
 
 			query.where = query.where.concat(filteredQueryObject.where);
+
+			let timeElapsedQueryInject = new Date() - startDateQueryInject;
+			timeElapsedArray.push(timeElapsedQueryInject);
+
+			stringify([timeElapsedArray], { header: false}, (err, output) => {
+				if (err) throw err;
+				fs.appendFile(`jenagrpc_setHKFiltered_profile.csv`, output, (err) => {
+					if (err) throw err;
+				});
+			});
 		}
 
 		/**
