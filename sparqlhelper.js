@@ -181,23 +181,43 @@ function setHKFiltered(query)
 	/**
 	 * Prefixes that Triplestores recognize although not passed in a query.
 	 */
+
+	// start profiling
+	let profilingResultRow = [];
+	let keywords = ['ASK', 'SELECT', 'CONSTRUCT'];
+	let profilingResultHeaders = keywords;
+
+	// identify type of query
+	for(let keyword of keywords)
+	{
+		if(query.includes(keyword))
+		{
+			profilingResultRow.push('yes')
+		}
+		else
+		{
+			profilingResultRow.push('no')
+		}
+	}
+
+	// store query length
+	profilingResultHeaders.push("QueryLength");
+	profilingResultRow.push(query.length);
+
 	const prefixes = { owl: 'http://www.w3.org/2002/07/owl#' };
-	
+
 	try
 	{
 		let sparqlParser = new SparqlJS.Parser({prefixes});
 		let sparqlGenerator = new SparqlJS.Generator();
-
-		let timeElapsedArray = [];
-		let queryLength = query.length;
-		timeElapsedArray.push(queryLength);
+		
+		// store time elapsed during parsing of string to object
 		let startDateQueryParse = new Date();
-
 		let sparqlObj = sparqlParser.parse(query);
-
 		let timeElapsedQueryParse = new Date() - startDateQueryParse;
-		timeElapsedArray.push(timeElapsedQueryParse);
-
+		profilingResultHeaders.push("QueryParsing(ms)");
+		profilingResultRow.push(timeElapsedQueryParse);
+		
 		let filteredSparqlParser = new SparqlJS.Parser();
 
 		let out = {subjects: new Set(),
@@ -205,11 +225,20 @@ function setHKFiltered(query)
 				  objects: new Set(),
 				  graphs: new Set(),
 				  queries: []};
-
-		let startDateQueryTraverse = new Date();
 		
+		// store time elapsed during traversal of sparqlObject to identify query parts
+		let startDateQueryTraverse = new Date();
 		traverseQuery(sparqlObj, out);
+		let timeElapsedQueryTraverse = new Date() - startDateQueryTraverse;
+		profilingResultHeaders.push("QueryTraversing(ms)");
+		profilingResultRow.push(timeElapsedQueryTraverse);
 
+		// store number of subqueries
+		profilingResultRow.push(out.queries.length);
+		profilingResultHeaders.push("#SubQueries");
+
+		// store time elapsed looping all subqueries to inject filters where needed
+		let startDateSubQueryTraverseLoop = new Date();
 		for(let i = 0; i < out.queries.length; i++)
 		{
 			let query = out.queries[i];
@@ -281,28 +310,18 @@ function setHKFiltered(query)
 				filterObjectsForHK(v, temp);
 				first = true;
 			}
-
-			let timeElapsedQueryTraverse = new Date() - startDateQueryTraverse;
-			timeElapsedArray.push(timeElapsedQueryTraverse);
-
-			let startDateQueryInject = new Date();
-
+			
 			let filteredQuery = `select ${[...variables].join(' ')} where { filter(${temp.filters}) }`;
 
 			let filteredQueryObject = filteredSparqlParser.parse(filteredQuery);
 
 			query.where = query.where.concat(filteredQueryObject.where);
 
-			let timeElapsedQueryInject = new Date() - startDateQueryInject;
-			timeElapsedArray.push(timeElapsedQueryInject);
-
-			stringify([timeElapsedArray], { header: false}, (err, output) => {
-				if (err) throw err;
-				fs.appendFile(`jenagrpc_setHKFiltered_profile.csv`, output, (err) => {
-					if (err) throw err;
-				});
-			});
 		}
+		let timeElapsedSubQueryTraverseLoop = new Date() - startDateSubQueryTraverseLoop;
+		profilingResultHeaders.push("SubQueriesTraverseLoop(ms)");
+		profilingResultRow.push(timeElapsedSubQueryTraverseLoop);
+		
 
 		/**
 		 * Workaround to remove brackets that are automatically added by sparqljs lib in the group by clause.
@@ -352,9 +371,35 @@ function setHKFiltered(query)
 			}
 		};
 
+		// store time elapsed during groupByResolver workaround
+		let startDateGroupByResolver = new Date();
 		groupByResolver(sparqlObj);
+		let timeElapsedGroupByResolver = new Date() - startDateGroupByResolver;
+		profilingResultHeaders.push("GroupByResolver(ms)");
+		profilingResultRow.push(timeElapsedGroupByResolver);
 
-		return sparqlGenerator.stringify(sparqlObj);
+		// store time elapsed serializing the final sparqlObject to a string
+		let startDateQueryStringify = new Date();
+		let sparqlQuery = sparqlGenerator.stringify(sparqlObj);
+		let timeElapsedQueryStringify = new Date() - startDateQueryStringify;
+		profilingResultHeaders.push("QueryStringify(ms)");
+		profilingResultRow.push(timeElapsedQueryStringify);
+
+		// persist result in CSV file
+		let profileFilePath = `jenagrpctdb1_setHKFiltered_profile.csv`;
+		let profilingFileOptions = { header: true, columns: profilingResultHeaders };
+		if(fs.existsSync(profileFilePath))
+		{
+			profilingFileOptions = {header: false};
+		}
+		stringify([profilingResultRow], profilingFileOptions, (err, output) => {
+			if (err) throw err;
+			fs.appendFile(profileFilePath, output, (err) => {
+				if (err) throw err;
+			});
+		});
+
+		return sparqlQuery;
 
 	}
 	catch(err)
