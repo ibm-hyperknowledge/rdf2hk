@@ -24,7 +24,6 @@ const HYPERKNOWLEDGE_URIS = new Set();
 HYPERKNOWLEDGE_URIS.add(HKUris.HAS_PARENT_URI);
 HYPERKNOWLEDGE_URIS.add(HKUris.REFERENCES_URI);
 HYPERKNOWLEDGE_URIS.add(HKUris.USES_CONNECTOR_URI);
-HYPERKNOWLEDGE_URIS.add(HKUris.REFERENCED_BY_URI);
 HYPERKNOWLEDGE_URIS.add(HKUris.HAS_BIND_URI);
 HYPERKNOWLEDGE_URIS.add(HKUris.BOUND_ROLE_URI);
 HYPERKNOWLEDGE_URIS.add(HKUris.BOUND_ANCHOR_URI);
@@ -102,10 +101,6 @@ HKParser.prototype.createEntities = function(s, p, o, g, spo)
     {
         _createEntities.call(this, s, p, o, g);
     }
-	else if(p === HKUris.REFERENCED_BY_URI)
-	{
-		_bindBlankNodes.call(this, s, p, o, g);
-	}
     else if(p === HKUris.USES_CONNECTOR_URI)
     {
         _createCompressedLink.call(this, s, p, o, g);
@@ -127,12 +122,6 @@ HKParser.prototype.setIntrisecsProperties = function(s, p, o, g, spo)
         let entities = this.entities;
         let entityId = Utils.getIdFromResource(s);
         let entity = entities[entityId];
-
-		if(p === HKUris.REFERENCED_BY_URI)
-		{
-			entityId = Utils.getIdFromResource(o);
-			entity = entities[entityId];
-		}
 
         const isAnchor = isCompressedAnchor(s) || this.interfaces.hasOwnProperty(s);
 		if(!entity && !this.binds.hasOwnProperty(s) && !isAnchor)
@@ -220,24 +209,6 @@ HKParser.prototype.setIntrisecsProperties = function(s, p, o, g, spo)
             case HKUris.REFERENCES_URI:
             {
                 entity.ref = Utils.getIdFromResource(o);
-                break;
-            }
-			case HKUris.REFERENCED_BY_URI:
-            {
-				let entityId = Utils.getIdFromResource(o);
-				let entity = entities[entityId];
-				if(entity && entity.type === Reference.type)
-				{
-					if(Utils.isBlankNode(s))
-					{
-						let id = this.blankNodesMap[s] || s;
-						entity.ref = id;
-					}
-					else
-					{
-                		entity.ref = Utils.getIdFromResource(s);
-					}
-				}
                 break;
             }
             case HKUris.USES_CONNECTOR_URI:
