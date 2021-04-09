@@ -57,6 +57,7 @@ const isUriOrBlankNode = Utils.isUriOrBlankNode;
  * @param {boolean} [options.serialize] Serialize output, i. e. remove unnecessary methods and fields from the intances.
  * @param {boolean} [options.convertHK] If set, it will read the Hyperknowledge vocabulary and make special conversion. Default is true.
  * @param {boolean} [options.onlyHK] If set, it will ONLY read the Hyperknowledge vocabulary and convert those entities, this options override `convertHK`. Default is false.
+ * @param {boolean} [options.textLiteralAsNode] If true, string literals will be converted to content nodes, which will be linked to subject using a link whose connector is the predicate.
  */
 
 function parseGraph(graph, options)
@@ -95,6 +96,8 @@ function parseGraph(graph, options)
 	let convertHK = options.convertHK && true;
 
 	let onlyHK = options.onlyHK || false;
+	
+	let textLiteralAsNode = options.textLiteralAsNode || false;
 
 	convertHK = convertHK || onlyHK;
 
@@ -370,7 +373,8 @@ function parseGraph(graph, options)
 			}
 
 			// Convert the literal
-			_setPropertyFromLiteral(node, p, o);
+			_setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel, objectLabel, textLiteralAsNode);
+			
 		}
 
 	});
@@ -410,10 +414,16 @@ function parseGraph(graph, options)
 	return entities;
 }
 
-function _setPropertyFromLiteral(node, p, o)
+function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel, objectLabel, textLiteralAsNode = false)
 {
 	let typeInfo = {};
 	let value = Utils.getValueFromLiteral(o, typeInfo, true);
+	let propertyName = Utils.getIdFromResource(p);
+
+	if (typeInfo.lang)
+	{
+		value = `"${value}"@${typeInfo.lang}`;
+	}
 
 	if(typeof value === "string")
 	{
@@ -426,19 +436,38 @@ function _setPropertyFromLiteral(node, p, o)
 			}
 			return;
 		}
+
+		if(textLiteralAsNode)
+		{
+			const contentNodeUri = Utils.createContentNodeUri(value);
+			if(!entities.hasOwnProperty(contentNodeUri))
+			{
+				const contentNode = new Node(contentNodeUri, node.parent);
+				contentNode.setProperty('mimeType', 'plain/text');
+				contentNode.setProperty('data', value);
+				entities[contentNodeUri] = contentNode;
+			}
+
+			const connectorId =  Utils.getIdFromResource(p)
+			if(!connectors.hasOwnProperty(connectorId))
+			{
+				const contentConnector = new Connector(connectorId, ConnectorClass.FACTS);
+				contentConnector.addRole(subjectLabel, RoleTypes.SUBJECT);
+				contentConnector.addRole(objectLabel, RoleTypes.OBJECT);
+				connectors[contentConnector.id] = contentConnector;
+				entities[contentConnector.id] = contentConnector;
+			}
+			
+			const linkUri = Utils.createSpoUri(node.id, p, value, node.parent);
+			const contentLink = new Link(linkUri, p, node.parent);
+			contentLink.addBind(subjectLabel, node.id);
+			contentLink.addBind(objectLabel, contentNodeUri);
+			entities[linkUri] = contentLink;
+			return;
+		}
 	}
 
-
-	let propertyName = Utils.getIdFromResource(p);
-
-	if (typeInfo.lang)
-	{
-		node.setOrAppendToProperty(propertyName, `"${value}"@${typeInfo.lang}`);
-	}
-	else
-	{
-		node.setOrAppendToProperty(propertyName, value);
-	}
+	node.setOrAppendToProperty(propertyName, value);
 
 	if (typeInfo.type && typeInfo.type !== xml.STRING_URI)
 	{
