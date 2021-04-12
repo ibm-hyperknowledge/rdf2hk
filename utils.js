@@ -510,6 +510,13 @@ function createSpoUri(s, p, o, g = "")
 	return `<${Constants.HK_LINK_PREFIX}/${hash}>`;
 }
 
+function createContentNodeUri(content)
+{
+    let hash = new MD5().update(`${content}`).digest("hex");
+	return `<${Constants.HK_NODE_PREFIX}/${hash}>`;
+}
+
+exports.createContentNodeUri = createContentNodeUri;
 exports.createLiteralObject = createLiteralObject;
 exports.createRefUri = createRefUri;
 exports.createSpoUri = createSpoUri;
