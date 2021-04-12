@@ -30,21 +30,30 @@ const HK_NULL_URI = `<${Constants.HK_NULL}>`;
 class WordnetParser
 {
 
-	constructor(entities, connectors, blankNodesMap, preserveBlankNodes, wordnetDefaultContext, options)
+	constructor(entities, connectors, blankNodesMap, options)
 	{
 
 		this.entities = entities;
 		this.connectors = connectors;
 		this.blankNodesMap = blankNodesMap;
-		this.preserveBlankNodes = preserveBlankNodes;
-		this.wordnetDefaultContext = wordnetDefaultContext;
+		this.preserveBlankNodes = options.preserveBlankNodes || false;
+		this.wordnetDefaultContext = options.wordnetDefaultContext || 'WordnetTBox';
 		this.subjectLabel = options.subjectLabel || Constants.DEFAULT_SUBJECT_ROLE;
 		this.objectLabel = options.objectLabel || Constants.DEFAULT_OBJECT_ROLE;
 		this.contextReferences = {};
+    this.mustConvert = options.convertWordnet30;
+
+    if(!entities.hasOwnProperty(wordnetDefaultContext))
+		{
+			entities[wordnetDefaultContext] =  new Context(wordnetDefaultContext, null);
+		}
 	}
 
 	shouldConvert(s, p, o, parent)
 	{
+    if (!this.shouldConvert) {
+      return false;
+    }
 		if (wordnet.WN30_OBJECTS.includes(o) || wordnet.W30_PREDICATES.includes(p) || p === rdfs.LABEL_URI)
 		{
 			return true;
@@ -210,6 +219,19 @@ class WordnetParser
 
 		return true;
 	}
+
+  firstLookCallback(s, p, o, parent) {
+    this.createContexts(s, p, o, parent);
+    return true;
+  }
+
+  secondLoopCallback(s, p, o, context) {
+    return false;
+  }
+
+  lastLoopCallback(s, p, o, context) {
+    return !this.createRelationships(s, p, o, context)
+  }
 
 	finish(entities)
 	{

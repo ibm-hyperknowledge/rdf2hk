@@ -29,16 +29,19 @@ owlVocabulary.add(rdfs.SUBPROPERTYOF_URI);
 
 class SimpleOwlParser
 {
-	constructor(entities, options)
+	constructor(entities, connectors, blackNodesMap, options)
 	{
 		this.entities = entities;
 		this.subjectLabel = options.subjectLabel || Constants.DEFAULT_SUBJECT_ROLE;
-    	this.objectLabel = options.objectLabel || Constants.DEFAULT_OBJECT_ROLE;
-
+    this.objectLabel = options.objectLabel || Constants.DEFAULT_OBJECT_ROLE;
+    this.mustConvert = options.convertOwl;
 	}
 
 	shouldConvert (s, p, o, g, spo)
 	{
+    if (!this.shouldConvert) {
+      return False;
+    }
 		if(p === owl.IMPORTS_URI)
 		{
 			return false;
@@ -116,6 +119,19 @@ class SimpleOwlParser
 		return false;
 
 	}
+
+  firstLookCallback(s, p, o, parent) {
+    this.createConnectors(s, p, o, parent);
+		return false;
+  }
+
+  secondLoopCallback(s, p, o, parent) {
+    return false;
+  }
+
+  lastLoopCallback(s, p, o, parent) {
+    return !this.createRelationships(s, p, o, parent);
+  }
 
 	finish ()
 	{

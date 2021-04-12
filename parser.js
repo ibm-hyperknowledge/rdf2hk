@@ -25,10 +25,10 @@ const xml 				= require("./xmlschema");
 const uuidv1 			= require('uuid/v1');
 
 // Sub Parsers
-const OWLParser = require("./simpleowlparser");
-const OWLTimeParser = require("./owltimeparser");
-const HKParser = require("./hkparser");
-const WordnetParser = require("./wordnetparser");
+// const OWLParser = require("./simpleowlparser");
+// const OWLTimeParser = require("./owltimeparser");
+// const HKParser = require("./hkparser");
+// const WordnetParser = require("./wordnetparser");
 
 const RELATION_QUALIFIER_URIS = new Set();
 RELATION_QUALIFIER_URIS.add(owl.INVERSE_OF_URI);
@@ -38,6 +38,12 @@ const HK_NULL_URI = `<${Constants.HK_NULL}>`;
 
 const isUriOrBlankNode = Utils.isUriOrBlankNode;
 const has = Object.prototype.hasOwnProperty;
+
+let activeParsers = [];
+
+function registerParser(parser) {
+  activeParsers.push(parser);
+}
 
 /**
  * Parse rdf to Hyperknowledge entities.
@@ -81,11 +87,11 @@ function parseGraph(graph, options)
 
 	const preserveBlankNodes = options.preserveBlankNodes || false;
 
-	let convertOwl = options.convertOwl || false;
+	let convertOwl = options.convertOwl = options.convertOwl || false;
 	
-	let convertOwlTime = options.convertOwlTime || false;
+	let convertOwlTime = options.convertOwlTime = options.convertOwlTime || false;
 
-	let convertWordnet30 = options.convertWordnet30 || false;
+	let convertWordnet30 = options.convertWordnet30 = options.convertWordnet30 || false;
 	let wordnetDefaultContext = options.wordnetDefaultContext || 'WordnetTBox';
 
 	let setNodeContext = options.setNodeContext && true;
@@ -98,7 +104,7 @@ function parseGraph(graph, options)
 
 	let onlyHK = options.onlyHK || false;
 
-	convertHK = convertHK || onlyHK;
+	options.convertHK = convertHK = convertHK || onlyHK;
 
 	let serialize = options.serialize || false;
 
@@ -113,21 +119,11 @@ function parseGraph(graph, options)
 
 	let blankNodesMap = {};
 
-	let owlParser = new OWLParser(entities, options);
+  const currentParsers = [];
+  activeParsers.forEach(parser => {
+    currentParsers.push(new parser(entities, connectors, blankNodesMap, options));
+  });
 
-	let owlTimeParser = new OWLTimeParser(entities, options);
-
-	let hkParser = new HKParser(entities, blankNodesMap, onlyHK);
-
-	let wordnetParser;
-	if(convertWordnet30)
-	{
-		if(!has.call(entities, wordnetDefaultContext))
-		{
-			entities[wordnetDefaultContext] =  new Context(wordnetDefaultContext, null);
-		}
-		wordnetParser = new WordnetParser(entities, connectors, blankNodesMap, preserveBlankNodes, wordnetDefaultContext,  options);
-	}
 
 	let getParent = (iri, g) => 
 	{
@@ -158,24 +154,15 @@ function parseGraph(graph, options)
 	graph.forEachStatement((s, p, o, g) =>
 	{
 		const parent = getParent(s, g);
-		if (convertHK && hkParser.shouldConvert(s, p, o, parent))
-		{
-			hkParser.createEntities(s, p, o, parent);
-			return;
-		}
-		else if (convertOwl && owlParser.shouldConvert(s, p, o, parent))
-		{
-			owlParser.createConnectors(s, p, o, parent);
-			return;
-		}
-		else if (convertOwlTime && owlTimeParser.shouldConvert(s, p, o, timeContext))
-		{
-			owlTimeParser.createContextAnchor(s, p, o, timeContext);
-		}
-		else if (convertWordnet30 && wordnetParser.shouldConvert(s, p, o, parent))
-		{
-			wordnetParser.createContexts(s, p, o, parent);
-		}
+
+    for(let i = 0; i < currentParsers.length; i++) {
+      if (parser.shouldConvert(s, p, o, parent)) {
+        let shouldContinue = parser.firstLoopCallback(s, p, o, parent);
+        if (shouldContinue !== undefined && !shouldContinue) {
+          return;
+        }
+      }
+    }
 
 		// Create connector?
 		if (Utils.isUri(p) && Utils.isUriOrBlankNode(o))
@@ -221,23 +208,14 @@ function parseGraph(graph, options)
 			}
 		}
 
-		if (onlyHK || (convertHK && hkParser.shouldConvert(s, p, o, parent)))
-		{
-			return;
-		}
-		else if (convertOwl && owlParser.shouldConvert(s, p, o, parent))
-		{
-			return;
-		}
-		else if (convertOwlTime && owlTimeParser.shouldConvert(s, p, o, timeContext))
-		{
-			return;
-		}
-		else if (convertWordnet30 && wordnetParser.shouldConvert(s, p, o, parent))
-		{
-			wordnetParser.createMainEntities(s, p, o, parent);
-			return;
-		}
+    for(let i = 0; i < currentParsers.length; i++) {
+      if (parser.shouldConvert(s, p, o, parent)) {
+        let shouldContinue = parser.secondLoopCallback(s, p, o, parent);
+        if (shouldContinue !== undefined && !shouldContinue) {
+          return;
+        }
+      }
+    }
 
 		let subjectId = Utils.getIdFromResource(s);
 		if ( isUriOrBlankNode(s) && !has.call(entities, subjectId))
@@ -275,32 +253,15 @@ function parseGraph(graph, options)
 	graph.forEachStatement((s, p, o, g) =>
 	{
 		const parent = getParent(s, g);
-		if (convertHK && hkParser.shouldConvert(s, p, o, parent))
-		{
-			hkParser.setIntrisecsProperties(s, p, o, parent);
-			return;
-		}
-		else if (convertOwl && owlParser.shouldConvert(s, p, o, parent))
-		{
-			if (owlParser.createRelationships(s, p, o, parent)) 
-			{
-				return;
-			}
-		}
-		else if (convertOwlTime && owlTimeParser.shouldConvert(s, p, o, timeContext))
-		{
-			if (owlTimeParser.createTimeRelationships(s, p, o, timeContext)) 
-			{
-				return;
-			}
-		}
-		else if (convertWordnet30 && wordnetParser.shouldConvert(s, p, o, parent))
-		{
-			if (wordnetParser.createRelationships(s, p, o, parent)) 
-			{
-				return;
-			}
-		}
+		
+    for(let i = 0; i < currentParsers.length; i++) {
+      if (parser.shouldConvert(s, p, o, parent)) {
+        let shouldContinue = parser.lastLoopCallback(s, p, o, parent);
+        if (shouldContinue !== undefined && !shouldContinue) {
+          return;
+        }
+      }
+    }
 
 		// Set relationship
 		if (isUriOrBlankNode(o))
@@ -411,25 +372,11 @@ function parseGraph(graph, options)
 		entities[c] = connectors[c];
 	}
 
-	if (convertHK)
-	{
-		hkParser.finish(entities);
-	}
-
-	if (convertOwl)
-	{
-		owlParser.finish(entities);
-	}
-
-	if (convertOwlTime)
-	{
-		owlTimeParser.finish(entities);
-	}
-
-	if (convertWordnet30)
-	{
-		wordnetParser.finish(entities);
-	}
+  currentParsers.forEach(parser => {
+    if (parser.mustConvert) {
+      parser.finish(entities);
+    }
+  });
 
 	// Serialize entities
 	if (serialize)
@@ -482,3 +429,4 @@ function _setPropertyFromLiteral(node, p, o)
 
 // exports.parseTriples = parseTriples;
 exports.parseGraph = parseGraph;
+exports.registerParser = registerParser;

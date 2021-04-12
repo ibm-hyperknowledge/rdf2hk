@@ -16,20 +16,27 @@ const Link				= require("hklib/link");
 
 class OwlTimeParser
 {
-	constructor(entities, options)
+	constructor(entities, connectors, blankNodesMap, options)
 	{
 		this.entities = entities;
 		this.subjectLabel = options.subjectLabel || Constants.DEFAULT_SUBJECT_ROLE;
 		this.objectLabel = options.objectLabel || Constants.DEFAULT_OBJECT_ROLE;
-		this.timeContext = null;
+		this.timeContext = options.timeContext;
 		this.anchors = null;
 		this.instantDatetimeMap = {}; // {instantId: datetime}
 		this.dateTimeDescriptionMap = {}; // {descriptionId: GeneralDateTimeDescription}
 		this.intervalDateTimeDescriptionMap = {}; // {intervalId: descriptionId}
+    this.convertOwlTime = options.convertOwlTime;
 	}
 
 	shouldConvert (s, p, o, context)
 	{
+    if (!this.convertOwlTime) {
+      return false;
+    }
+    if (this.timeContext != null) {
+      context = this.timeContext;
+    }
 		this.timeContext = this.entities[context] || {};
 		this.anchors = this.timeContext.interfaces || {};
 
@@ -44,7 +51,7 @@ class OwlTimeParser
 		return false;
     }
     
-    createContextAnchor(s, p, o, context)
+  createContextAnchor(s, p, o, context)
     {
 		this.timeContext = this.entities[context] ||  new Context(context);
 		if(p !== time.HAS_TIME_URI)
@@ -192,6 +199,25 @@ class OwlTimeParser
 		}
 		return false;
 	}
+
+  firstLoopCallback(s, p, o, context) {
+    if (this.timeContext && context != this.timeContext) {
+      context = this.timeContext;
+    }
+    this.createContextAnchor(s, p, o, timeContext); 
+    return true;
+  }
+
+  secondLoopCallback(s, p, o, context) {
+    return false;
+  }
+
+  lastLoopCallback(s, p, o, parent) {
+    if (this.timeContext && parent != this.timeContext) {
+      parent = this.timeContext;
+    }
+    return !this.createTimeRelationships(s, p, o, this.timeContext);
+  }
 
 	finish ()
 	{

@@ -8,7 +8,7 @@ const rdf = require("./rdf");
 const xml = require("./xmlschema");
 const wordnet = require("./wordnetconstants");
 const Utils = require("./utils");
-const { TYPE_URI } = require("rdf2hk/rdfs");
+const { TYPE_URI } = require("./rdfs");
 const { REFERENCE } = require("hklib/types");
 
 class WordnetSerializer

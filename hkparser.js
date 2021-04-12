@@ -45,24 +45,30 @@ NUMBER_DATATYPES.add(xml.DOUBLE_URI);
 NUMBER_DATATYPES.add(xml.FLOAT_URI);
 
 
-function HKParser(sharedEntities, sharedBlankNodeMap, onlyHK)
+function HKParser(sharedEntities, connectors, sharedBlankNodeMap, options)
 {
     this.entities = sharedEntities;
 
-    this.onlyHK = onlyHK;
+    this.onlyHK = options.onlyHK || false;;
     this.binds = {};
     this.bindLinks = {};
-	this.connectors = {};
+	this.connectors = connectors;
 	this.blankNodesMap = sharedBlankNodeMap; 
 
     this.linksWithCompressedBinds = new Set();
 
     this.interfaces = {};
 
+    this.mustConvert = options.convertHK;
+
 }
 
 HKParser.prototype.shouldConvert = function(s, p, o, g)
 {
+    if (!this.mustConvert) {
+      return false;
+    }
+
     if(HYPERKNOWLEDGE_URIS.has(p) || HYPERKNOWLEDGE_URIS.has(o) || 
 	  isCompressedRoleUri(p) || 
 	  isCompressedRoleUri(o) || 
@@ -116,11 +122,11 @@ HKParser.prototype.createEntities = function(s, p, o, g, spo)
     }
     else if(p === HKUris.HAS_BIND_URI || p === HKUris.HAS_ANCHOR_URI)
     {
-        this.setIntrisecsProperties(s, p, o, g);
+        this.setIntrinsicProperties(s, p, o, g);
     }
 }
 
-HKParser.prototype.setIntrisecsProperties = function(s, p, o, g, spo)
+HKParser.prototype.setIntrinsicProperties = function(s, p, o, g, spo)
 {
     if(p !== HKUris.ISA_URI)
     {
@@ -406,6 +412,21 @@ HKParser.prototype.finish = function()
             }
         }
     }
+}
+
+HKParser.prototype.firstLoopCallback = function(s, p, o, parent) {
+  this.createEntities(s, p, o, parent);
+  // this indicates if the parsing should stop or not...
+  return false;
+};
+
+HKParser.prototype.secondLoopCallback = function(s, p, o, parent) { 
+  return false;
+}
+
+HKParser.prototype.lastLoopCallback = function(s, p, o, parent) {
+  hkParser.setIntrinsicProperties(s, p, o, parent);
+  return false;
 }
 
 function _createCompressedLink(s, p, o, g)
