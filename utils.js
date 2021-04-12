@@ -28,6 +28,9 @@ NUMBER_DATATYPES.add(xml.DECIMAL_URI);
 NUMBER_DATATYPES.add(xml.DOUBLE_URI);
 NUMBER_DATATYPES.add(xml.FLOAT_URI);
 
+const DEFAULT_SUBJECT_ROLE_ID = "subject";
+const DEFAULT_OBJECT_ROLE_ID = "object";
+
 const LIST_OF_PROPERTIES = 
 [
     SKOS.PREF_LABEL_URI,
@@ -522,3 +525,6 @@ exports.isUri = isUri;
 exports.isBlankNode = isBlankNode;
 exports.createBlankNodeUri = createBlankNodeUri;
 exports.isUriOrBlankNode = isUriOrBlankNode;
+exports.LIST_OF_TITLE_PROPERTIES = LIST_OF_PROPERTIES;
+exports.DEFAULT_SUBJECT_ROLE_ID = DEFAULT_SUBJECT_ROLE_ID;
+exports.DEFAULT_OBJECT_ROLE_ID = DEFAULT_OBJECT_ROLE_ID;
