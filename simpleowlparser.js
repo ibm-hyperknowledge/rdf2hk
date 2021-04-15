@@ -27,111 +27,118 @@ owlVocabulary.add(rdfs.RANGE_URI);
 owlVocabulary.add(rdfs.SUBPROPERTYOF_URI);
 
 
-class SimpleOwlParser {
-  constructor(entities, connectors, blackNodesMap, options) {
+class SimpleOwlParser
+{
+  constructor(entities, connectors, blackNodesMap, options)
+  {
     this.entities = entities;
-		this.subjectLabel = options.subjectLabel || Constants.DEFAULT_SUBJECT_ROLE;
+    this.subjectLabel = options.subjectLabel || Constants.DEFAULT_SUBJECT_ROLE;
     this.objectLabel = options.objectLabel || Constants.DEFAULT_OBJECT_ROLE;
     this.mustConvert = options.convertOwl || false;
   }
 
-  shouldConvert (s, p, o, g, spo)
-	{
-    if (!this.mustConvert) {
+  shouldConvert(s, p, o, g, spo)
+  {
+    if (!this.mustConvert)
+    {
       return false;
     }
-		if(p === owl.IMPORTS_URI)
-		{
-			return false;
-		}
-		else if(p === rdf.TYPE_URI && owl.OBJECT_PROPERTY_URIS.includes(o))
-    	{
-			return true;
-		}
-		// if(owlVocabulary.has(s) || 
-		// 	owlVocabulary.has(p) ||
-		// 	owlVocabulary.has(o) ||
-		// 	owlVocabulary.has(g))
-		// {
-		// 	// if(Utils.isUriOrBlankNode(o))
-		// 	// {
-		// 	// }
-		// 		return true;
-		// }
-		return false;
-	}
+    if (p === owl.IMPORTS_URI)
+    {
+      return false;
+    }
+    else if (p === rdf.TYPE_URI && owl.OBJECT_PROPERTY_URIS.includes(o))
+    {
+      return true;
+    }
+    // if(owlVocabulary.has(s) || 
+    // 	owlVocabulary.has(p) ||
+    // 	owlVocabulary.has(o) ||
+    // 	owlVocabulary.has(g))
+    // {
+    // 	// if(Utils.isUriOrBlankNode(o))
+    // 	// {
+    // 	// }
+    // 		return true;
+    // }
+    return false;
+  }
 
-	createConnectors (s, p, o, g, spo)
-	{
-		if(p === rdf.TYPE_URI && owl.OBJECT_PROPERTY_URIS.includes(o))
-    	{
-			if(!this.entities.hasOwnProperty(s))
-			{
-				let connector = new Connector();
-				connector.id = s;
+  createConnectors(s, p, o, g, spo)
+  {
+    if (p === rdf.TYPE_URI && owl.OBJECT_PROPERTY_URIS.includes(o))
+    {
+      if (!this.entities.hasOwnProperty(s))
+      {
+        let connector = new Connector();
+        connector.id = s;
 
-				connector.className = ConnectorClass.FACTS;
-				connector.addRole(this.subjectLabel, RoleTypes.SUBJECT);
-				connector.addRole(this.objectLabel, RoleTypes.OBJECT);
+        connector.className = ConnectorClass.FACTS;
+        connector.addRole(this.subjectLabel, RoleTypes.SUBJECT);
+        connector.addRole(this.objectLabel, RoleTypes.OBJECT);
 
-				this.entities[s] = connector;
-			}
-		}
-	}
+        this.entities[s] = connector;
+      }
+    }
+  }
 
-	createRelationships (s, p, o, g)
-	{
-		if((p === rdf.TYPE_URI && !owl.OBJECT_PROPERTY_URIS.includes(o)) ||
-		   (owlVocabulary.has(p)) )
-    	{
-			let refID = Utils.createRefUri(s, g);
-			let ref = null;
+  createRelationships(s, p, o, g)
+  {
+    if ((p === rdf.TYPE_URI && !owl.OBJECT_PROPERTY_URIS.includes(o)) ||
+      (owlVocabulary.has(p)))
+    {
+      let refID = Utils.createRefUri(s, g);
+      let ref = null;
 
-			if(!this.entities.hasOwnProperty(refID))
-			{
-				ref = new Reference();
-				ref.id = refID;
-				ref.ref = s;
+      if (!this.entities.hasOwnProperty(refID))
+      {
+        ref = new Reference();
+        ref.id = refID;
+        ref.ref = s;
 
-				this.entities[refID] = ref;
-			}
-			else
-			{
-				ref = this.entities[refID];
-			}
+        this.entities[refID] = ref;
+      }
+      else
+      {
+        ref = this.entities[refID];
+      }
 
-			if(Utils.isLiteral(o))
-			{
-				let info = {};
-				let literal = Utils.getValueFromLiteral(o, info);
+      if (Utils.isLiteral(o))
+      {
+        let info = {};
+        let literal = Utils.getValueFromLiteral(o, info);
 
-				ref.setOrAppendToProperty(p, literal, info.type || null);
-			}
-			else
-			{
-				ref.setOrAppendToProperty(p, o);
-			}
+        ref.setOrAppendToProperty(p, literal, info.type || null);
+      }
+      else
+      {
+        ref.setOrAppendToProperty(p, o);
+      }
 
-			return true;
-		}
-		return false;
-
-	}
-
-  finish() {
+      return true;
+    }
+    return false;
 
   }
 
-  firstLookCallback(s, p, o, parent) {
+  finish()
+  {
+
+  }
+
+  firstLookCallback(s, p, o, parent)
+  {
     this.createConnectors(s, p, o, parent);
     return false;
   }
 
-  secondLoopCallback(s, p, o, parent) {
+  secondLoopCallback(s, p, o, parent)
+  {
     return false;
   }
 
-  lastLoopCallback(s, p, o, parent) {
+  lastLoopCallback(s, p, o, parent)
+  {
     return !this.createRelationships(s, p, o, parent);
   }
 

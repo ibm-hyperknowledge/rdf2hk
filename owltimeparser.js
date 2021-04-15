@@ -14,8 +14,10 @@ const { LAMBDA } = require("hklib/constants");
 const Context = require("hklib/context");
 const Link = require("hklib/link");
 
-class OwlTimeParser {
-  constructor(entities, connectors, blankNodesMap, options) {
+class OwlTimeParser
+{
+  constructor(entities, connectors, blankNodesMap, options)
+  {
     this.entities = entities;
     this.subjectLabel = options.subjectLabel || Constants.DEFAULT_SUBJECT_ROLE;
     this.objectLabel = options.objectLabel || Constants.DEFAULT_OBJECT_ROLE;
@@ -27,11 +29,14 @@ class OwlTimeParser {
     this.mustConvert = options.convertOwlTime || false;
   }
 
-  shouldConvert(s, p, o, context) {
-    if (!this.mustConvert) {
+  shouldConvert(s, p, o, context)
+  {
+    if (!this.mustConvert)
+    {
       return false;
     }
-    if (this.timeContext != null) {
+    if (this.timeContext != null)
+    {
       context = this.timeContext;
     }
 
@@ -42,40 +47,49 @@ class OwlTimeParser {
       || p === time.HAS_BEGINNING_URI || p === time.HAS_END_URI
       || p === time.IN_DATE_TIME_URI || p === time.HAS_TIME_URI
       || p === time.HAS_DATE_TIME_DESCRIPTION_URI || time.GENERAL_DATE_TIME_DESCRIPTION_URIS.includes(p)
-      || this.anchors.hasOwnProperty(s)) {
+      || this.anchors.hasOwnProperty(s))
+    {
       return true;
     }
     return false;
   }
-  createContextAnchor(s, p, o, context) {
+  createContextAnchor(s, p, o, context)
+  {
     this.timeContext = this.entities[context] || new Context(context);
-    if (p !== time.HAS_TIME_URI) {
+    if (p !== time.HAS_TIME_URI)
+    {
       this.timeContext.addInterface(s, 'temporal', {});
     }
-    else {
+    else
+    {
       this.timeContext.addInterface(o, 'temporal', {});
     }
 
     this.entities[context] = this.timeContext;
-    if (p === time.IN_DATE_TIME_URI) {
+    if (p === time.IN_DATE_TIME_URI)
+    {
       const literal = Utils.getValueFromLiteral(o, {}, true);
       this.instantDatetimeMap[s] = literal;
     }
   }
 
-  convertToContextAnchor(id) {
+  convertToContextAnchor(id)
+  {
     // create context anchor for id, if it does not exist
     const anchor = this.anchors[id] || { type: 'temporal', properties: {} };
     this.anchors[id] = anchor;
     // remove id entity if there is any
-    if (this.entities.hasOwnProperty(id)) {
+    if (this.entities.hasOwnProperty(id))
+    {
       delete this.entities[id];
     }
     return anchor;
   }
 
-  createTimeRelationships(s, p, o, context) {
-    if (p === rdf.TYPE_URI && (time.INTERVAL_URIS.includes(o) || o === time.INSTANT_URI || this.anchors.hasOwnProperty(s))) {
+  createTimeRelationships(s, p, o, context)
+  {
+    if (p === rdf.TYPE_URI && (time.INTERVAL_URIS.includes(o) || o === time.INSTANT_URI || this.anchors.hasOwnProperty(s)))
+    {
       const anchor = this.convertToContextAnchor(s);
 
       // create property of anchor to represent rdf:type relationship
@@ -84,24 +98,31 @@ class OwlTimeParser {
       anchor.properties[rdf.TYPE_URI] = types;
       return true;
     }
-    else if (p === time.HAS_BEGINNING_URI || p === time.HAS_END_URI) {
+    else if (p === time.HAS_BEGINNING_URI || p === time.HAS_END_URI)
+    {
       const anchor = this.convertToContextAnchor(s)
 
       // if instant is indefinite, set its URI as begin or end of the interval
       // otherwise, set its begin and end (which should be the same date) as begin or end of the interval
-      if (!this.instantDatetimeMap.hasOwnProperty(o)) {
-        if (p === time.HAS_BEGINNING_URI) {
+      if (!this.instantDatetimeMap.hasOwnProperty(o))
+      {
+        if (p === time.HAS_BEGINNING_URI)
+        {
           anchor.properties.begin = o;
         }
-        else if (p === time.HAS_END_URI) {
+        else if (p === time.HAS_END_URI)
+        {
           anchor.properties.end = o;
         }
       }
-      else {
-        if (p === time.HAS_BEGINNING_URI) {
+      else
+      {
+        if (p === time.HAS_BEGINNING_URI)
+        {
           anchor.properties.begin = this.instantDatetimeMap[o];
         }
-        else if (p === time.HAS_END_URI) {
+        else if (p === time.HAS_END_URI)
+        {
           anchor.properties.end = this.instantDatetimeMap[o];
         }
       }
@@ -111,7 +132,8 @@ class OwlTimeParser {
 
       return true;
     }
-    else if (p === time.IN_DATE_TIME_URI) {
+    else if (p === time.IN_DATE_TIME_URI)
+    {
       const anchor = this.convertToContextAnchor(s);
 
       // set begin and end properties of anchor as o
@@ -120,24 +142,30 @@ class OwlTimeParser {
       anchor.properties.end = literal;
       return true;
     }
-    else if (p === time.HAS_DATE_TIME_DESCRIPTION_URI) {
-      if (!this.intervalDateTimeDescriptionMap.hasOwnProperty(o)) {
+    else if (p === time.HAS_DATE_TIME_DESCRIPTION_URI)
+    {
+      if (!this.intervalDateTimeDescriptionMap.hasOwnProperty(o))
+      {
         this.intervalDateTimeDescriptionMap[s] = o;
       }
       return true;
     }
-    else if (time.GENERAL_DATE_TIME_DESCRIPTION_URIS.includes(p) || o === time.DATE_TIME_DESCRIPTION_URI) {
-      if (!this.dateTimeDescriptionMap.hasOwnProperty(s)) {
+    else if (time.GENERAL_DATE_TIME_DESCRIPTION_URIS.includes(p) || o === time.DATE_TIME_DESCRIPTION_URI)
+    {
+      if (!this.dateTimeDescriptionMap.hasOwnProperty(s))
+      {
         this.dateTimeDescriptionMap[s] = {};
       }
       this.dateTimeDescriptionMap[s][p] = o;
     }
-    else if (this.anchors.hasOwnProperty(s) || this.anchors.hasOwnProperty(o)) {
+    else if (this.anchors.hasOwnProperty(s) || this.anchors.hasOwnProperty(o))
+    {
 
       // check if s is an anchor, and update subject if needed
       let subjectEntity = s;
       let subjectAnchor = LAMBDA;
-      if (this.anchors.hasOwnProperty(s)) {
+      if (this.anchors.hasOwnProperty(s))
+      {
         subjectEntity = context;
         subjectAnchor = s;
       }
@@ -145,17 +173,20 @@ class OwlTimeParser {
       // check if o is an anchor, and updated object if needed
       let objectEntity = o;
       let objectAnchor = LAMBDA;
-      if (this.anchors.hasOwnProperty(o)) {
+      if (this.anchors.hasOwnProperty(o))
+      {
         objectEntity = context;
         objectAnchor = o;
       }
 
-      if (time.DATE_TIME_URIS.includes(p) && Utils.isLiteral(o)) {
+      if (time.DATE_TIME_URIS.includes(p) && Utils.isLiteral(o))
+      {
         const anchor = this.convertToContextAnchor(s);
         anchor.properties.begin = o;
         anchor.properties.end = o;
       }
-      else {
+      else
+      {
         // create link with updated subject and object
         const anchorLink = new Link();
         anchorLink.addBind(this.subjectLabel, subjectEntity, subjectAnchor);
@@ -171,9 +202,11 @@ class OwlTimeParser {
     return false;
   }
 
-  finish() {
+  finish()
+  {
     // post process date time descriptions
-    for (let intervalId in this.intervalDateTimeDescriptionMap) {
+    for (let intervalId in this.intervalDateTimeDescriptionMap)
+    {
       const descriptionId = this.intervalDateTimeDescriptionMap[intervalId];
       const dateTimeDescription = this.dateTimeDescriptionMap[descriptionId];
       const anchor = this.convertToContextAnchor(intervalId);
@@ -184,21 +217,25 @@ class OwlTimeParser {
       let beginDate = null;
       let endDate = null;
 
-      for (let generalDescriptionPredicate of time.GENERAL_DATE_TIME_DESCRIPTION_URIS) {
+      for (let generalDescriptionPredicate of time.GENERAL_DATE_TIME_DESCRIPTION_URIS)
+      {
         if (!dateTimeDescription || !dateTimeDescription.hasOwnProperty(generalDescriptionPredicate)) continue; // skip
 
         const generalDescriptionValue = dateTimeDescription[generalDescriptionPredicate];
         const generalDescriptionValueLiteral = Utils.getValueFromLiteral(generalDescriptionValue, {}, true);
 
-        if (!beginDate) {
+        if (!beginDate)
+        {
           beginDate = new Date(generalDescriptionValueLiteral);
         }
 
-        if (!endDate) {
+        if (!endDate)
+        {
           endDate = new Date(generalDescriptionValueLiteral);
         }
 
-        switch (generalDescriptionPredicate) {
+        switch (generalDescriptionPredicate)
+        {
           case time.YEAR_URI:
             endDate.setFullYear(endDate.getFullYear() + 1);
             endDate.setMilliseconds(-1);
@@ -225,19 +262,23 @@ class OwlTimeParser {
         }
       }
 
-      if (!anchor.properties.begin && beginDate) {
+      if (!anchor.properties.begin && beginDate)
+      {
         anchor.properties.begin = beginDate.toLocaleString();
       }
-      if (!anchor.properties.end && endDate) {
+      if (!anchor.properties.end && endDate)
+      {
         anchor.properties.end = endDate.toLocaleString();
       }
     }
 
   }
 
-  finish() {
+  finish()
+  {
     // post process date time descriptions
-    for (let intervalId in this.intervalDateTimeDescriptionMap) {
+    for (let intervalId in this.intervalDateTimeDescriptionMap)
+    {
       const descriptionId = this.intervalDateTimeDescriptionMap[intervalId];
       const dateTimeDescription = this.dateTimeDescriptionMap[descriptionId];
       const anchor = this.convertToContextAnchor(intervalId);
@@ -248,21 +289,25 @@ class OwlTimeParser {
       let beginDate = null;
       let endDate = null;
 
-      for (let generalDescriptionPredicate of time.GENERAL_DATE_TIME_DESCRIPTION_URIS) {
+      for (let generalDescriptionPredicate of time.GENERAL_DATE_TIME_DESCRIPTION_URIS)
+      {
         if (!dateTimeDescription || !dateTimeDescription.hasOwnProperty(generalDescriptionPredicate)) continue; // skip
 
         const generalDescriptionValue = dateTimeDescription[generalDescriptionPredicate];
         const generalDescriptionValueLiteral = Utils.getValueFromLiteral(generalDescriptionValue, {}, true);
 
-        if (!beginDate) {
+        if (!beginDate)
+        {
           beginDate = new Date(generalDescriptionValueLiteral);
         }
 
-        if (!endDate) {
+        if (!endDate)
+        {
           endDate = new Date(generalDescriptionValueLiteral);
         }
 
-        switch (generalDescriptionPredicate) {
+        switch (generalDescriptionPredicate)
+        {
           case time.YEAR_URI:
             endDate.setFullYear(endDate.getFullYear() + 1);
             endDate.setMilliseconds(-1);
@@ -289,30 +334,37 @@ class OwlTimeParser {
         }
       }
 
-      if (!anchor.properties.begin && beginDate) {
+      if (!anchor.properties.begin && beginDate)
+      {
         anchor.properties.begin = beginDate.toLocaleString();
       }
-      if (!anchor.properties.end && endDate) {
+      if (!anchor.properties.end && endDate)
+      {
         anchor.properties.end = endDate.toLocaleString();
       }
     }
 
   }
 
-  firstLoopCallback(s, p, o, context) {
-    if (this.timeContext && context != this.timeContext) {
+  firstLoopCallback(s, p, o, context)
+  {
+    if (this.timeContext && context != this.timeContext)
+    {
       context = this.timeContext;
     }
     this.createContextAnchor(s, p, o, context);
     return true;
   }
 
-  secondLoopCallback(s, p, o, context) {
+  secondLoopCallback(s, p, o, context)
+  {
     return false;
   }
 
-  lastLoopCallback(s, p, o, parent) {
-    if (this.timeContext && parent != this.timeContext) {
+  lastLoopCallback(s, p, o, parent)
+  {
+    if (this.timeContext && parent != this.timeContext)
+    {
       parent = this.timeContext;
     }
     return !this.createTimeRelationships(s, p, o, parent);
