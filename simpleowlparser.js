@@ -3,23 +3,23 @@
  * Licensed under The MIT License [see LICENSE for details]
  */
 "use strict";
-const HKLib				= require("hklib");
-const Node              = HKLib.Node;
-const Trail             = HKLib.Trail;
-const Connector         = HKLib.Connector;
-const Link              = HKLib.Link;
-const Context           = HKLib.Context;
-const ConnectorClass    = HKLib.ConnectorClass;
-const Reference         = HKLib.Reference;
-const RoleTypes         = HKLib.RolesTypes;
+const HKLib = require("hklib");
+const Node = HKLib.Node;
+const Trail = HKLib.Trail;
+const Connector = HKLib.Connector;
+const Link = HKLib.Link;
+const Context = HKLib.Context;
+const ConnectorClass = HKLib.ConnectorClass;
+const Reference = HKLib.Reference;
+const RoleTypes = HKLib.RolesTypes;
 
-const owl 				= require("./owl");
-const rdfs				= require("./rdfs");
-const rdf  				= require("./rdf");
+const owl = require("./owl");
+const rdfs = require("./rdfs");
+const rdf = require("./rdf");
 
-const Utils             = require("./utils");
+const Utils = require("./utils");
 
-const Constants         = require("./constants");
+const Constants = require("./constants");
 
 let owlVocabulary = new Set(Object.values(owl));
 owlVocabulary.add(rdfs.DOMAIN_URI);
@@ -27,18 +27,19 @@ owlVocabulary.add(rdfs.RANGE_URI);
 owlVocabulary.add(rdfs.SUBPROPERTYOF_URI);
 
 
-class SimpleOwlParser
-{
-	constructor(entities, options)
-	{
-		this.entities = entities;
+class SimpleOwlParser {
+  constructor(entities, connectors, blackNodesMap, options) {
+    this.entities = entities;
 		this.subjectLabel = options.subjectLabel || Constants.DEFAULT_SUBJECT_ROLE;
-    	this.objectLabel = options.objectLabel || Constants.DEFAULT_OBJECT_ROLE;
+    this.objectLabel = options.objectLabel || Constants.DEFAULT_OBJECT_ROLE;
+    this.mustConvert = options.convertOwl || false;
+  }
 
-	}
-
-	shouldConvert (s, p, o, g, spo)
+  shouldConvert (s, p, o, g, spo)
 	{
+    if (!this.mustConvert) {
+      return false;
+    }
 		if(p === owl.IMPORTS_URI)
 		{
 			return false;
@@ -117,10 +118,23 @@ class SimpleOwlParser
 
 	}
 
-	finish ()
-	{
+  finish() {
 
-	}
+  }
+
+  firstLookCallback(s, p, o, parent) {
+    this.createConnectors(s, p, o, parent);
+    return false;
+  }
+
+  secondLoopCallback(s, p, o, parent) {
+    return false;
+  }
+
+  lastLoopCallback(s, p, o, parent) {
+    return !this.createRelationships(s, p, o, parent);
+  }
+
 }
 
 module.exports = SimpleOwlParser;

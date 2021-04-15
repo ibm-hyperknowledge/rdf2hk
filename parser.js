@@ -112,11 +112,19 @@ function parseGraph(graph, options)
 
 	let blankNodesMap = {};
 
-	let owlParser = new OWLParser(entities, options);
-
-	let owlTimeParser = new OWLTimeParser(entities, options);
-
-	let hkParser = new HKParser(entities, blankNodesMap, onlyHK);
+  // instantiate new parsers
+  const parsers = [];
+  registeredParsers.forEach(parser => {
+    try {
+      const instantiatedParser = new parser(entities, connectors, blankNodesMap, options);
+      parsers.push(instantiatedParser);
+      // console.log(`new instantiated parser ${instantiatedParser}`);
+    }
+    catch(err) {
+      console.error(`There was anrror while instatianting the parser ${parser}`);
+      throw err;
+    }
+  });
 
 	let getParent = (iri, g) => 
 	{
@@ -147,20 +155,17 @@ function parseGraph(graph, options)
 	graph.forEachStatement((s, p, o, g) =>
 	{
 		const parent = getParent(s, g);
-		if (convertHK && hkParser.shouldConvert(s, p, o, parent))
-		{
-			hkParser.createEntities(s, p, o, parent);
-			return;
-		}
-		else if (convertOwl && owlParser.shouldConvert(s, p, o, parent))
-		{
-			owlParser.createConnectors(s, p, o, parent);
-			return;
-		}
-		else if (convertOwlTime && owlTimeParser.shouldConvert(s, p, o, timeContext))
-		{
-			owlTimeParser.createContextAnchor(s, p, o, timeContext);
-		}
+
+    for (let i = 0; i < parsers.length; i++) {
+      const parser = parsers[i];
+      if (parser.shouldConvert(s, p, o, parent)) {
+        let shouldContinue = parser.firstLoopCallback(s, p, o, parent);
+        if (shouldContinue !== undefined && !shouldContinue) {
+          return;
+        }
+      }
+    }
+
 		// Create connector?
 
 		if (Utils.isUri(p) && Utils.isUriOrBlankNode(o))
@@ -207,18 +212,15 @@ function parseGraph(graph, options)
 			}
 		}
 
-		if (onlyHK || (convertHK && hkParser.shouldConvert(s, p, o, parent)))
-		{
-			return;
-		}
-		else if (convertOwl && owlParser.shouldConvert(s, p, o, parent))
-		{
-			return;
-		}
-		else if (convertOwlTime && owlTimeParser.shouldConvert(s, p, o, timeContext))
-		{
-			return;
-		}
+    for(let i = 0; i < parsers.length; i++) {
+      const parser = parsers[i];
+      if (parser.shouldConvert(s, p, o, parent)) {
+        let shouldContinue = parser.secondLoopCallback(s, p, o, parent);
+        if (shouldContinue !== undefined && !shouldContinue) {
+          return;
+        }
+      }
+    }
 
 		let subjectId = Utils.getIdFromResource(s);
 		if ( isUriOrBlankNode(s) && !entities.hasOwnProperty(subjectId))
@@ -256,25 +258,16 @@ function parseGraph(graph, options)
 	graph.forEachStatement((s, p, o, g) =>
 	{
 		const parent = getParent(s, g);
-		if (convertHK && hkParser.shouldConvert(s, p, o, parent))
-		{
-			hkParser.setIntrisecsProperties(s, p, o, parent);
-			return;
-		}
-		else if (convertOwl && owlParser.shouldConvert(s, p, o, parent))
-		{
-			if (owlParser.createRelationships(s, p, o, parent)) 
-			{
-				return;
-			}
-		}
-		else if (convertOwlTime && owlTimeParser.shouldConvert(s, p, o, timeContext))
-		{
-			if (owlTimeParser.createTimeRelationships(s, p, o, timeContext)) 
-			{
-				return;
-			}
-		}
+
+    for(let i = 0; i < parsers.length; i++) {
+      const parser = parsers[i];
+      if (parser.shouldConvert(s, p, o, parent)) {
+        let shouldContinue = parser.lastLoopCallback(s, p, o, parent);
+        if (shouldContinue !== undefined && !shouldContinue) {
+          return;
+        }
+      }
+    }
 
 		// Set relationship
 		if (isUriOrBlankNode(o))
@@ -387,20 +380,11 @@ function parseGraph(graph, options)
 		entities[c] = connectors[c];
 	}
 
-	if (convertHK)
-	{
-		hkParser.finish(entities);
-	}
-
-	if (convertOwl)
-	{
-		owlParser.finish(entities);
-	}
-
-	if (convertOwlTime)
-	{
-		owlTimeParser.finish(entities);
-	}
+  parsers.forEach(parser => {
+    if (parser.mustConvert) {
+      parser.finish(entities);
+    }
+  });
 
 	// Serialize entities
 	if (serialize)
@@ -475,6 +459,11 @@ function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel,
 	}
 }
 
+const registeredParsers = new Set();
 
-// exports.parseTriples = parseTriples;
+function registerParser(parser) {
+  registeredParsers.add(parser);
+}
+
+exports.registerParser = registerParser;
 exports.parseGraph = parseGraph;
