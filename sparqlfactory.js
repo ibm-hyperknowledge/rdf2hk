@@ -305,12 +305,19 @@ function filterEntitiesSelect (filters)
 						builder.append("GRAPH ?g { ?s ?p ?o } .");	
 					});
 
-					builder.appendUnion();
+					let filteredAndFilters = andFilters.filter(filter => {
+            if (filter.hasOwnProperty("id")) return false;
+            return true;
+          })
 
-					builder.closure(() =>
-					{
-						appendUnionFilters(builder, andFilters);	
-					});
+          if (filteredAndFilters.length > 0) {
+            builder.appendUnion();
+
+            builder.closure(() =>
+            {
+              appendUnionFilters(builder, filteredAndFilters);	
+            });       
+          }
 					
 				}
 			});
