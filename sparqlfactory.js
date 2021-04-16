@@ -24,12 +24,12 @@ const REFERENCES_FILTERS    = ` ?g = ?g1 || !bound(?g1) `;
 const DEFAULT_GRAPH_PATTERN = `GRAPH ?g { ?s ?p ?o } .`;
 
 const FILTER_HK = `FILTER ( ?p != ${HKUris.ISA_URI} &&
-     ?p != ${HKUris.USES_CONNECTOR_URI} &&
-     ?p != ${HKUris.CLASSNAME_URI} &&
-     ?p != ${HKUris.REFERENCES_URI} &&
-     ?p != ${HKUris.HAS_PARENT_URI} &&
-     !STRSTARTS(STR(?p), "hkrole") &&
-     ( isIRI(?o) || isBlank(?o) ||  datatype(?o) != ${HKUris.DATA_LIST_URI}))`
+		 ?p != ${HKUris.USES_CONNECTOR_URI} &&
+		 ?p != ${HKUris.CLASSNAME_URI} &&
+		 ?p != ${HKUris.REFERENCES_URI} &&
+		 ?p != ${HKUris.HAS_PARENT_URI} &&
+		 !STRSTARTS(STR(?p), "hkrole") &&
+		 ( isIRI(?o) || isBlank(?o) ||  datatype(?o) != ${HKUris.DATA_LIST_URI}))`
 
 const HKTypeUriMap = {};
 HKTypeUriMap[HKTypes.NODE] = HKUris.NODE_URI;
@@ -306,18 +306,18 @@ function filterEntitiesSelect (filters)
 					});
 
 					let filteredAndFilters = andFilters.filter(filter => {
-            if (filter.hasOwnProperty("id")) return false;
-            return true;
-          })
+						if (filter.hasOwnProperty("id")) return false;
+						return true;
+					})
 
-          if (filteredAndFilters.length > 0) {
-            builder.appendUnion();
+					if (filteredAndFilters.length > 0) {
+						builder.appendUnion();
 
-            builder.closure(() =>
-            {
-              appendUnionFilters(builder, filteredAndFilters);	
-            });       
-          }
+						builder.closure(() =>
+						{
+							appendUnionFilters(builder, filteredAndFilters);	
+						});       
+					}
 					
 				}
 			});
