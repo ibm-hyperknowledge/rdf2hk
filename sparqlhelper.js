@@ -13,7 +13,7 @@ const SparqlJS = require("sparqljs");
 
 const BOOLEAN_XSD_URI = "http://www.w3.org/2001/XMLSchema#boolean";
 
-const HKUris = require("rdf2hk/hk");
+const HKUris = require("./hk");
 
 /**
  * @deprecated after https://github.com/RubenVerborgh/SPARQL.js/issues/92 get fixed. 
