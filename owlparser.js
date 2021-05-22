@@ -57,7 +57,7 @@ const SOME_VALUES_FROM_LABEL = "owl:someValuesFrom";
 const ALL_VALUES_FROM_LABEL = " owl:allValuesFrom";
 const HAS_VALUE_LABEL = "owl:hasValue";
 
-function OWLParser(entities, options)
+function OWLParser(entities, connectors, blankNodesMap, refNodesMap, options)
 {
 	this.entities = entities;
     this.objectPropertyMap = {};

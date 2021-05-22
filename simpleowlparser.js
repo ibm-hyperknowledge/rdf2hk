@@ -29,9 +29,10 @@ owlVocabulary.add(rdfs.SUBPROPERTYOF_URI);
 
 class SimpleOwlParser
 {
-  constructor(entities, connectors, blackNodesMap, options)
+  constructor(entities, connectors, blackNodesMap, refNodesMap, options)
   {
     this.entities = entities;
+    this.refNodesMap = refNodesMap;
     this.subjectLabel = options.subjectLabel || Constants.DEFAULT_SUBJECT_ROLE;
     this.objectLabel = options.objectLabel || Constants.DEFAULT_OBJECT_ROLE;
     this.mustConvert = options.convertOwl || false;
@@ -97,6 +98,7 @@ class SimpleOwlParser
         ref.ref = s;
 
         this.entities[refID] = ref;
+        this.refNodesMap[refID] = ref;
       }
       else
       {
