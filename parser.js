@@ -58,6 +58,7 @@ const isUriOrBlankNode = Utils.isUriOrBlankNode;
  * @param {boolean} [options.convertHK] If set, it will read the Hyperknowledge vocabulary and make special conversion. Default is true.
  * @param {boolean} [options.onlyHK] If set, it will ONLY read the Hyperknowledge vocabulary and convert those entities, this options override `convertHK`. Default is false.
  * @param {boolean} [options.textLiteralAsNode] If true, string literals will be converted to content nodes, which will be linked to subject using a link whose connector is the predicate.
+ * @param {string}  [options.strategy] "pre-existing-context", "new-context" or "automatically"
  */
 
 function parseGraph(graph, options)
@@ -80,6 +81,8 @@ function parseGraph(graph, options)
 	let namespaceContext = options.namespaceContext || false; 
 
 	let createContext = options.createContext || namespaceContext;
+
+	let strategy = options.strategy;
 
 	const preserveBlankNodes = options.preserveBlankNodes || false;
 
@@ -111,12 +114,13 @@ function parseGraph(graph, options)
 	let connectors = {};
 
 	let blankNodesMap = {};
+	let refNodesMap = {};
 
   // instantiate new parsers
   const parsers = [];
   registeredParsers.forEach(parser => {
     try {
-      const instantiatedParser = new parser(entities, connectors, blankNodesMap, options);
+      const instantiatedParser = new parser(entities, connectors, blankNodesMap, refNodesMap, options);
       parsers.push(instantiatedParser);
       // console.log(`new instantiated parser ${instantiatedParser}`);
     }
@@ -145,6 +149,7 @@ function parseGraph(graph, options)
 		ref.parent = parent;
 
 		entities[ref.id] = ref;
+		refNodesMap[ref.id] = ref;
 
 		return ref;
 	}
@@ -179,7 +184,8 @@ function parseGraph(graph, options)
 			entities[connector.id] = connector;
 		}
 
-		if (createContext && parent && parent !== HK_NULL_URI)
+		const isPreExistingContext = strategy === 'pre-existing-context' && parent === rootContext;
+		if (createContext && parent && parent !== HK_NULL_URI && !isPreExistingContext)
 		{
 			// Create context
 			if (!entities.hasOwnProperty(parent))
@@ -228,6 +234,7 @@ function parseGraph(graph, options)
 			let node = new Node();
 			node.id = blankNodesMap.hasOwnProperty(s) ? blankNodesMap[s] : subjectId;
 			entities[node.id] = node;
+			node.parent = undefined;
 
 			// Set the context to the graph name
 			if (setNodeContext && parent)
@@ -242,6 +249,7 @@ function parseGraph(graph, options)
 			let node = new Node();
 			node.id = blankNodesMap.hasOwnProperty(o) ? blankNodesMap[o] : objectId;
 			entities[node.id] = node;
+			node.parent = undefined;
 
 			// Set the context to the graph name
 			if (setNodeContext && parent)

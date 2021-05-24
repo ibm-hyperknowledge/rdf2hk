@@ -45,7 +45,7 @@ NUMBER_DATATYPES.add(xml.DOUBLE_URI);
 NUMBER_DATATYPES.add(xml.FLOAT_URI);
 
 
-function HKParser(sharedEntities, connectors, sharedBlankNodeMap, options)
+function HKParser(sharedEntities, connectors, sharedBlankNodeMap, sharedRefNodesMap, options)
 {
   this.entities = sharedEntities;
 
@@ -54,6 +54,7 @@ function HKParser(sharedEntities, connectors, sharedBlankNodeMap, options)
   this.bindLinks = {};
   this.connectors = connectors;
   this.blankNodesMap = sharedBlankNodeMap;
+  this.refNodesMap = sharedRefNodesMap;
 
   this.linksWithCompressedBinds = new Set();
 
@@ -302,7 +303,6 @@ HKParser.prototype.finish = function ()
   let entities = this.entities;
 
   // Set interfaces
-
   for (let k in this.interfaces)
   {
     let interf = this.interfaces[k];
@@ -386,6 +386,25 @@ HKParser.prototype.finish = function ()
       }
     }
   }
+
+  // suppress referenced nodes with undefined parent
+  for(let id in this.refNodesMap)
+  {
+    let ref = this.refNodesMap[id].ref;
+    if(entities.hasOwnProperty(ref) && entities[ref].parent === undefined)
+    {
+      delete this.entities[ref];
+    }
+  }
+
+  // set parents of remaining nodes with undefined parent as null
+  for(let id in this.entities)
+  {
+    if(entities[id].parent === undefined)
+    {
+      this.entities[id].parent = null;
+    }
+  }
 }
 
 function _createCompressedLink(s, p, o, g)
@@ -463,6 +482,10 @@ function _createEntities(s, p, o, g)
     if (g && entity && entity.type !== Connector.type)
     {
       entity.parent = Utils.getIdFromResource(g);
+    }
+    if(entity.type === Reference.type)
+    {
+      this.refNodesMap[entity.id] = entity;
     }
   }
 }

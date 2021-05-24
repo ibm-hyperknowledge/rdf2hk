@@ -140,19 +140,16 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
 					}
 
 					// Generate literal triples to the resource from the ref
-                    if(!options.convertHK || options.compressReification)
+                    if((!options.convertHK || options.compressReification) && entity.parent)
                     {
-						let refObj = {
-							id: entity.ref, 
-							properties: entity.properties, 
-							metaProperties: entity.metaProperties,
-						}
-
-						if(entity.parent)
-						{
-							refObj.parent = entity.parent;
-						}
-						_collectProperties(refObj, graph, options);
+						
+                        let refObj = {
+                            id: entity.ref, 
+                            properties: entity.properties, 
+                            metaProperties: entity.metaProperties,
+                            parent: entity.parent
+                        };
+                        _collectProperties(refObj, graph, options);
                     }
                     
                     break;
@@ -286,7 +283,7 @@ function _addLiteral(entity, graph, predicate, value, metaProperty, graphName)
     let literal = Utils.createLiteralObject(v, lang, type);
 
     if (entity.hasOwnProperty('type')){
-        if (entity.type === Reference.type){
+        if (entity.type === Reference.type && entity.parent){
             //we are dealing with a ref node, use reference for the triple 
             graph.add(entity.ref, predicate, literal, graphName);
         }        
