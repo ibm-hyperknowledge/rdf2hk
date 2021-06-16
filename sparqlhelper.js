@@ -275,6 +275,15 @@ function setHKFiltered(query)
 
 			let filteredQueryObject = filteredSparqlParser.parse(filteredQuery);
 
+			if (query.where.length == 1 && query.where[0].type == 'query') {
+				// should create a group that contains the current where...
+				let newGroup = {
+					type: 'group', 
+					patterns: [query.where[0]]
+				};
+				query.where[0] = newGroup;
+			}
+			
 			query.where = query.where.concat(filteredQueryObject.where);
 		}
 
