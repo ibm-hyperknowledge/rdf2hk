@@ -202,13 +202,7 @@ function setHKFiltered(query)
 		{
 			let query = out.queries[i];
 
-			let queryTraversal = {subjects: new Set(),
-				predicates: new Set(),
-				objects: new Set(),
-				graphs: new Set(),
-				queries: []};
-
-			traverseQuery(query, queryTraversal);
+			let queryTraversal = out;
 
 			let temp = {filters: ""}
 
