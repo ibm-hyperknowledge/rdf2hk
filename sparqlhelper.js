@@ -202,13 +202,7 @@ function setHKFiltered(query)
 		{
 			let query = out.queries[i];
 
-			let queryTraversal = {subjects: new Set(),
-				predicates: new Set(),
-				objects: new Set(),
-				graphs: new Set(),
-				queries: []};
-
-			traverseQuery(query, queryTraversal);
+			let queryTraversal = out;
 
 			let temp = {filters: ""}
 
@@ -275,6 +269,15 @@ function setHKFiltered(query)
 
 			let filteredQueryObject = filteredSparqlParser.parse(filteredQuery);
 
+			if (query.where.length == 1 && query.where[0].type == 'query') {
+				// should create a group that contains the current where...
+				let newGroup = {
+					type: 'group', 
+					patterns: [query.where[0]]
+				};
+				query.where[0] = newGroup;
+			}
+			
 			query.where = query.where.concat(filteredQueryObject.where);
 		}
 
