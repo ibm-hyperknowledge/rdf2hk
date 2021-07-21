@@ -128,7 +128,7 @@ class SimpleOwlParser
 
   }
 
-  firstLookCallback(s, p, o, parent)
+  firstLoopCallback(s, p, o, parent)
   {
     this.createConnectors(s, p, o, parent);
     return false;
