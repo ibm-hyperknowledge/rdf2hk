@@ -306,7 +306,7 @@ function filterEntitiesSelect (filters)
 					});
 
 					let filteredAndFilters = andFilters.filter(filter => {
-						if (filter.hasOwnProperty("id")) return false;
+						if (filter.hasOwnProperty("id") || (filter.hasOwnProperty("parent") && !(filter.parent instanceof Object)) ) return false;
 						return true;
 					})
 
