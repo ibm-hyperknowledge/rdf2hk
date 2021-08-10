@@ -57,6 +57,7 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
     }
 
     let connectors = {};
+    let literalAsNodeTriples = {};
 
     let defaultGraph = options.defaultGraph || null;
 
@@ -96,7 +97,7 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
         objectLabel = Constants.DEFAULT_OBJECT_ROLE;
     }
     
-    // Collect connectors
+    // Collect connectors, references and literal links
     for(let k in entities)
     {
         if(entities.hasOwnProperty(k))
@@ -111,6 +112,14 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
             else if(entity.type === Reference.type)
             {
                 referenceMap[entity.id] = entity;
+            }
+            else if(entity.type === Link.type && entity.properties && entity.properties.hasOwnProperty(hk.DATA_LITERAL_URI))
+            {
+                const subject = Object.keys(entity.binds[subjectLabel])[0];
+                const predicate = entity.connector;
+                const object = entities[Object.keys(entity.binds[objectLabel])[0]].getProperty('data');
+                const graph = entity.parent;
+                literalAsNodeTriples[entity.id] = {subject, predicate, object, graph};    
             }
         }
     }
@@ -254,33 +263,20 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
         }
     }
 
+    // reify literal as node triples
+    for(let k in literalAsNodeTriples)
+    {
+        const triple = literalAsNodeTriples[k];
+        const literal = _buildLiteralObject(triple.object);
+        graph.add(triple.subject, triple.predicate, literal, triple.graph);
+    }
+
     return graph;
 }
 
 function _addLiteral(entity, graph, predicate, value, metaProperty, graphName)
 {
-    let typeInfo = {};
-
-    let v = null; 
-
-	if(value !== null)
-	{
-		v = Utils.getValueFromLiteral(value, typeInfo) || value;
-	}
-	else
-	{
-		// Entity with only metaproperties
-		v = `<${Constants.HK_NULL}>`;
-	}
-    let lang = undefined;
-
-    let type = typeInfo.type || metaProperty;
-
-    if(typeInfo.lang)
-    {
-        lang = typeInfo.lang;
-    }
-    let literal = Utils.createLiteralObject(v, lang, type);
+    let literal = _buildLiteralObject(value, metaProperty);
 
     if (entity.hasOwnProperty('type')){
         if (entity.type === Reference.type && entity.parent){
@@ -290,6 +286,34 @@ function _addLiteral(entity, graph, predicate, value, metaProperty, graphName)
     }
     graph.add(entity.id, predicate, literal, graphName);
 
+}
+
+function _buildLiteralObject(value, metaProperty)
+{
+    let typeInfo = {};
+
+    let v = null;
+
+    if (value !== null)
+    {
+        v = Utils.getValueFromLiteral(value, typeInfo) || value;
+    }
+
+    else
+    {
+        // Entity with only metaproperties
+        v = `<${Constants.HK_NULL}>`;
+    }
+    let lang = undefined;
+
+    let type = typeInfo.type || metaProperty;
+
+    if (typeInfo.lang)
+    {
+        lang = typeInfo.lang;
+    }
+    let literal = Utils.createLiteralObject(v, lang, type);
+    return literal;
 }
 
 function _collectProperties(entity, graph, options)
