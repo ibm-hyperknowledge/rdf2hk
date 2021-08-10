@@ -44,3 +44,4 @@ exports.LIST_NEXT_URI         = '<http://research.ibm.com/ontologies/graph#listN
 
 
 exports.DATA_LIST_URI         = '<http://research.ibm.com/ontologies/data#list>';
+exports.DATA_LITERAL_URI      = '<http://research.ibm.com/ontologies/data#Literal>';
