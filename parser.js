@@ -431,6 +431,8 @@ function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel,
 
 		if(textLiteralAsNode)
 		{
+
+			// create content node with literal as data, if needed
 			const contentNodeUri = Utils.createContentNodeUri(value);
 			if(!entities.hasOwnProperty(contentNodeUri))
 			{
@@ -440,7 +442,8 @@ function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel,
 				entities[contentNodeUri] = contentNode;
 			}
 
-			const connectorId =  Utils.getIdFromResource(p)
+			// create predicate connector, if needed
+			const connectorId =  Utils.getIdFromResource(p);
 			if(!connectors.hasOwnProperty(connectorId))
 			{
 				const contentConnector = new Connector(connectorId, ConnectorClass.FACTS);
@@ -450,11 +453,51 @@ function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel,
 				entities[contentConnector.id] = contentConnector;
 			}
 			
+			// create spo link between subject and content node
 			const linkUri = Utils.createSpoUri(node.id, p, value, node.parent);
 			const contentLink = new Link(linkUri, p, node.parent);
 			contentLink.addBind(subjectLabel, node.id);
 			contentLink.addBind(objectLabel, contentNodeUri);
 			entities[linkUri] = contentLink;
+
+		  // create hierarchical connector, if needed
+			const typeConnectorId =  Utils.getIdFromResource(rdfs.TYPE_URI);
+			if(!connectors.hasOwnProperty(typeConnectorId))
+			{
+				const typeConnector = new Connector(typeConnectorId, ConnectorClass.HIERARCHY);
+				typeConnector.addRole(subjectLabel, RoleTypes.SUBJECT);
+				typeConnector.addRole(objectLabel, RoleTypes.OBJECT);
+				connectors[typeConnector.id] = typeConnector;
+				entities[typeConnector.id] = typeConnector;
+			}
+
+			// add literal node to body, if needed
+			const typeId =  Utils.getIdFromResource(hk.DATA_LITERAL_URI);
+			let typeNode = entities[typeId];
+			if(!typeNode)
+			{
+				typeNode = new Node(typeId);
+				entities[typeId] = typeNode;
+			}
+
+			// add reference to literal node within context, if needed
+			if(node.parent && node.parent !== "null" && node.parent !== HK_NULL_URI)
+			{
+				const typeReferenceUri = Utils.createSpoUri(typeId, hk.HAS_PARENT_URI, node.parent);
+				if(!entities.hasOwnProperty(typeReferenceUri))
+				{
+					typeNode = new Reference(typeReferenceUri, typeId, node.parent);
+					entities[typeReferenceUri] = typeNode;
+				}
+			}
+
+			// create hierarchical link between content node and literal type
+			const typeLinkUri = Utils.createSpoUri(contentNodeUri, rdfs.TYPE_URI, hk.DATA_LITERAL_URI, node.parent);
+			const typeLink = new Link(typeLinkUri, rdfs.TYPE_URI, node.parent);
+			typeLink.addBind(subjectLabel, contentNodeUri);
+			typeLink.addBind(objectLabel, typeNode.id);
+			entities[typeLinkUri] = typeLink;
+
 			return;
 		}
 	}
