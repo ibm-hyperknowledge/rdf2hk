@@ -8,6 +8,7 @@ const HKUris = require("./hk");
 const Utils = require("./utils");
 const Constants = require("./constants");
 const xml = require("./xmlschema");
+const hk = require("./hk");
 
 const HK = require("hklib");
 
@@ -61,6 +62,7 @@ function HKParser(sharedEntities, connectors, sharedBlankNodeMap, sharedRefNodes
   this.interfaces = {};
 
   this.mustConvert = options.onlyHK || options.convertHK;
+  this.textLiteralAsNode = options.textLiteralAsNode || false;
 }
 
 HKParser.prototype.shouldConvert = function (s, p, o, g)
@@ -400,9 +402,17 @@ HKParser.prototype.finish = function ()
   // set parents of remaining nodes with undefined parent as null
   for(let id in this.entities)
   {
-    if(entities[id].parent === undefined)
+    const entity = this.entities[id];
+    if(entity.parent === undefined)
     {
-      this.entities[id].parent = null;
+      entity.parent = null;
+    }
+
+    if(!this.textLiteralAsNode && (entity.type === Node.type || entity.type === Link.type) && entity.hasProperty(HKUris.DATA_LITERAL_URI))
+    {
+      const propertyName = entity.getProperty(HKUris.DATA_LITERAL_URI);
+      delete entity.properties[HKUris.DATA_LITERAL_URI];
+      if(propertyName) delete entity.properties[propertyName];
     }
   }
 }

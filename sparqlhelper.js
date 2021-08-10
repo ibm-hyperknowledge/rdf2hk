@@ -355,6 +355,7 @@ function filterPredicatesForHK (variable, filters)
 			${variable} != ${HKUris.CLASSNAME_URI} &&
 			${variable} != ${HKUris.REFERENCES_URI} &&
 			${variable} != ${HKUris.HAS_PARENT_URI} &&
+			${variable} != ${HKUris.DATA_LITERAL_URI} &&
 			!STRSTARTS(STR(${variable}), "hk://role") &&
 			!STRSTARTS(STR(${variable}), "hk://b/") &&
 			!STRSTARTS(STR(${variable}), "hk://link")
@@ -373,7 +374,7 @@ function filterObjectsForHK (variable, filters)
 	{
 		variable = "?" + variable;
 	}
-	const stringBasedFilters =  `!( ISIRI(${variable}) && ( STRSTARTS(STR(${variable}), "hk://role") || STRSTARTS(STR(${variable}), "hk://link") || STRSTARTS(STR(${variable}), "hk://b/") ) )`;
+	const stringBasedFilters =  `!( ISIRI(${variable}) && ( STRSTARTS(STR(${variable}), "hk://role") || STRSTARTS(STR(${variable}), "hk://link") || STRSTARTS(STR(${variable}), "hk://b/") || STRSTARTS(STR(${variable}), "hk://node/") || ${variable} = ${HKUris.DATA_LITERAL_URI} ) )`;
 	const functionBasedFilters = `( isIRI(${variable}) || isBlank(${variable}) ||  datatype(${variable}) != ${HKUris.DATA_LIST_URI} )`;
 	filters.filters += `(
 		!BOUND(${variable}) ||

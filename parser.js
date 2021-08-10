@@ -432,6 +432,9 @@ function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel,
 		if(textLiteralAsNode)
 		{
 
+			// add metaproperty in subject node
+			node.setProperty(Utils.getIdFromResource(hk.DATA_LITERAL_URI), Utils.getIdFromResource(p));
+
 			// create content node with literal as data, if needed
 			const contentNodeUri = Utils.createContentNodeUri(value);
 			if(!entities.hasOwnProperty(contentNodeUri))
@@ -458,6 +461,7 @@ function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel,
 			const contentLink = new Link(linkUri, p, node.parent);
 			contentLink.addBind(subjectLabel, node.id);
 			contentLink.addBind(objectLabel, contentNodeUri);
+			contentLink.setProperty(Utils.getIdFromResource(hk.DATA_LITERAL_URI), Utils.getIdFromResource(p));
 			entities[linkUri] = contentLink;
 
 		  // create hierarchical connector, if needed
