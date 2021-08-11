@@ -487,11 +487,15 @@ function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel,
 			// add reference to literal node within context, if needed
 			if(node.parent && node.parent !== "null" && node.parent !== HK_NULL_URI)
 			{
-				const typeReferenceUri = Utils.createSpoUri(typeId, hk.HAS_PARENT_URI, node.parent);
+				const typeReferenceUri = Utils.createRefUri(typeId, node.parent);
 				if(!entities.hasOwnProperty(typeReferenceUri))
 				{
 					typeNode = new Reference(typeReferenceUri, typeId, node.parent);
 					entities[typeReferenceUri] = typeNode;
+				}
+				else
+				{
+					typeNode = entities[typeReferenceUri];
 				}
 			}
 
