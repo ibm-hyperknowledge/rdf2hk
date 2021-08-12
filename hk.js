@@ -15,6 +15,7 @@ exports.NODE_URI          = '<http://research.ibm.com/ontologies/graph#node>';
 exports.LINK_URI          = '<http://research.ibm.com/ontologies/graph#link>';
 exports.REF_URI           = '<http://research.ibm.com/ontologies/graph#ref>';
 exports.TRAIL_URI         = '<http://research.ibm.com/ontologies/graph#trail>';
+// exports.ACTION_URI         = '<http://research.ibm.com/ontologies/graph#action>';
 
 // exports.SUBGRAPH_OF_URI       = '<http://research.ibm.com/ontologies/graph#subGraphOf>';
 
@@ -36,6 +37,16 @@ exports.HAS_BLANK_ID_URI      = '<http://research.ibm.com/ontologies/graph#hasBl
 exports.HAS_ANCHOR_URI        = '<http://research.ibm.com/ontologies/graph#hasAnchor>';
 exports.ANCHOR_KEY_URI        = '<http://research.ibm.com/ontologies/graph#anchorKey>';
 exports.ANCHOR_TYPE_URI       = '<http://research.ibm.com/ontologies/graph#anchorType>';
+
+// Trails
+exports.AGENT_URI                 = '<http://research.ibm.com/ontologies/trail#agent>';
+exports.EVENT_PROPERTIES_URI      = '<http://research.ibm.com/ontologies/trail#eventProperties>';
+exports.EVENT_TYPE_URI            = '<http://research.ibm.com/ontologies/trail#eventType>';
+exports.FROM_URI                  = '<http://research.ibm.com/ontologies/trail#from>';
+exports.HAS_ACTION_URI            = '<http://research.ibm.com/ontologies/trail#hasAction>';
+exports.HAS_TIMESTAMP_URI         = '<http://research.ibm.com/ontologies/trail#hasTimestamp>';
+exports.TO_URI                    = '<http://research.ibm.com/ontologies/trail#to>';
+exports.TRAIL_BASE_URI            = 'http://research.ibm.com/ontologies/trail';
 
 
 // List

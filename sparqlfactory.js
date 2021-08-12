@@ -204,12 +204,10 @@ function filterEntities (filters)
 						appendUnionFilters(builder, andFilters);	
 					});
 				}
-
-
 			})
 		}
 	});
-
+	
 	let query = builder.getQuery();
 
 	return query;
@@ -1133,6 +1131,19 @@ function appendUnionFilters(builder, andFilters, idVar = "s")
 					}
 					break;
 				}
+				case "trail":
+					{
+						if(Array.isArray(constraintValue))
+						{
+							builder.append(_filterForTypeArray(constraintValue, idVar), true);	
+						}
+						else
+						{
+							builder.addValues("g", [constraintValue], true);
+							builder.append(_filterForTrail(true, idVar), true);
+						}
+						break;
+				}
 				case "type":
 				{
 					if(Array.isArray(constraintValue))
@@ -1217,6 +1228,18 @@ function _checkIfHasNodeInConstraint(andFilters)
 	return false;
 }
 
+function _filterForTrail(fetchActions, idVar="s"){
+	if (fetchActions)
+	{
+		// query all triples in trail subgraph
+		return  "?s ?p ?o ";
+	}
+	else {
+		// get action ids only
+		return `?s ${HKUris.HAS_ACTION_URI} ?o . ?s ?p ?o `;
+	}
+}
+
 function _filterForParent(builder, parent) {
 	if (Array.isArray(parent)) {
 		builder.addValues("g", parent, true);
@@ -1293,7 +1316,7 @@ function _filterForType(type, idVar = "s")
 		}
 		case HKTypes.TRAIL:
 		{
-			return `?s ${HKUris.ISA_URI} ${HKUris.TRAIL_URI} . `;
+			return `?s ${HKUris.ISA_URI} ${HKUris.TRAIL_URI} . ` ;
 		}
 		case HKTypes.REFERENCE:
 		{

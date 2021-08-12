@@ -38,6 +38,15 @@ HYPERKNOWLEDGE_URIS.add(HKUris.HAS_ANCHOR_URI);
 HYPERKNOWLEDGE_URIS.add(HKUris.ANCHOR_KEY_URI);
 HYPERKNOWLEDGE_URIS.add(HKUris.ANCHOR_TYPE_URI);
 
+// Trails
+HYPERKNOWLEDGE_URIS.add(HKUris.AGENT_URI);
+HYPERKNOWLEDGE_URIS.add(HKUris.EVENT_PROPERTIES_URI);
+HYPERKNOWLEDGE_URIS.add(HKUris.EVENT_TYPE_URI);
+HYPERKNOWLEDGE_URIS.add(HKUris.FROM_URI);
+HYPERKNOWLEDGE_URIS.add(HKUris.HAS_ACTION_URI);
+HYPERKNOWLEDGE_URIS.add(HKUris.HAS_TIMESTAMP_URI);
+HYPERKNOWLEDGE_URIS.add(HKUris.TO_URI);
+
 const NUMBER_DATATYPES = new Set();
 NUMBER_DATATYPES.add(xml.INTEGER_URI);
 NUMBER_DATATYPES.add(xml.NONNEGATIVEINTEGER_URI);
@@ -119,6 +128,10 @@ HKParser.prototype.createEntities = function (s, p, o, g, spo)
   {
     _createInterface.call(this, s, p, o, g);
   }
+  else if (p.includes(HKUris.TRAIL_BASE_URI))
+  {
+    _createActions.call(this, s, p, o, g);
+  }
   else if (p === HKUris.HAS_BIND_URI || p === HKUris.HAS_ANCHOR_URI)
   {
     this.setIntrinsicProperties(s, p, o, g);
@@ -195,7 +208,7 @@ HKParser.prototype.setIntrinsicProperties = function (s, p, o, g, spo)
     {
       case HKUris.HAS_PARENT_URI:
         {
-          entity.parent = Utils.getIdFromResource(g);
+          entity.parent = Utils.getIdFromResource(o);
           break;
         }
       case HKUris.ANCHOR_KEY_URI:
@@ -425,6 +438,24 @@ HKParser.prototype.finish = function ()
       if(propertyName) delete entity.properties[propertyName];  
     }
   }
+
+  // create trails and collected actions
+  for(let id in this.entities)
+  {
+    if(entities[id].type === HK.TRAIL_TYPE)
+    {
+      let actionIds = this.entities[id].actionIds;
+      let actions = this.entities[id].actions;
+
+      // check if actions were not parsed, but we have their ids
+      if (Object.keys(actions).length == 0 && actionIds.length > 0)
+      {
+        this.entities[id].actions = actionIds;
+      }
+      
+      this.entities[id] = new Trail.List(entities[id]);
+    }
+  }
 }
 
 function _createCompressedLink(s, p, o, g)
@@ -489,7 +520,16 @@ function _createEntities(s, p, o, g)
         }
       case HKUris.TRAIL_URI:
         {
-          entity = new Trail();
+          // check if Trail already exists
+          if (!this.entities[id]) 
+          {
+            entity = new Trail.List(id);
+          }
+          else 
+          {
+            entity = this.entities[id]
+          }
+          
           break;
         }
     }
@@ -499,7 +539,7 @@ function _createEntities(s, p, o, g)
   if (entity)
   {
     entities[entity.id] = entity;
-    if (g && entity && entity.type !== Connector.type)
+    if (!entity.parent && g && entity && entity.type !== Connector.type)
     {
       entity.parent = Utils.getIdFromResource(g);
     }
@@ -528,6 +568,54 @@ function _bindBlankNodes(s, p, o, g)
 function _createInterface(s, p, o, g)
 {
   this.interfaces[o] = { entityId: s, properties: {}, key: null, type: null };
+}
+
+function _createActions(s, p, o, g)
+{
+  let graph = Utils.getIdFromResource(g);
+  let subject = Utils.getIdFromResource(s);
+  let property = Utils.getLabelFromUri(p);
+  let value = Utils.getValueFromLiteral(o);
+
+  // handle trail subgraph attributes
+  if (graph == subject)
+  {
+    if (property == 'hasAction')
+    {
+      // check if parent trail exists
+      if (!this.entities.hasOwnProperty(graph))
+      {
+        this.entities[graph] = new Trail.List(graph);
+      }
+
+      // keep actionIds array
+      if (!this.entities[graph].actionIds)
+      {
+        this.entities[graph].actionIds = [];
+      }
+
+      this.entities[graph].actionIds.push(o)
+
+    }
+
+    return; 
+
+  }
+
+  // check if parent trail exists
+  if (!this.entities.hasOwnProperty(graph))
+  {
+    this.entities[graph] = new Trail.List(graph);
+  }
+
+  // check if action object exists
+  if (!this.entities[graph].actions.hasOwnProperty(subject))
+  {
+    this.entities[graph].actions[subject] = {};
+  }
+
+  this.entities[graph].actions[subject][property] = value;
+
 }
 
 function isCompressedRoleUri(uri)
