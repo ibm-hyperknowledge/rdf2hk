@@ -113,13 +113,19 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
             {
                 referenceMap[entity.id] = entity;
             }
-            else if(entity.type === Link.type && entity.properties && entity.properties.hasOwnProperty(hk.DATA_LITERAL_URI))
+            else if(entity.type === Link.type)
             {
-                const subject = Object.keys(entity.binds[subjectLabel])[0];
-                const predicate = entity.connector;
-                const object = entities[Object.keys(entity.binds[objectLabel])[0]].getProperty('data');
-                const graph = entity.parent;
-                literalAsNodeTriples[entity.id] = {subject, predicate, object, graph};    
+                const literalTypeId = hk.DATA_LITERAL_URI;
+                const hasLiteralProperty = entity.properties && entity.properties.hasOwnProperty(literalTypeId);
+                const hasLiteralMetaProperty = entity.metaProperties && entity.metaProperties.hasOwnProperty(literalTypeId);
+                if(hasLiteralProperty || hasLiteralMetaProperty)
+                {
+                    const subject = Object.keys(entity.binds[subjectLabel])[0];
+                    const predicate = entity.connector;
+                    const object = entities[Object.keys(entity.binds[objectLabel])[0]].getProperty('data');
+                    const graph = entity.parent;
+                    literalAsNodeTriples[entity.id] = {subject, predicate, object, graph};    
+                }
             }
         }
     }

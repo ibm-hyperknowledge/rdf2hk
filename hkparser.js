@@ -408,11 +408,21 @@ HKParser.prototype.finish = function ()
       entity.parent = null;
     }
 
-    if(!this.textLiteralAsNode && (entity.type === Node.type || entity.type === Link.type) && entity.hasProperty(HKUris.DATA_LITERAL_URI))
+    const literalTypeId = HKUris.DATA_LITERAL_URI;
+    if(!this.textLiteralAsNode && (entity.type === Node.type || entity.type === Link.type))
     {
-      const propertyName = entity.getProperty(HKUris.DATA_LITERAL_URI);
-      delete entity.properties[HKUris.DATA_LITERAL_URI];
-      if(propertyName) delete entity.properties[propertyName];
+      let propertyName = null;
+      if(entity.hasProperty(literalTypeId))
+      {
+        propertyName = entity.getProperty(literalTypeId);
+        delete entity.properties[literalTypeId];
+      }
+      else if(entity.getMetaProperty(literalTypeId))
+      {
+        propertyName = entity.getMetaProperty(literalTypeId);
+        delete entity.metaProperties[literalTypeId];
+      }
+      if(propertyName) delete entity.properties[propertyName];  
     }
   }
 }
