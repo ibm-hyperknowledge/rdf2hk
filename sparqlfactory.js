@@ -1297,7 +1297,7 @@ function _filterForType(type, idVar = "s")
 		}
 		case HKTypes.REFERENCE:
 		{
-			return `?s ${HKUris.ISA_URI} ${HKUris.REF_URI} . `;
+			return `GRAPH ?g { ?s ${HKUris.ISA_URI} ${HKUris.REF_URI}.  ?s ?p ?o .  } `;
 		}
 		case HKTypes.LINK:
 		{

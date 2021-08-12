@@ -58,6 +58,7 @@ const isUriOrBlankNode = Utils.isUriOrBlankNode;
  * @param {boolean} [options.convertHK] If set, it will read the Hyperknowledge vocabulary and make special conversion. Default is true.
  * @param {boolean} [options.onlyHK] If set, it will ONLY read the Hyperknowledge vocabulary and convert those entities, this options override `convertHK`. Default is false.
  * @param {boolean} [options.textLiteralAsNode] If true, string literals will be converted to content nodes, which will be linked to subject using a link whose connector is the predicate.
+ * @param {boolean} [options.textLiteralAsNodeEncoding] If 'property', textLiteralAsNode encoding will be made using node and link properties. If 'metaproperty' encoding will be made using node and link metaproperties. Default is 'metaproperty'.
  * @param {string}  [options.strategy] "pre-existing-context", "new-context" or "automatically"
  */
 
@@ -90,7 +91,7 @@ function parseGraph(graph, options)
 	
 	let convertOwlTime = options.convertOwlTime || false;
 
-	let setNodeContext = options.setNodeContext && true;
+	let setNodeContext = options.setNodeContext || false;
 
 	let rootContext = options.context;
 	
@@ -101,6 +102,7 @@ function parseGraph(graph, options)
 	let onlyHK = options.onlyHK || false;
 	
 	let textLiteralAsNode = options.textLiteralAsNode || false;
+	let textLiteralAsNodeEncoding = options.textLiteralAsNodeEncoding || 'metaproperty';
 
 	convertHK = convertHK || onlyHK;
 
@@ -374,7 +376,7 @@ function parseGraph(graph, options)
 			}
 
 			// Convert the literal
-			_setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel, objectLabel, textLiteralAsNode);
+			_setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel, objectLabel, textLiteralAsNode, textLiteralAsNodeEncoding);
 			
 		}
 
@@ -406,7 +408,7 @@ function parseGraph(graph, options)
 	return entities;
 }
 
-function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel, objectLabel, textLiteralAsNode = false)
+function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel, objectLabel, textLiteralAsNode = false, textLiteralAsNodeEncoding = 'property')
 {
 	let typeInfo = {};
 	let value = Utils.getValueFromLiteral(o, typeInfo, true);
@@ -432,8 +434,18 @@ function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel,
 		if(textLiteralAsNode)
 		{
 
-			// add metaproperty in subject node
-			node.setProperty(Utils.getIdFromResource(hk.DATA_LITERAL_URI), Utils.getIdFromResource(p));
+			// add property or metaproperty in subject node
+			const literalTypeId =  Utils.getIdFromResource(hk.DATA_LITERAL_URI);
+			const predicateId = Utils.getIdFromResource(p);
+			if(textLiteralAsNodeEncoding === 'property')
+			{
+				node.setProperty(literalTypeId, predicateId);
+			}
+			else if(textLiteralAsNodeEncoding === 'metaproperty')
+			{
+				node.setMetaProperty(literalTypeId, predicateId);
+			}
+			
 
 			// create content node with literal as data, if needed
 			const contentNodeUri = Utils.createContentNodeUri(value);
@@ -461,7 +473,14 @@ function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel,
 			const contentLink = new Link(linkUri, p, node.parent);
 			contentLink.addBind(subjectLabel, node.id);
 			contentLink.addBind(objectLabel, contentNodeUri);
-			contentLink.setProperty(Utils.getIdFromResource(hk.DATA_LITERAL_URI), Utils.getIdFromResource(p));
+			if(textLiteralAsNodeEncoding === 'property')
+			{
+				contentLink.setProperty(literalTypeId, predicateId);
+			}
+			else if(textLiteralAsNodeEncoding === 'metaproperty')
+			{
+				contentLink.setMetaProperty(literalTypeId, predicateId);
+			}
 			entities[linkUri] = contentLink;
 
 		  // create hierarchical connector, if needed
@@ -476,21 +495,20 @@ function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel,
 			}
 
 			// add literal node to body, if needed
-			const typeId =  Utils.getIdFromResource(hk.DATA_LITERAL_URI);
-			let typeNode = entities[typeId];
+			let typeNode = entities[literalTypeId];
 			if(!typeNode)
 			{
-				typeNode = new Node(typeId);
-				entities[typeId] = typeNode;
+				typeNode = new Node(literalTypeId, null);
+				entities[literalTypeId] = typeNode;
 			}
 
 			// add reference to literal node within context, if needed
 			if(node.parent && node.parent !== "null" && node.parent !== HK_NULL_URI)
 			{
-				const typeReferenceUri = Utils.createRefUri(typeId, node.parent);
+				const typeReferenceUri = Utils.createRefUri(literalTypeId, node.parent);
 				if(!entities.hasOwnProperty(typeReferenceUri))
 				{
-					typeNode = new Reference(typeReferenceUri, typeId, node.parent);
+					typeNode = new Reference(typeReferenceUri, literalTypeId, node.parent);
 					entities[typeReferenceUri] = typeNode;
 				}
 				else
