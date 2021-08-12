@@ -453,7 +453,7 @@ HKParser.prototype.finish = function ()
         this.entities[id].actions = actionIds;
       }
       
-      this.entities[id] = new Trail.List(entities[id]);
+      this.entities[id] = new Trail(entities[id]);
     }
   }
 }
@@ -523,7 +523,7 @@ function _createEntities(s, p, o, g)
           // check if Trail already exists
           if (!this.entities[id]) 
           {
-            entity = new Trail.List(id);
+            entity = new Trail(id);
           }
           else 
           {
@@ -585,7 +585,7 @@ function _createActions(s, p, o, g)
       // check if parent trail exists
       if (!this.entities.hasOwnProperty(graph))
       {
-        this.entities[graph] = new Trail.List(graph);
+        this.entities[graph] = new Trail(graph);
       }
 
       // keep actionIds array
@@ -605,7 +605,7 @@ function _createActions(s, p, o, g)
   // check if parent trail exists
   if (!this.entities.hasOwnProperty(graph))
   {
-    this.entities[graph] = new Trail.List(graph);
+    this.entities[graph] = new Trail(graph);
   }
 
   // check if action object exists
