@@ -448,7 +448,7 @@ HKParser.prototype.finish = function ()
       let actions = this.entities[id].actions;
 
       // check if actions were not parsed, but we have their ids
-      if (Object.keys(actions).length == 0 && actionIds.length > 0)
+      if ((!actions || Object.keys(actions).length == 0) && (actionIds && actionIds.length > 0))
       {
         this.entities[id].actions = actionIds;
       }
