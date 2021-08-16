@@ -807,6 +807,12 @@ function getLinks (ids, sparqlType = "construct")
 
 function deleteTriples (bgp)
 {
+	// check if all we have is a graph reference, then drop it
+	if (bgp[3] !== null && bgp[0] == null && bgp[1] == null && bgp[2] == null)
+	{
+		return `DROP GRAPH ${bgp[3]}`;
+	}
+
 	let builder = new SparqlBuilder();
 
 	builder.delete(() =>
