@@ -577,31 +577,27 @@ function _createActions(s, p, o, g)
   let property = Utils.getLabelFromUri(p);
   let value = Utils.getValueFromLiteral(o);
 
-  // handle trail subgraph attributes
-  if (graph == subject)
+
+  if (property == "hasAction")
   {
-    if (property == 'hasAction')
+    // check if parent trail exists
+    if (!this.entities.hasOwnProperty(subject))
     {
-      // check if parent trail exists
-      if (!this.entities.hasOwnProperty(graph))
-      {
-        this.entities[graph] = new Trail(graph);
-      }
-
-      // keep actionIds array
-      if (!this.entities[graph].actionIds)
-      {
-        this.entities[graph].actionIds = [];
-      }
-
-      this.entities[graph].actionIds.push(o)
-
+      this.entities[subject] = new Trail(subject);
     }
 
-    return; 
+    // store actionId in array
+    if (!this.entities[subject].actionIds)
+    {
+      this.entities[subject].actionIds = [];
+    }
 
+    this.entities[subject].actionIds.push(o);
+    
+    return; 
   }
 
+  // if we are here then ?graph should be a trail subgraph
   // check if parent trail exists
   if (!this.entities.hasOwnProperty(graph))
   {
