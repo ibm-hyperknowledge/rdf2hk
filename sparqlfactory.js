@@ -1218,13 +1218,13 @@ function _checkIfHasNodeInConstraint(andFilters)
 		let item = andFilters[i];
 		for(let k in item)
 		{
-			if(k === "id" || k === "properties" || k === "parent")
+			if(k === "id" || k === "properties" || k === "parent" || k === "trail")
 			{
 				return true;
 			}
 			else if(k === "type")
 			{
-				if(item[k] === "node" || item[k] === "context" || item[k] === "ref")
+				if(item[k] === "node" || item[k] === "context" || item[k] === "ref" || item[k] === "trail" )
 				{
 					return true;
 				}
