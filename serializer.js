@@ -347,9 +347,14 @@ function _collectActions(trailEntity, graph, options)
             let event = action.event;
             let parent = trailEntity.parent;
         
-            //add actions to trail subgraph
+            // add parent trail
+            if (parent)
+            {
+                graph.add(trailEntity.id, hk.HAS_PARENT_URI, parent, trailEntity.id);
+            }
+            
+            // add actions to trail subgraph
             graph.add(trailEntity.id, hk.ISA_URI, hk.TRAIL_URI, trailEntity.id);
-            graph.add(trailEntity.id, hk.HAS_PARENT_URI, parent, trailEntity.id);
             graph.add(trailEntity.id, hk.HAS_ACTION_URI, event.id, trailEntity.id);
             _addLiteral(event, graph, hk.AGENT_URI, agent, null, trailEntity.id);
             _addLiteral(event, graph, hk.EVENT_TYPE_URI, event.type, null, trailEntity.id);
