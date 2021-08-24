@@ -359,8 +359,8 @@ function _collectActions(trailEntity, graph, options)
             _addLiteral(event, graph, hk.AGENT_URI, agent, null, trailEntity.id);
             _addLiteral(event, graph, hk.EVENT_TYPE_URI, event.type, null, trailEntity.id);
             _addLiteral(event, graph, hk.EVENT_PROPERTIES_URI, JSON.stringify(event.properties), null, trailEntity.id);
-            _addLiteral(event, graph, hk.FROM_URI, from, null, trailEntity.id);
-            _addLiteral(event, graph, hk.TO_URI, to, null, trailEntity.id);
+            _addLiteral(event, graph, hk.FROM_URI, JSON.stringify(from), null, trailEntity.id);
+            _addLiteral(event, graph, hk.TO_URI, JSON.stringify(to), null, trailEntity.id);
             _addLiteral(event, graph, hk.HAS_TIMESTAMP_URI, event.timestamp, Utils.getTypeIfNumberOrBoolean(event.timestamp), trailEntity.id);
         }
     }
