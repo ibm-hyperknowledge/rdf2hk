@@ -250,9 +250,12 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
                 case Connector.type:
                     break;
                 case Trail.type:
-                    if(entity.actions)
+                    if(entity.properties)
                     {
                         _collectProperties(entity, graph, options);
+                    }
+                    if(entity.actions)
+                    {
                         _collectActions(entity, graph, options);
                     }
                     break;
@@ -336,11 +339,15 @@ function _collectActions(trailEntity, graph, options)
         graphName = trailEntity.parent;
     }
     
-    if(trailEntity.actions)
+    if(trailEntity.actions && trailEntity.actions.length>0)
     {
-        for(let i = 0; i < trailEntity.actions.length; i++)
+        //does not have effect in triplestore injection
+        //let actions = Trail.sort(trailEntity.actions);
+        let actions = trailEntity.actions;
+
+        for(let i = 0; i < actions.length; i++)
         {
-            let action = trailEntity.actions[i];
+            let action = actions[i];
             let from = action.from;
             let to = action.to;
             let agent = action.agent;

@@ -19,6 +19,7 @@ const SparqlBuilder    = require("./sparqlbuilder");
 const { HIERARCHY } = require("hklib/connectorclass");
 
 const ENTITY_ANCHORS        = ` ?s ${HKUris.HAS_ANCHOR_URI} ?a . GRAPH ?g {?a ?b ?c} `;
+const TRAIL_ACTIONS_TIMESTAMPS = ` ?s ?p ?o . GRAPH ?g { ?s ?p ?o } . FILTER (?p = ${HKUris.HAS_TIMESTAMP_URI})`;
 const REFERENCES_FILTERS    = ` ?g = ?g1 || !bound(?g1) `;
 
 const DEFAULT_GRAPH_PATTERN = `GRAPH ?g { ?s ?p ?o } .`;
@@ -145,6 +146,14 @@ function getEntities (ids)
 		{
 			builder.addValues("?s", ids);
 			builder.append(ENTITY_ANCHORS);
+		});
+
+		builder.appendUnion();
+
+		builder.closure(() =>
+		{
+			builder.addValues("?g", ids);
+			builder.append(TRAIL_ACTIONS_TIMESTAMPS);
 		});
 
 		builder.filter(REFERENCES_FILTERS);
@@ -1145,8 +1154,7 @@ function appendUnionFilters(builder, andFilters, idVar = "s")
 						}
 						else
 						{
-							builder.addValues("g", [constraintValue], true);
-							builder.append(_filterForTrail(true, idVar), true);
+							_filterForTrail(builder, [constraintValue]);
 						}
 						break;
 				}
@@ -1172,6 +1180,15 @@ function appendUnionFilters(builder, andFilters, idVar = "s")
 					{
 						builder.bindVar(_convertToUri(constraintValue), idVar, true);
 					}
+
+					// trail subgraph timestamps
+					builder.appendUnion();
+					builder.closure(() =>
+					{
+						builder.addValues("?g", [constraintValue]);
+						builder.append(TRAIL_ACTIONS_TIMESTAMPS);
+					});
+
 					break;
 				}
 				case "connector":
@@ -1224,7 +1241,7 @@ function _checkIfHasNodeInConstraint(andFilters)
 			}
 			else if(k === "type")
 			{
-				if(item[k] === "node" || item[k] === "context" || item[k] === "ref" || item[k] === "trail" )
+				if(item[k] === "node" || item[k] === "context" || item[k] === "ref" || item[k] === "trail")
 				{
 					return true;
 				}
@@ -1234,16 +1251,44 @@ function _checkIfHasNodeInConstraint(andFilters)
 	return false;
 }
 
-function _filterForTrail(fetchActions, idVar="s"){
-	if (fetchActions)
+function _filterForTrail(builder, trailId){
+	// fetch trail subgraph
+	builder.closure(() => 
 	{
-		// query all triples in trail subgraph
-		return  "?s ?p ?o ";
-	}
-	else {
-		// get action ids only
-		return `?s ${HKUris.HAS_ACTION_URI} ?o . ?s ?p ?o `;
-	}
+		builder.addValues("g", trailId, true);
+		builder.append('GRAPH ?g');
+		builder.closure(() => 
+		{
+			builder.append(`?s ?p ?o .`);
+			//` ?s ?p ?o . GRAPH ?g { ?s ?p ?o } . FILTER (?p = ${HKUris.HAS_TIMESTAMP_URI})`
+		});
+	});	
+
+	// fetch extra info from parent subgraph
+	builder.appendUnion();
+	builder.closure(() => 
+	{
+		builder.addValues("s", trailId, true);
+		builder.append('GRAPH ?g');
+		builder.closure(() => 
+		{
+			builder.append(`?s ?p ?o .`);
+			builder.append(`?s ${HKUris.HAS_ANCHOR_URI} ?a . GRAPH ?g {?a ?b ?c}`, true);
+		});
+	});	
+
+	// fetch extra info from parent subgraph
+	builder.appendUnion();
+	builder.closure(() => 
+	{
+		builder.addValues("s", trailId, true);
+		builder.append('GRAPH ?g');
+		builder.closure(() => 
+		{
+			builder.append(`?s ?p ?o .`);
+			builder.append(`?s ${HKUris.HAS_ANCHOR_URI} ?a . GRAPH ?g {?a ?b ?c}`, true);
+		});
+	});	
 }
 
 function _filterForParent(builder, parent) {

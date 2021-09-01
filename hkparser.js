@@ -524,6 +524,8 @@ function _createEntities(s, p, o, g)
           if (!this.entities[id]) 
           {
             entity = new Trail(id);
+            entities[id] = entity;
+            entities[id].actionIds = [];
           }
           else 
           {
@@ -577,41 +579,28 @@ function _createActions(s, p, o, g)
   let property = Utils.getLabelFromUri(p);
   let value = Utils.getValueFromLiteral(o);
 
-
-  if (property == "hasAction")
-  {
-    // check if parent trail exists
-    if (!this.entities.hasOwnProperty(subject))
-    {
-      this.entities[subject] = new Trail(subject);
-    }
-
-    // store actionId in array
-    if (!this.entities[subject].actionIds)
-    {
-      this.entities[subject].actionIds = [];
-    }
-
-    this.entities[subject].actionIds.push(o);
-    
-    return; 
-  }
-
-  // if we are here then ?graph should be a trail subgraph
   // check if parent trail exists
   if (!this.entities.hasOwnProperty(graph))
   {
     this.entities[graph] = new Trail(graph);
+    this.entities[graph].actionIds = [];
   }
-
-  // check if action object exists
+  
+  if (property == "hasAction")
+  { 
+    // store action ids in array
+    // used when not fetching actions
+    this.entities[graph].actionIds.push(Utils.getIdFromResource(o));
+    return;
+  }
+    
+  // store other action properties
   if (!this.entities[graph].actions.hasOwnProperty(subject))
   {
     this.entities[graph].actions[subject] = {};
   }
-
   this.entities[graph].actions[subject][property] = value;
-
+  
 }
 
 function isCompressedRoleUri(uri)
