@@ -588,6 +588,11 @@ function _createActions(s, p, o, g)
   
   if (property == "hasAction")
   { 
+    if (!this.entities[graph].actionIds)
+    {
+      this.entities[graph].actionIds = [];
+    }
+    
     // store action ids in array
     // used when not fetching actions
     this.entities[graph].actionIds.push(Utils.getIdFromResource(o));

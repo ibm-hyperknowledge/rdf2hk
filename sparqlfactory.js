@@ -1276,19 +1276,6 @@ function _filterForTrail(builder, trailId){
 			builder.append(`?s ${HKUris.HAS_ANCHOR_URI} ?a . GRAPH ?g {?a ?b ?c}`, true);
 		});
 	});	
-
-	// fetch extra info from parent subgraph
-	builder.appendUnion();
-	builder.closure(() => 
-	{
-		builder.addValues("s", trailId, true);
-		builder.append('GRAPH ?g');
-		builder.closure(() => 
-		{
-			builder.append(`?s ?p ?o .`);
-			builder.append(`?s ${HKUris.HAS_ANCHOR_URI} ?a . GRAPH ?g {?a ?b ?c}`, true);
-		});
-	});	
 }
 
 function _filterForParent(builder, parent) {
