@@ -89,7 +89,7 @@ function serializeGraph(aGraph, callback)
 		case "text/turtle":
 			n3Serialize(aGraph, callback);
 			break;
-		case "application/rdf+xml"
+		case "application/rdf+xml":
 			rdfXmlSerialize(aGraph, callback);
 			break;
 		default:
