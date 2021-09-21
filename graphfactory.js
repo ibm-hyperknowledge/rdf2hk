@@ -89,6 +89,9 @@ function serializeGraph(aGraph, callback)
 		case "text/turtle":
 			n3Serialize(aGraph, callback);
 			break;
+		case "application/rdf+xml"
+			rdfXmlSerialize(aGraph, callback);
+			break;
 		default:
 			callback(`The mimeType ${mimeType} is not currently supported for serialization.`);
 	}
@@ -149,6 +152,53 @@ function n3Parse(inputData, mimeType, callback)
 function n3Serialize(aGraph, callback)
 {
 	if (aGraph.store)
+	{
+		const writer = new N3.Writer({format: aGraph.mimeType});
+	
+		aGraph.graph.forEach ((statement) =>
+		{
+			if(statement)
+			{
+				writer.addQuad(statement);
+			}
+
+		});
+
+		writer.end((err, data) =>
+		{
+			if(!err)
+			{
+				callback(null, data);
+			}
+			else
+			{
+				callback(err);
+			}
+			
+		});
+	}
+	else
+	{
+		// Graph is already a writer
+		aGraph.graph.end((err, data) =>
+		{
+			if(!err)
+			{
+				callback(null, data);
+			}
+			else
+			{
+				callback(err);
+			}
+		});
+
+	}
+	
+}
+
+function rdfXmlSerialize(aGraph, callback)
+{
+	if (aGraph.store || Array.isArray(aGraph.graph))
 	{
 		const writer = new N3.Writer({format: aGraph.mimeType});
 	
