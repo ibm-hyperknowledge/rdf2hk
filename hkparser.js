@@ -526,6 +526,7 @@ function _createEntities(s, p, o, g)
             entity = new Trail(id);
             entities[id] = entity;
             entities[id].actionIds = [];
+            entities[id].actionIds = [];
           }
           else 
           {
@@ -586,26 +587,66 @@ function _createActions(s, p, o, g)
     this.entities[graph].actionIds = [];
   }
   
-  if (property == "hasAction")
-  { 
-    if (!this.entities[graph].actionIds)
-    {
-      this.entities[graph].actionIds = [];
-    }
-    
-    // store action ids in array
-    // used when not fetching actions
-    this.entities[graph].actionIds.push(Utils.getIdFromResource(o));
-    return;
-  }
-    
-  // store other action properties
-  if (!this.entities[graph].actions.hasOwnProperty(subject))
+  // aux function to check before adding action properties
+  function checkAction(trail, actionId)
   {
-    this.entities[graph].actions[subject] = {};
+    if(!this.entities[trail].actions.hasOwnProperty(actionId))
+    {
+      this.entities[trail].actions[actionId] = {};
+      this.entities[trail].actions[actionId].event = {};
+    }
   }
-  this.entities[graph].actions[subject][property] = value;
+
+  switch(p)
+  {
+    case hk.HAS_ACTION_URI:
+      if (!this.entities[graph].actions.hasOwnProperty(Utils.getIdFromResource(o)))
+      {
+        this.entities[graph].actions[Utils.getIdFromResource(o)] = {};
+        this.entities[graph].actions[Utils.getIdFromResource(o)].event = {};
+      }
+      
+      // store action id
+      this.entities[graph].actions[Utils.getIdFromResource(o)].event['id'] = Utils.getIdFromResource(o);
+      this.entities[graph].actionIds.push(Utils.getIdFromResource(o));
+      break;
+    case hk.FROM_URI:
+      this.entities[graph].actions[subject]['from'] = JSON.parse(value);
+      break;
+    case hk.TO_URI:
+      this.entities[graph].actions[subject]['to'] = JSON.parse(value);
+      break;
+    case hk.EVENT_TYPE_URI:
+      checkAction.call(this, graph, subject);
+      this.entities[graph].actions[subject].event['type'] = value;
+      break;
+    case hk.EVENT_PROPERTIES_URI:
+      checkAction.call(this, graph, subject);
+      this.entities[graph].actions[subject].event['properties'] = value;
+      break;
+    case hk.HAS_TIMESTAMP_URI:
+      checkAction.call(this, graph, subject);
+      this.entities[graph].actions[subject].event['timestamp'] = value;
+      break;
+    default:
+      this.entities[graph].actions[subject][property] = value;
+  }
   
+  // if(property == Utils.getIdFromResource(hk.EVENT_TYPE_URI))
+  // {
+  //   this.entities[graph].actions[subject].event['type'] = value;
+  // }
+  // else if(property == Utils.getIdFromResource(hk.EVENT_PROPERTIES_URI))
+  // {
+  //   this.entities[graph].actions[subject].event['properties'] = value;
+  // }
+  // else if(property == Utils.getIdFromResource(hk.HAS_TIMESTAMP_URI))
+  // {
+  //   this.entities[graph].actions[subject].event['timestamp'] = value;
+  // }
+  // else{
+  //   this.entities[graph].actions[subject][property] = value;
+  // }
 }
 
 function isCompressedRoleUri(uri)
