@@ -1130,6 +1130,7 @@ function appendUnionFilters(builder, andFilters, idVar = "s")
 					else
 					{
 						builder.append(`?s ${HKUris.REFERENCES_URI} ${_convertToUri(constraint[k])} .`);
+						builder.append(`GRAPH ?g {?s ?p ?o} .`);
 					}
 					break;
 				}
