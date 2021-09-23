@@ -340,7 +340,6 @@ HKParser.prototype.finish = function ()
   }
 
   // Set compressed binds
-
   for (let l of this.linksWithCompressedBinds)
   {
     let link = entities[l];
@@ -437,23 +436,19 @@ HKParser.prototype.finish = function ()
       }
       if(propertyName) delete entity.properties[propertyName];  
     }
-  }
-
-  // create trails and collected actions
-  for(let id in this.entities)
-  {
-    if(entities[id].type === HK.TRAIL_TYPE)
+    else if(entity.type === Trail.TRAIL_TYPE)
     {
-      let actionIds = this.entities[id].actionIds;
-      let actions = this.entities[id].actions;
+      // create trail and collected actions
+      let actionIds = entity.actionIds;
+      let actions = entity.actions;
 
       // check if actions were not parsed, but we have their ids
       if ((!actions || Object.keys(actions).length == 0) && (actionIds && actionIds.length > 0))
       {
-        this.entities[id].actions = actionIds;
+        entity.actions = actionIds;
       }
       
-      this.entities[id] = new Trail(entities[id]);
+      entity = new Trail(entity);
     }
   }
 }
