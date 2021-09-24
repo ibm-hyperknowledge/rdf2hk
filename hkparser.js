@@ -14,6 +14,7 @@ const HK = require("hklib");
 
 const Node = HK.Node;
 const Trail = HK.Trail;
+const Action = Trail.Action;
 const Connector = HK.Connector;
 const Link = HK.Link;
 const Context = HK.Context;
@@ -436,19 +437,9 @@ HKParser.prototype.finish = function ()
       }
       if(propertyName) delete entity.properties[propertyName];  
     }
-    else if(entity.type === Trail.TRAIL_TYPE)
+    else if(entity.type === Trail.type && entity.size()>0)
     {
-      // create trail and collected actions
-      let actionIds = entity.actionIds;
-      let actions = entity.actions;
-
-      // check if actions were not parsed, but we have their ids
-      if ((!actions || Object.keys(actions).length == 0) && (actionIds && actionIds.length > 0))
-      {
-        entity.actions = actionIds;
-      }
-      
-      entity = new Trail(entity);
+      entity.actions = entity.loadActions(entity.actions.toArray());
     }
   }
 }
@@ -520,8 +511,7 @@ function _createEntities(s, p, o, g)
           {
             entity = new Trail(id);
             entities[id] = entity;
-            entities[id].actionIds = [];
-            entities[id].actionIds = [];
+            // entities[id].actionIds = [];
           }
           else 
           {
@@ -579,69 +569,70 @@ function _createActions(s, p, o, g)
   if (!this.entities.hasOwnProperty(graph))
   {
     this.entities[graph] = new Trail(graph);
-    this.entities[graph].actionIds = [];
   }
-  
-  // aux function to check before adding action properties
+  let trail = this.entities[graph];
+  let action = null;
+
+  // aux function to check actions
   function checkAction(trail, actionId)
   {
-    if(!this.entities[trail].actions.hasOwnProperty(actionId))
+    // if we already have this action reference
+    if(this.action && this.action.id == actionId)
     {
-      this.entities[trail].actions[actionId] = {};
-      this.entities[trail].actions[actionId].event = {};
+      return this.action;
     }
+
+    // search action in trail
+    this.action = trail.search(actionId);
+
+    if(!this.action)
+    {
+      this.action = trail.append(new Action({event: { "id": actionId }}));
+    }
+    return this.action;
   }
 
   switch(p)
   {
     case hk.HAS_ACTION_URI:
-      if (!this.entities[graph].actions.hasOwnProperty(Utils.getIdFromResource(o)))
-      {
-        this.entities[graph].actions[Utils.getIdFromResource(o)] = {};
-        this.entities[graph].actions[Utils.getIdFromResource(o)].event = {};
-      }
-      
-      // store action id
-      this.entities[graph].actions[Utils.getIdFromResource(o)].event['id'] = Utils.getIdFromResource(o);
-      this.entities[graph].actionIds.push(Utils.getIdFromResource(o));
+      let actionId = Utils.getIdFromResource(o);
+      action = checkAction.call(this, trail, actionId);
+
       break;
     case hk.FROM_URI:
-      this.entities[graph].actions[subject]['from'] = JSON.parse(value);
+      action = checkAction.call(this, trail, subject);
+      action['from'] = JSON.parse(value);
+
       break;
     case hk.TO_URI:
-      this.entities[graph].actions[subject]['to'] = JSON.parse(value);
+      action = checkAction.call(this, trail, subject);
+      action['to'] = JSON.parse(value);
+
       break;
     case hk.EVENT_TYPE_URI:
-      checkAction.call(this, graph, subject);
-      this.entities[graph].actions[subject].event['type'] = value;
+      action = checkAction.call(this, trail, subject);
+      action.event['type'] = value;
+
       break;
     case hk.EVENT_PROPERTIES_URI:
-      checkAction.call(this, graph, subject);
-      this.entities[graph].actions[subject].event['properties'] = value;
+      action = checkAction.call(this, trail, subject);
+      action.event['properties'] = value;
+
       break;
     case hk.HAS_TIMESTAMP_URI:
-      checkAction.call(this, graph, subject);
-      this.entities[graph].actions[subject].event['timestamp'] = value;
+      action = checkAction.call(this, trail, subject);
+      action.event['timestamp'] = value;
+
+      break;
+    case hk.AGENT_URI:
+      action = checkAction.call(this, trail, subject);
+      action['agent'] = value;
+
       break;
     default:
-      this.entities[graph].actions[subject][property] = value;
+      action = checkAction.call(this, trail, subject);
+      action[property] = value;
   }
-  
-  // if(property == Utils.getIdFromResource(hk.EVENT_TYPE_URI))
-  // {
-  //   this.entities[graph].actions[subject].event['type'] = value;
-  // }
-  // else if(property == Utils.getIdFromResource(hk.EVENT_PROPERTIES_URI))
-  // {
-  //   this.entities[graph].actions[subject].event['properties'] = value;
-  // }
-  // else if(property == Utils.getIdFromResource(hk.HAS_TIMESTAMP_URI))
-  // {
-  //   this.entities[graph].actions[subject].event['timestamp'] = value;
-  // }
-  // else{
-  //   this.entities[graph].actions[subject][property] = value;
-  // }
 }
 
 function isCompressedRoleUri(uri)
