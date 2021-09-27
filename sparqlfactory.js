@@ -563,7 +563,7 @@ function updateTriples (changedEntities, changedParents)
 					{
 						let t = newTriples[i];
 
-						builder.append(`GRAPH ${t[3]} { ${t[0]} ${t[1]} ${t[2]} } . `);
+						builder.append(`GRAPH ${t[3]} { ${t[0]} ${t[1]} ${JSON.stringify(t[2])} } . `);
 					}
 				});
 			}
@@ -575,7 +575,7 @@ function updateTriples (changedEntities, changedParents)
 					{
 						let t = newTriples[i];
 
-						builder.append(`GRAPH ?g { ${t[0]} ${t[1]} ${t[2]} } . `);
+						builder.append(`GRAPH ?g { ${t[0]} ${t[1]} ${JSON.stringify(t[2])} } . `);
 					}
 				});
 				builder.where(() =>
