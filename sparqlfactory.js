@@ -711,7 +711,7 @@ function getContextHierarchy (uris, targetTypes, sparqlType = "construct")
 	switch(sparqlType)
 	{
 		case "describe":
-			builder.describe(["?s ?o"]);
+			builder.describe(["?s"]);
 			break;
 		default :
 			builder.construct(() =>
