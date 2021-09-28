@@ -563,7 +563,7 @@ function updateTriples (changedEntities, changedParents)
 					{
 						let t = newTriples[i];
 
-						if(t[2].includes('\n') || (t[2].match(/"/g) || []).length > 2)
+						if(t[2].includes('\n') || ((t[2].match(/"/g) || []).length - (t[2].match(/\"/g) || []).length) > 2)
 						{
 							builder.append(`GRAPH ${t[3]} { ${t[0]} ${t[1]} ${JSON.stringify(t[2])} } . `);
 						}
@@ -583,7 +583,7 @@ function updateTriples (changedEntities, changedParents)
 					{
 						let t = newTriples[i];
 
-						if(t[2].includes('\n') || (t[2].match(/"/g) || []).length > 2)
+						if(t[2].includes('\n') || ((t[2].match(/"/g) || []).length - (t[2].match(/\"/g) || []).length) > 2)
 						{
 							builder.append(`GRAPH ?g { ${t[0]} ${t[1]} ${JSON.stringify(t[2])} } . `);
 						}
