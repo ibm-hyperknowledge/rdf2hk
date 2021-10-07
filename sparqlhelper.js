@@ -281,56 +281,6 @@ function setHKFiltered(query)
 			query.where = query.where.concat(filteredQueryObject.where);
 		}
 
-		/**
-		 * Workaround to remove brackets that are automatically added by sparqljs lib in the group by clause.
-		 * This is necessary because triplestores such as Allegrograph do not support queries with round brackets in the group by clause.
-		 * E.g.: from group by (?x) to group by ?x 
-		 * 
-		 * Remove this workaround in case the issue #127 (https://github.com/RubenVerborgh/SPARQL.js/issues/127) is solved.
-		 */
-
-		let groupByResolver = (sparqlObj) => {
-			if(sparqlObj.group)
-			{
-				if(sparqlObj.group.length > 0)
-				{
-					for(let g of sparqlObj.group )
-					{
-						if(g.expression.termType === "Variable" )
-						{
-							g.expression = `?${g.expression.value}`;
-						}
-					}
-				}
-			}
-
-			if(sparqlObj.where)
-			{
-				for(let where of sparqlObj.where)
-				{
-					if(where.patterns)
-					{
-						where.patterns.forEach(p => 
-						{
-							groupByResolver(p);
-						})
-					}	
-				}
-			}
-			else if (sparqlObj.type === 'group')
-			{
-				if(sparqlObj.patterns)
-				{
-					sparqlObj.patterns.forEach(p => 
-					{
-						groupByResolver(p);
-					})
-				}
-			}
-		};
-
-		groupByResolver(sparqlObj);
-
 		return sparqlGenerator.stringify(sparqlObj);
 
 	}
