@@ -687,6 +687,20 @@ function removeEntities (ids)
 			// builder.optional(ENTITY_ANCHORS);
 		});
 
+		builder.appendUnion();
+
+		// removing triples where entities are predicates
+		builder.closure(() =>
+		{
+			builder.addValues("?l", ids);
+			builder.append(
+				`?l ?subject_role ?s ;
+					?object_role ?o ;
+					${HKUris.USES_CONNECTOR_URI} ?p .
+				?p ?subject_role "s";
+					?object_role "o" .`);
+			builder.append(DEFAULT_GRAPH_PATTERN);
+		});
 		
 	});
 
