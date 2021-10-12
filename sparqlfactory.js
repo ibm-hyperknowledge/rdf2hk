@@ -694,11 +694,15 @@ function removeEntities (ids)
 		{
 			builder.addValues("?l", ids);
 			builder.append(
-				`?l ?subject_role ?s ;
-					?object_role ?o ;
-					${HKUris.USES_CONNECTOR_URI} ?p .
-				?p ?subject_role "s";
-					?object_role "o" .`);
+`graph ?g {
+	?l ?subject_role ?ref_s ;
+		?object_role ?ref_o ;
+		${HKUris.USES_CONNECTOR_URI} ?p .
+	?ref_s ${HKUris.REFERENCES_URI}? ?s .
+	?ref_o ${HKUris.REFERENCES_URI}? ?o .
+}
+?p ?subject_role "s";
+		?object_role "o" .`);
 			builder.append(DEFAULT_GRAPH_PATTERN);
 		});
 		
