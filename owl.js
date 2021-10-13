@@ -28,6 +28,7 @@ const ALL_VALUES_FROM_URI = "<http://www.w3.org/2002/07/owl#allValuesFrom>";
 const HAS_VALUES_URI =  "<http://www.w3.org/2002/07/owl#hasValue>";
 const ANNOTATION_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#AnnotationProperty>";
 const TOP_ANNOTATION_PROPERTY_URI = "<http://www.w3.org/2002/07/owl#topAnnotationProperty>";
+const EQUIVALENT_PROPERTY_URI = '<http://www.w3.org/2002/07/owl#equivalentProperty>';
 
 const CLASSES_URIS = [THING_URI, CLASS_URI];
 const OBJECT_PROPERTY_URIS = [ 
@@ -73,3 +74,4 @@ exports.DATA_PROPERTY_URIS = DATA_PROPERTY_URIS;
 exports.ANNOTATION_PROPERTY_URIS = ANNOTATION_PROPERTY_URIS;
 exports.ONTOLOGY_URIS = ONTOLOGY_URIS;
 exports.TOP_OBJECT_PROPERTIES_URIS = TOP_OBJECT_PROPERTIES_URIS;
+exports.EQUIVALENT_PROPERTY_URI = EQUIVALENT_PROPERTY_URI;

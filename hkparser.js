@@ -11,6 +11,7 @@ const xml = require("./xmlschema");
 const hk = require("./hk");
 
 const HK = require("hklib");
+const { CONNECTOR } = require("hklib/types");
 
 const Node = HK.Node;
 const Trail = HK.Trail;
@@ -393,7 +394,7 @@ HKParser.prototype.finish = function ()
   for(let id in this.refNodesMap)
   {
     let ref = this.refNodesMap[id].ref;
-    if(entities.hasOwnProperty(ref) && entities[ref].parent === undefined)
+    if(entities.hasOwnProperty(ref) && entities[ref].parent === undefined && entities[ref].type !== CONNECTOR)
     {
       delete this.entities[ref];
     }
