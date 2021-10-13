@@ -25,6 +25,7 @@ let owlVocabulary = new Set(Object.values(owl));
 owlVocabulary.add(rdfs.DOMAIN_URI);
 owlVocabulary.add(rdfs.RANGE_URI);
 owlVocabulary.add(rdfs.SUBPROPERTYOF_URI);
+owlVocabulary.add(owl.EQUIVALENT_PROPERTY_URI);
 
 
 class SimpleOwlParser
@@ -52,6 +53,10 @@ class SimpleOwlParser
     {
       return true;
     }
+    else if(owlVocabulary.has(p))
+    {
+      return true;
+    }
     // if(owlVocabulary.has(s) || 
     // 	owlVocabulary.has(p) ||
     // 	owlVocabulary.has(o) ||
@@ -67,7 +72,7 @@ class SimpleOwlParser
 
   createConnectors(s, p, o, g, spo)
   {
-    if (p === rdf.TYPE_URI && owl.OBJECT_PROPERTY_URIS.includes(o))
+    if ((p === rdf.TYPE_URI && owl.OBJECT_PROPERTY_URIS.includes(o)) || owlVocabulary.has(p))
     {
       if (!this.entities.hasOwnProperty(s))
       {
