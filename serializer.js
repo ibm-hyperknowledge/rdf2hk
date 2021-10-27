@@ -10,7 +10,6 @@ const Node              = HKLib.Node;
 const Connector         = HKLib.Connector;
 const Link              = HKLib.Link;
 const Context           = HKLib.Context;
-const VirtualContext    = HKLib.VirtualContext;
 const Trail             = HKLib.Trail;
 const Reference         = HKLib.Reference;
 const ConnectorClass    = HKLib.ConnectorClass;
@@ -140,7 +139,6 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
             switch(entity.type)
             {
                 case Context.type:
-				case VirtualContext.type: 
                 case Node.type:
                 {
                     // Convert literals

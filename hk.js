@@ -11,7 +11,6 @@ exports.BODY_URI          = '<http://research.ibm.com/ontologies/graph#body>';
 // Entity types
 exports.CONNECTOR_URI       = '<http://research.ibm.com/ontologies/graph#connector>';
 exports.CONTEXT_URI         = '<http://research.ibm.com/ontologies/graph#context>';
-exports.VIRTUAL_CONTEXT_URI = '<http://research.ibm.com/ontologies/graph#virtualcontext>';
 exports.NODE_URI            = '<http://research.ibm.com/ontologies/graph#node>';
 exports.LINK_URI            = '<http://research.ibm.com/ontologies/graph#link>';
 exports.REF_URI             = '<http://research.ibm.com/ontologies/graph#ref>';

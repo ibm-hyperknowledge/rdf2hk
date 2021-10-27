@@ -79,11 +79,6 @@ HKSerializer.prototype.serialize = function (entity)
 
     let entityUri = entity.id;
 
-    // if(Utils.isBlankNode(entity.id))
-    // {
-    // 	graph.add(entityUri, this.hasBlankId, graph.createBlankid(entity.id), parentUri);
-    // }
-
     switch (entity.type)
     {
         case HKTypes.CONNECTOR:
@@ -119,7 +114,6 @@ HKSerializer.prototype.serialize = function (entity)
 
                 break;
             }
-        case HKTypes.VIRTUALCONTEXT:
         case HKTypes.CONTEXT:
             {
                 let parentContext = parentUri;
@@ -127,15 +121,8 @@ HKSerializer.prototype.serialize = function (entity)
                 {
                     parentContext = this.bodyResource;
                 }
-                if (entity.type === HKTypes.CONTEXT)
-                {
-                    graph.add(entityUri, this.isAPredicate, this.contextResourceType, parentUri);
-                }
-                else
-                {
-                    graph.add(entityUri, this.isAPredicate, this.virtualContextResourceType, parentUri);
-                }
 
+				graph.add(entityUri, this.isAPredicate, this.contextResourceType, parentUri);
                 graph.add(entityUri, this.hasParent, parentContext, parentUri);
 
                 _serializeAnchors.call(this, entityUri, entity, parentUri, graph);

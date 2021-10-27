@@ -18,7 +18,6 @@ const Trail = HK.Trail;
 const Connector = HK.Connector;
 const Link = HK.Link;
 const Context = HK.Context;
-const VirtualContext = HK.VirtualContext;
 const Reference = HK.Reference;
 const LAMBDA = HK.Constants.LAMBDA;
 
@@ -452,12 +451,6 @@ function _createEntities(s, p, o, g)
     let entities = this.entities;
     let entity = null;
 
-    // Map blank nodes
-    // if(Utils.isBlankNode(s) && !this.blankNodesMap.hasOwnProperty(s))
-    // {
-    // 	this.blankNodesMap[s] = "_:" + uuidv1();
-    // }
-    // let id = this.blankNodesMap.hasOwnProperty(s) ? this.blankNodesMap[s] : Utils.getIdFromResource(s);
     let id = Utils.getIdFromResource(s);
 
     if (!entities.hasOwnProperty(id))
@@ -472,11 +465,6 @@ function _createEntities(s, p, o, g)
             case HKUris.CONTEXT_URI:
                 {
                     entity = new Context();
-                    break;
-                }
-            case HKUris.VIRTUAL_CONTEXT_URI:
-                {
-                    entity = new VirtualContext();
                     break;
                 }
             case HKUris.CONNECTOR_URI:
