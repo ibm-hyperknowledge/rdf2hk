@@ -38,6 +38,7 @@ function HKSerializer(sharedGraph, options)
     this.hasBlankId = hk.HAS_BLANK_ID_URI;
 
     this.references = hk.REFERENCES_URI;
+    this.endpoint = hk.ENDPOINT_URI;
     this.hasBind = hk.HAS_BIND_URI;
     this.usesConnector = hk.USES_CONNECTOR_URI;
     this.boundRole = hk.BOUND_ROLE_URI;
@@ -123,7 +124,13 @@ HKSerializer.prototype.serialize = function (entity)
                 }
 
 				graph.add(entityUri, this.isAPredicate, this.contextResourceType, parentUri);
+				
                 graph.add(entityUri, this.hasParent, parentContext, parentUri);
+
+				if(entity.hasOwnProperty('endpoint') && entityUri['endpoint'] !== "")
+				{
+					graph.add(entityUri, this.endpoint, entityUri['endpoint'], parentUri);
+				}
 
                 _serializeAnchors.call(this, entityUri, entity, parentUri, graph);
                 break;
