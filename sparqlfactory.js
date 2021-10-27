@@ -36,6 +36,7 @@ HKTypeUriMap[HKTypes.NODE] = HKUris.NODE_URI;
 HKTypeUriMap[HKTypes.CONNECTOR] = HKUris.CONNECTOR_URI;
 HKTypeUriMap[HKTypes.LINK] = HKUris.LINK_URI;
 HKTypeUriMap[HKTypes.CONTEXT] = HKUris.CONTEXT_URI;
+HKTypeUriMap[HKTypes.VIRTUALCONTEXT] = HKUris.VIRTUAL_CONTEXT_URI;
 HKTypeUriMap[HKTypes.REFERENCE] = HKUris.REF_URI;
 HKTypeUriMap[HKTypes.TRAIL] = HKUris.TRAIL_URI;
 
@@ -1324,6 +1325,10 @@ function _filterForType(type, idVar = "s")
 		case HKTypes.CONTEXT:
 		{
 			return `?${idVar} ${HKUris.ISA_URI} ${HKUris.CONTEXT_URI} . `;
+		}
+		case HKTypes.VIRTUALCONTEXT:
+		{
+			return `?${idVar} ${HKUris.ISA_URI} ${HKUris.VIRTUAL_CONTEXT_URI} . `;
 		}
 		case HKTypes.TRAIL:
 		{
