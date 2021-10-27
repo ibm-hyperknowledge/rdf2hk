@@ -127,9 +127,9 @@ HKSerializer.prototype.serialize = function (entity)
 				
                 graph.add(entityUri, this.hasParent, parentContext, parentUri);
 
-				if(entity.hasOwnProperty('endpoint') && entityUri['endpoint'] !== "")
+				if(entity.hasOwnProperty('endpoint') && entity['endpoint'] !== "")
 				{
-					graph.add(entityUri, this.endpoint, entityUri['endpoint'], parentUri);
+					graph.add(entityUri, this.endpoint, entity['endpoint'], parentUri);
 				}
 
                 _serializeAnchors.call(this, entityUri, entity, parentUri, graph);
