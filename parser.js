@@ -6,7 +6,6 @@
 
 const HKLib				= require("hklib");
 const Node 				= HKLib.Node;
-const Trail 			= HKLib.Trail;
 const Connector 		= HKLib.Connector;
 const Link 				= HKLib.Link;
 const Context 			= HKLib.Context;

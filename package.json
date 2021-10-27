@@ -33,7 +33,7 @@
 	"license": "MIT",
 	"dependencies": {
 		"@rdfjs/data-model": "^1.1.2",
-		"hklib": "^2.7.0",
+		"hklib": "git://github.com/ibm-hyperknowledge/hklib.git#dev",
 		"md5.js": "^1.3.5",
 		"n3": "^1.8.0",
 		"ninja-util": "^1.1.0",

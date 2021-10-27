@@ -6,13 +6,9 @@
 
 
 const HKLib				= require("hklib");
-const Node              = HKLib.Node;
-const Trail             = HKLib.Trail;
 const Connector         = HKLib.Connector;
 const Link              = HKLib.Link;
-const Context           = HKLib.Context;
 const ConnectorClass    = HKLib.ConnectorClass;
-const Reference         = HKLib.Reference;
 const RoleTypes         = HKLib.roletypes;
 const Constants         = require("./constants");
 
