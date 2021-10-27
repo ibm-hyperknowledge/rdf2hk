@@ -12,6 +12,7 @@ const hk = require("./hk");
 
 const HK = require("hklib");
 const { CONNECTOR } = require("hklib/types");
+const VirtualContext = require("hklib/virtualcontext");
 
 const Node = HK.Node;
 const Trail = HK.Trail;
@@ -221,6 +222,14 @@ HKParser.prototype.setIntrinsicProperties = function (s, p, o, g, spo)
             case HKUris.REFERENCES_URI:
                 {
                     entity.ref = Utils.getIdFromResource(o);
+                    break;
+                }
+            case HKUris.ENDPOINT_URI:
+                {
+                    entity.endpoint = Utils.getIdFromResource(o);
+                    const vContext = new VirtualContext(entity);
+                    entity = vContext;
+                    this.entities[entity.id] = entity;
                     break;
                 }
             case HKUris.USES_CONNECTOR_URI:

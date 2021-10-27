@@ -93,7 +93,7 @@ function getAllEntities (sparqlType = "construct")
 
 	let sparql = builder.getQuery();
 
-
+	console.debug(sparql);
 	return sparql;
 }
 

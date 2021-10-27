@@ -26,12 +26,6 @@ const hk = require("./hk");
 
 const uuidv1 = require('uuid/v1');
 
-
-// Sub Parsers
-const OWLParser = require("./simpleowlparser");
-const OWLTimeParser = require("./owltimeparser");
-const HKParser = require("./hkparser");
-
 const RELATION_QUALIFIER_URIS = new Set();
 RELATION_QUALIFIER_URIS.add(owl.INVERSE_OF_URI);
 RELATION_QUALIFIER_URIS.add(rdfs.SUBPROPERTYOF_URI);
