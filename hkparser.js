@@ -26,7 +26,7 @@ const HYPERKNOWLEDGE_URIS = new Set();
 
 HYPERKNOWLEDGE_URIS.add(HKUris.HAS_PARENT_URI);
 HYPERKNOWLEDGE_URIS.add(HKUris.REFERENCES_URI);
-HYPERKNOWLEDGE_URIS.add(HKUris.ENDPOINT_URI);
+// HYPERKNOWLEDGE_URIS.add(HKUris.ENDPOINT_URI);
 HYPERKNOWLEDGE_URIS.add(HKUris.USES_CONNECTOR_URI);
 
 HYPERKNOWLEDGE_URIS.add(HKUris.HAS_BIND_URI);
@@ -224,14 +224,14 @@ HKParser.prototype.setIntrinsicProperties = function (s, p, o, g, spo)
                     entity.ref = Utils.getIdFromResource(o);
                     break;
                 }
-            case HKUris.ENDPOINT_URI:
-                {
-                    entity.endpoint = Utils.getIdFromResource(o);
-                    const vContext = new VirtualContext(entity);
-                    entity = vContext;
-                    this.entities[entity.id] = entity;
-                    break;
-                }
+            // case HKUris.ENDPOINT_URI:
+            //     {
+            //         entity.endpoint = Utils.getIdFromResource(o);
+            //         const vContext = new VirtualContext(entity);
+            //         entity = vContext;
+            //         this.entities[entity.id] = entity;
+            //         break;
+            //     }
             case HKUris.USES_CONNECTOR_URI:
                 {
                     entity.connector = Utils.getIdFromResource(o);
