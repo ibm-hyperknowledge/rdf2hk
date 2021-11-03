@@ -25,7 +25,6 @@ function HKSerializer(sharedGraph, options)
   this.graph = sharedGraph;
   this.nodeResourceType = hk.NODE_URI;
   this.contextResourceType = hk.CONTEXT_URI;
-  this.virtualContextResourceType = hk.VIRTUAL_CONTEXT_URI;
   this.connectorResourceType = hk.CONNECTOR_URI;
   this.linkResourceType = hk.LINK_URI;
   this.trailResourceType = hk.TRAIL_URI;
@@ -38,7 +37,6 @@ function HKSerializer(sharedGraph, options)
   this.hasBlankId = hk.HAS_BLANK_ID_URI;
 
   this.references = hk.REFERENCES_URI;
-  // this.endpoint = hk.ENDPOINT_URI;
   this.hasBind = hk.HAS_BIND_URI;
   this.usesConnector = hk.USES_CONNECTOR_URI;
   this.boundRole = hk.BOUND_ROLE_URI;
@@ -126,11 +124,6 @@ HKSerializer.prototype.serialize = function (entity)
         graph.add(entityUri, this.isAPredicate, this.contextResourceType, parentUri);
 
         graph.add(entityUri, this.hasParent, parentContext, parentUri);
-
-        // if(entity.hasOwnProperty('endpoint') && entity['endpoint'] !== "")
-        // {
-        // 	graph.add(entityUri, this.endpoint, entity['endpoint'], parentUri);
-        // }
 
         _serializeAnchors.call(this, entityUri, entity, parentUri, graph);
         break;

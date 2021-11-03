@@ -30,7 +30,6 @@ exports.HAS_BIND_URI          = '<http://research.ibm.com/ontologies/graph#hasBi
 exports.HAS_PARENT_URI        = '<http://research.ibm.com/ontologies/graph#hasParent>';
 exports.ISA_URI               = '<http://research.ibm.com/ontologies/graph#isa>';
 exports.REFERENCES_URI        = '<http://research.ibm.com/ontologies/graph#references>';
-// exports.ENDPOINT_URI          = '<http://research.ibm.com/ontologies/graph#endpoint>';
 exports.USES_CONNECTOR_URI    = '<http://research.ibm.com/ontologies/graph#usesConnector>';
 exports.HAS_BLANK_ID_URI      = '<http://research.ibm.com/ontologies/graph#hasBlankId>';
 

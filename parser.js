@@ -80,15 +80,10 @@ function parseGraph(graph, options)
 
     const preserveBlankNodes = options.preserveBlankNodes || false;
 
-    let convertOwl = options.convertOwl || false;
-
-    let convertOwlTime = options.convertOwlTime || false;
-
     let setNodeContext = options.setNodeContext || false;
 
     let rootContext = options.context;
 
-    let timeContext = options.timeContext;
 
     let convertHK = options.convertHK && true;
 
@@ -119,7 +114,6 @@ function parseGraph(graph, options)
         {
             const instantiatedParser = new parser(entities, connectors, blankNodesMap, refNodesMap, options);
             parsers.push(instantiatedParser);
-            // console.log(`new instantiated parser ${instantiatedParser}`);
         }
         catch (err)
         {
