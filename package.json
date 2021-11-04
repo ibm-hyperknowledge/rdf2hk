@@ -33,7 +33,7 @@
 	"license": "MIT",
 	"dependencies": {
 		"@rdfjs/data-model": "^1.1.2",
-		"hklib": "^2.9.0",
+		"hklib": "^2.8.0",
 		"md5.js": "^1.3.5",
 		"n3": "^1.8.0",
 		"ninja-util": "^1.2.3",
