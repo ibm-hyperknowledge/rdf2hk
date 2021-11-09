@@ -12,7 +12,7 @@ describe("Testing sparqlHelper functions", () => {
 
 		const query = `SELECT ?x WHERE { ?x ?y ?z. }`;
 
-    let newQuery = SparqlHelper.setNamedGraphFilter(query, "hk://id/TBox");
+    let newQuery = SparqlHelper.setFilterFrom(query, "hk://id/TBox");
 
     const expectedQuery = "SELECT ?x FROM <hk://id/TBox> WHERE { ?x ?y ?z. }" 
 

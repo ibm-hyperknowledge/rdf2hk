@@ -795,4 +795,4 @@ function optimizeFilter2 (filters)
 exports.optimizeFilter  = optimizeFilter;
 exports.filterForHK = filterPredicatesForHK;
 exports.setHKFiltered = setHKFiltered;
-exports.setNamedGraphFilter = setFilterFrom;
+exports.setFilterFrom = setFilterFrom;
