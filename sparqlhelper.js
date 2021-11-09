@@ -9,6 +9,7 @@
 "use strict";
 
 
+const { NamedNode } = require("n3");
 const SparqlJS = require("sparqljs");
 
 const BOOLEAN_XSD_URI = "http://www.w3.org/2001/XMLSchema#boolean";
@@ -290,6 +291,42 @@ function setHKFiltered(query)
 	}
 
 }
+
+
+function setFilterFrom(query, namedGraph)
+{
+  try
+	{
+		let sparqlParser = new SparqlJS.Parser();
+		let sparqlGenerator = new SparqlJS.Generator();
+
+    let sparqlObj = sparqlParser.parse(query);
+    
+    if(sparqlObj.from === undefined)
+    {
+      sparqlObj.from = {'default': [new NamedNode(namedGraph)]};
+    }
+    else
+    {
+      if(sparqlObj.from.default)
+      {
+        sparqlObj.from.default.push(new NamedNode(namedGraph));
+      }
+      else
+      {
+        sparqlObj.from.default = [new NamedNode(namedGraph)];
+      } 
+    }
+    
+    return sparqlGenerator.stringify(sparqlObj);
+  }
+  catch(err)
+  {
+    throw err;
+  }
+
+}
+
 
 function filterPredicatesForHK (variable, filters)
 {
@@ -758,3 +795,4 @@ function optimizeFilter2 (filters)
 exports.optimizeFilter  = optimizeFilter;
 exports.filterForHK = filterPredicatesForHK;
 exports.setHKFiltered = setHKFiltered;
+exports.setNamedGraphFilter = setFilterFrom;
