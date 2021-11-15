@@ -296,35 +296,34 @@ function setHKFiltered(query)
 function setFilterFrom(query, namedGraph)
 {
   try
-	{
-		let sparqlParser = new SparqlJS.Parser();
-		let sparqlGenerator = new SparqlJS.Generator();
+  {
+    let sparqlParser = new SparqlJS.Parser();
+    let sparqlGenerator = new SparqlJS.Generator();
 
     let sparqlObj = sparqlParser.parse(query);
-    
-    if(sparqlObj.from === undefined)
+
+    if (sparqlObj.from === undefined)
     {
-      sparqlObj.from = {'default': [new NamedNode(namedGraph)]};
+      sparqlObj.from = { 'default': [new NamedNode(namedGraph)] };
     }
     else
     {
-      if(sparqlObj.from.default)
+      if (sparqlObj.from.default)
       {
         sparqlObj.from.default.push(new NamedNode(namedGraph));
       }
       else
       {
         sparqlObj.from.default = [new NamedNode(namedGraph)];
-      } 
+      }
     }
-    
+
     return sparqlGenerator.stringify(sparqlObj);
   }
-  catch(err)
+  catch (err)
   {
     throw err;
   }
-
 }
 
 
