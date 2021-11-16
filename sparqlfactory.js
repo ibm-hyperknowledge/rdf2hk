@@ -57,6 +57,11 @@ function getAllEntitiesUncompressed ()
 	return query;
 }
 
+function getHKTypeUriMap()
+{
+  return HKTypeUriMap;
+}
+
 function getAllEntities (sparqlType = "construct")
 {
 	let builder = new SparqlBuilder();
@@ -1410,6 +1415,7 @@ exports.getAllEntitiesLazy = getAllEntitiesLazy;
 exports.getRdf = getRdf;
 exports.getAllEntitiesUncompressed = getAllEntitiesUncompressed;
 exports.getEntities = getEntities;
+exports.getHKTypeUriMap = getHKTypeUriMap;
 exports.removeEntities = removeEntities;
 exports.removeAllEntities = removeAllEntities;
 exports.filterEntities = filterEntities;
