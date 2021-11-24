@@ -4,15 +4,18 @@
  */
 "use strict";
 
-const HKLib				= require("hklib");
-const Node 				= HKLib.Node;
-const Trail 			= HKLib.Trail;
-const Connector 		= HKLib.Connector;
-const Link 				= HKLib.Link;
-const Context 			= HKLib.Context;
-const ConnectorClass 	= HKLib.ConnectorClass;
-const Reference 		= HKLib.Reference;
-const RoleTypes 		= HKLib.RolesTypes;
+const HKLib = require("hklib");
+const Node = HKLib.Node;
+const Trail = HKLib.Trail;
+const Connector = HKLib.Connector;
+const Link = HKLib.Link;
+const Context = HKLib.Context;
+const VirtualContext = HKLib.VirtualContext;
+const ConnectorClass = HKLib.ConnectorClass;
+const Reference = HKLib.Reference;
+const RoleTypes = HKLib.RolesTypes;
+
+const VIRTUAL_SOURCE_PROPERTY = HKLib.VIRTUAL_SOURCE_PROPERTY;
 
 const Constants 		= require("./constants");
 const Utils 			= require("./utils");
@@ -325,7 +328,7 @@ function parseGraph(graph, options)
 			// Set Entity properties
 
 			// Define the entity to bind the property
-			let node = null;
+			let entity = null;
 
 			// Get maped blank node
 			if (!preserveBlankNodes && blankNodesMap.hasOwnProperty(s))
@@ -336,34 +339,34 @@ function parseGraph(graph, options)
 
 			if (!Utils.getIdFromResource(parent))
 			{
-				node = entities[subjectId]; // we assume the entity must have been created
+				entity = entities[subjectId]; // we assume the entity must have been created
 			}
 			else
 			{
-				node = entities[subjectId] || null;
+				entity = entities[subjectId] || null;
 
-				if(node !== null)
+				if(entity !== null)
 				{
-					if (node.type !== Connector.type && node.parent !== Utils.getIdFromResource(parent))
+					if (entity.type !== Connector.type && entity.parent !== Utils.getIdFromResource(parent))
 					{
 						// The node already exists and it belongs to another context
 						// This assign will force to look for a reference node
-						node = null;
+						entity = null;
 					}
 				}
 
 				// Check if there is a reference to the resource
-				if (!node)
+				if (!entity)
 				{
 					let refId = Utils.createRefUri(s, parent);
 
-					node = entities[refId] || null;
+					entity = entities[refId] || null;
 				}
 			}
 
 			// If at this point the entity was not set
 			// create a reference to it
-			if (!node)
+			if (!entity)
 			{
 				if (onlyHK)
 				{
@@ -372,11 +375,11 @@ function parseGraph(graph, options)
 					// hyperknowledge entities
 					return;
 				}
-				node = createReference(s, parent);
+				entity = createReference(s, parent);
 			}
 
 			// Convert the literal
-			_setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel, objectLabel, textLiteralAsNode, textLiteralAsNodeEncoding);
+			_setPropertyFromLiteral(entity, p, o, entities, connectors, subjectLabel, objectLabel, textLiteralAsNode, textLiteralAsNodeEncoding);
 			
 		}
 
@@ -408,11 +411,22 @@ function parseGraph(graph, options)
 	return entities;
 }
 
-function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel, objectLabel, textLiteralAsNode = false, textLiteralAsNodeEncoding = 'property')
+function _setPropertyFromLiteral(entity, p, o, entities, connectors, subjectLabel, objectLabel, textLiteralAsNode = false, textLiteralAsNodeEncoding = 'property')
 {
 	let typeInfo = {};
 	let value = Utils.getValueFromLiteral(o, typeInfo, true);
 	let propertyName = Utils.getIdFromResource(p);
+
+  if(propertyName === VIRTUAL_SOURCE_PROPERTY)
+  {
+    const vContext = new VirtualContext(entity.id);
+    vContext.parent = entity.parent;
+    vContext.properties = entity.properties || {};
+    vContext.metaProperties = entity.metaProperties || {};
+    entity = vContext;
+    entities[entity.id] = entity;
+
+  }
 
 	if (typeInfo.lang)
 	{
@@ -426,7 +440,7 @@ function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel,
 		{
 			if (literalSlices[1] !== null)
 			{
-				node.setMetaProperty(Utils.getIdFromResource(p), Utils.getIdFromResource(literalSlices[1]));
+				entity.setMetaProperty(Utils.getIdFromResource(p), Utils.getIdFromResource(literalSlices[1]));
 			}
 			return;
 		}
@@ -439,11 +453,11 @@ function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel,
 			const predicateId = Utils.getIdFromResource(p);
 			if(textLiteralAsNodeEncoding === 'property')
 			{
-				node.setProperty(literalTypeId, predicateId);
+				entity.setProperty(literalTypeId, predicateId);
 			}
 			else if(textLiteralAsNodeEncoding === 'metaproperty')
 			{
-				node.setMetaProperty(literalTypeId, predicateId);
+				entity.setMetaProperty(literalTypeId, predicateId);
 			}
 			
 
@@ -451,7 +465,7 @@ function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel,
 			const contentNodeUri = Utils.createContentNodeUri(value);
 			if(!entities.hasOwnProperty(contentNodeUri))
 			{
-				const contentNode = new Node(contentNodeUri, node.parent);
+				const contentNode = new Node(contentNodeUri, entity.parent);
 				contentNode.setProperty('mimeType', 'plain/text');
 				contentNode.setProperty('data', value);
 				entities[contentNodeUri] = contentNode;
@@ -469,9 +483,9 @@ function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel,
 			}
 			
 			// create spo link between subject and content node
-			const linkUri = Utils.createSpoUri(node.id, p, value, node.parent);
-			const contentLink = new Link(linkUri, p, node.parent);
-			contentLink.addBind(subjectLabel, node.id);
+			const linkUri = Utils.createSpoUri(entity.id, p, value, entity.parent);
+			const contentLink = new Link(linkUri, p, entity.parent);
+			contentLink.addBind(subjectLabel, entity.id);
 			contentLink.addBind(objectLabel, contentNodeUri);
 			if(textLiteralAsNodeEncoding === 'property')
 			{
@@ -503,12 +517,12 @@ function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel,
 			}
 
 			// add reference to literal node within context, if needed
-			if(node.parent && node.parent !== "null" && node.parent !== HK_NULL_URI)
+			if(entity.parent && entity.parent !== "null" && entity.parent !== HK_NULL_URI)
 			{
-				const typeReferenceUri = Utils.createRefUri(literalTypeId, node.parent);
+				const typeReferenceUri = Utils.createRefUri(literalTypeId, entity.parent);
 				if(!entities.hasOwnProperty(typeReferenceUri))
 				{
-					typeNode = new Reference(typeReferenceUri, literalTypeId, node.parent);
+					typeNode = new Reference(typeReferenceUri, literalTypeId, entity.parent);
 					entities[typeReferenceUri] = typeNode;
 				}
 				else
@@ -518,8 +532,8 @@ function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel,
 			}
 
 			// create hierarchical link between content node and literal type
-			const typeLinkUri = Utils.createSpoUri(contentNodeUri, rdfs.TYPE_URI, hk.DATA_LITERAL_URI, node.parent);
-			const typeLink = new Link(typeLinkUri, rdfs.TYPE_URI, node.parent);
+			const typeLinkUri = Utils.createSpoUri(contentNodeUri, rdfs.TYPE_URI, hk.DATA_LITERAL_URI, entity.parent);
+			const typeLink = new Link(typeLinkUri, rdfs.TYPE_URI, entity.parent);
 			typeLink.addBind(subjectLabel, contentNodeUri);
 			typeLink.addBind(objectLabel, typeNode.id);
 			entities[typeLinkUri] = typeLink;
@@ -528,11 +542,11 @@ function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel,
 		}
 	}
 
-	node.setOrAppendToProperty(propertyName, value);
+	entity.setOrAppendToProperty(propertyName, value);
 
 	if (typeInfo.type && typeInfo.type !== xml.STRING_URI)
 	{
-		node.setMetaProperty(propertyName, Utils.getIdFromResource(typeInfo.type));
+		entity.setMetaProperty(propertyName, Utils.getIdFromResource(typeInfo.type));
 	}
 }
 
