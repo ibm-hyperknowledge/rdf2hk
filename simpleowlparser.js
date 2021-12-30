@@ -72,7 +72,12 @@ class SimpleOwlParser
 
   createConnectors(s, p, o, g, spo)
   {
-    if ((p === rdf.TYPE_URI && owl.OBJECT_PROPERTY_URIS.includes(o)) || owlVocabulary.has(p))
+    if (
+      !Utils.isBlankNode(s) && (
+        (p === rdf.TYPE_URI && owl.OBJECT_PROPERTY_URIS.includes(o)) || 
+        owlVocabulary.has(p)
+      )
+    )
     {
       if (!this.entities.hasOwnProperty(s))
       {
@@ -90,8 +95,12 @@ class SimpleOwlParser
 
   createRelationships(s, p, o, g)
   {
-    if ((p === rdf.TYPE_URI && !owl.OBJECT_PROPERTY_URIS.includes(o)) ||
-      (owlVocabulary.has(p)))
+    if (
+      !Utils.isBlankNode(s) && (
+        (p === rdf.TYPE_URI && !owl.OBJECT_PROPERTY_URIS.includes(o)) ||
+        (owlVocabulary.has(p))
+      )
+    )
     {
       let refID = Utils.createRefUri(s, g);
       let ref = null;
