@@ -340,6 +340,7 @@ function filterPredicatesForHK (variable, filters)
 			${variable} != ${HKUris.USES_CONNECTOR_URI}  &&
 			${variable} != ${HKUris.CLASSNAME_URI} &&
 			${variable} != ${HKUris.REFERENCES_URI} &&
+			${variable} != ${HKUris.REFERENCED_BY_URI} &&
 			${variable} != ${HKUris.HAS_PARENT_URI} &&
 			${variable} != ${HKUris.DATA_LITERAL_URI} &&
 			!STRSTARTS(STR(${variable}), "hk://role") &&
