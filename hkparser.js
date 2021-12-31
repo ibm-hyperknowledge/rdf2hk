@@ -25,6 +25,7 @@ const HYPERKNOWLEDGE_URIS = new Set();
 
 HYPERKNOWLEDGE_URIS.add(HKUris.HAS_PARENT_URI);
 HYPERKNOWLEDGE_URIS.add(HKUris.REFERENCES_URI);
+HYPERKNOWLEDGE_URIS.add(HKUris.REFERENCED_BY_URI);
 HYPERKNOWLEDGE_URIS.add(HKUris.USES_CONNECTOR_URI);
 
 HYPERKNOWLEDGE_URIS.add(HKUris.HAS_BIND_URI);
@@ -222,6 +223,11 @@ HKParser.prototype.setIntrinsicProperties = function (s, p, o, g, spo)
           entity.ref = Utils.getIdFromResource(o);
           break;
         }
+      case HKUris.REFERENCED_BY_URI:
+      {
+        entity.ref = Utils.getIdFromResource(s);
+        break;
+      }
       case HKUris.USES_CONNECTOR_URI:
         {
           entity.connector = Utils.getIdFromResource(o);

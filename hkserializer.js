@@ -197,7 +197,11 @@ HKSerializer.prototype.serialize = function(entity)
             let referencedNode = entity.ref;
 
             graph.add(entityUri, this.isAPredicate, this.refResourceType, parentUri);
-			if(this.inverseRefNode)
+            if(Utils.isBlankNode(entityUri))
+            {
+                graph.add(referencedNode, hk.REFERENCED_BY_URI, entityUri, parentUri);
+            }
+			else if(this.inverseRefNode)
 			{
 				graph.add(entityUri, hk.REFERENCES_URI, referencedNode, parentUri);
 			}

@@ -27,6 +27,7 @@ const FILTER_HK = `FILTER ( ?p != ${HKUris.ISA_URI} &&
 		 ?p != ${HKUris.USES_CONNECTOR_URI} &&
 		 ?p != ${HKUris.CLASSNAME_URI} &&
 		 ?p != ${HKUris.REFERENCES_URI} &&
+		 ?p != ${HKUris.REFERENCED_BY_URI} &&
 		 ?p != ${HKUris.HAS_PARENT_URI} &&
 		 !STRSTARTS(STR(?p), "hkrole") &&
 		 ( isIRI(?o) || isBlank(?o) ||  datatype(?o) != ${HKUris.DATA_LIST_URI}))`
@@ -703,8 +704,21 @@ function removeEntities (ids)
 	?l ?subject_role ?ref_s ;
 		?object_role ?ref_o ;
 		${HKUris.USES_CONNECTOR_URI} ?p .
-	?ref_s ${HKUris.REFERENCES_URI}? ?s .
-	?ref_o ${HKUris.REFERENCES_URI}? ?o .
+	{
+		?ref_s ${HKUris.REFERENCES_URI}? ?s .
+	}
+	UNION
+	{
+		?s ${HKUris.REFERENCED_BY_URI}? ?ref_s .
+	}
+	
+	{
+		?ref_o ${HKUris.REFERENCES_URI}? ?o .
+	}
+	UNION
+	{
+		?o ${HKUris.REFERENCED_BY_URI}? ?ref_o .
+	}
 }
 ?p ?subject_role "s";
 		?object_role "o" .`);
@@ -884,7 +898,9 @@ function deleteTriples (bgp)
 
 			builder.closure( () =>
 			{
-				builder.append(`?s ${HKUris.REFERENCES_URI} ${bgp[0]} `);
+				builder.append(`{ ?s ${HKUris.REFERENCES_URI} ${bgp[0]} . }`);
+				builder.appendUnion();
+				builder.append(`{ ${bgp[0]} ${HKUris.REFERENCED_BY_URI} ?s . }`);
 				if(bgp[1] !== null)
 				{
 					builder.bindVar(bgp[1], "p");
@@ -976,12 +992,16 @@ function _filterForBinds(builder, binds, connector = null, parent = undefined)
 					if(includeReferences)
 					{
 						builder.closure(() => {
-							builder.append(`?s ${uri}/${HKUris.REFERENCES_URI}? ${_convertToUri(binds[role])} . `);	
+							builder.append(`{ ?s ${uri}/${HKUris.REFERENCES_URI}? ${_convertToUri(binds[role])} . }`);	
+							builder.appendUnion();
+							builder.append(`{ ${_convertToUri(binds[role])} ${uri}/${HKUris.REFERENCED_BY_URI}?  ?s . }`);	
 						});
 						builder.appendUnion();
 						builder.closure(() =>
 						{
-							builder.append(`?s ${uri}/${HKUris.REFERENCES_URI}? ?referredNode . `);	
+							builder.append(`{ ?s ${uri}/${HKUris.REFERENCES_URI}? ?referredNode . }`);	
+							builder.appendUnion();
+							builder.append(`{ ?referredNode ${uri}/${HKUris.REFERENCED_BY_URI}? ?s . }`);	
 							builder.append(`?referredNode ?isa ${_convertToUri(binds[role])} .`);
 							builder.append(`?s ${HKUris.USES_CONNECTOR_URI} ?connector2 .`);
 							builder.append(`?connector2 ${HKUris.CLASSNAME_URI} "${HIERARCHY}" .`);
@@ -1010,12 +1030,16 @@ function _filterForBinds(builder, binds, connector = null, parent = undefined)
 					if(includeReferences)
 					{
 						builder.closure(() => {
-							builder.append(`?s ${uri}/${HKUris.REFERENCES_URI}? ${_convertToUri(binds[role])} . `);	
+							builder.append(`{ ?s ${uri}/${HKUris.REFERENCES_URI}? ${_convertToUri(binds[role])} . }`);	
+							builder.appendUnion();
+							builder.append(`{ ${_convertToUri(binds[role])} ${uri}/${HKUris.REFERENCED_BY_URI}? ?s . }`);	
 						});
 						builder.appendUnion();
 						builder.closure(() =>
 						{
-							builder.append(`?s ${uri}/${HKUris.REFERENCES_URI}? ?referredNode . `);	
+							builder.append(`{ ?s ${uri}/${HKUris.REFERENCES_URI}? ?referredNode . }`);	
+							builder.appendUnion();
+							builder.append(`{ ?referredNode ${uri}/${HKUris.REFERENCED_BY_URI}? ?s . }`);	
 							builder.append(`?referredNode ?isa ${_convertToUri(binds[role])} .`);
 							builder.append(`?s ${HKUris.USES_CONNECTOR_URI} ?connector2 .`);
 							builder.append(`?connector2 ${HKUris.CLASSNAME_URI} "${HIERARCHY}" .`);
@@ -1081,7 +1105,11 @@ function _filterForBinds(builder, binds, connector = null, parent = undefined)
 			{
 				filterForRole(true);
 				filterForConnector(false);
-				builder.append(`GRAPH ?g { ?ref ${HKUris.REFERENCES_URI} ?node }.`);
+				builder.append(`GRAPH ?g { 
+					{ ?ref ${HKUris.REFERENCES_URI} ?node . }
+					UNION
+					{ ?node ${HKUris.REFERENCED_BY_URI} ?ref . }
+				}`);
 			});
 			_filterForParent(builder, parent);
 		}
@@ -1125,7 +1153,9 @@ function appendUnionFilters(builder, andFilters, idVar = "s")
 					if(Array.isArray(constraintValue))
 					{
 						builder.addValues("r", constraintValue, true);
-						builder.append(`?s ${HKUris.REFERENCES_URI} ?r .`);
+						builder.append(`{ ?s ${HKUris.REFERENCES_URI} ?r . }`);
+						builder.appendUnion();
+						builder.append(`{ ?r ${HKUris.REFERENCED_BY_URI} ?s. }`);
 					}
 					else if(constraint.parent)
 					{
@@ -1134,7 +1164,9 @@ function appendUnionFilters(builder, andFilters, idVar = "s")
 							builder.append('GRAPH ?g');
 							builder.closure(() => 
 							{
-								builder.append(`?s ${HKUris.REFERENCES_URI} ${_convertToUri(constraint[k])} .`)
+								builder.append(`{ ?s ${HKUris.REFERENCES_URI} ${_convertToUri(constraint[k])} . }`);
+								builder.appendUnion();
+								builder.append(`{ ${_convertToUri(constraint[k])} ${HKUris.REFERENCED_BY_URI} ?s . }`);
 								builder.append(`?s ?p ?o .`);
 							});
 						});	
@@ -1144,7 +1176,11 @@ function appendUnionFilters(builder, andFilters, idVar = "s")
 						builder.closure(() => 
 						{
 							builder.append('GRAPH ?g');
-							builder.closure(() => builder.append(`?s ${HKUris.REFERENCES_URI} ?referedNode .`));
+							builder.closure(() => {
+								builder.append(`{ ?s ${HKUris.REFERENCES_URI} ?referedNode . }`);
+								builder.appendUnion();
+								builder.append(`{ ?referedNode ${HKUris.REFERENCED_BY_URI} ?s . }`);
+							});
 							builder.append(`?referedNode ?isa ${_convertToUri(constraint[k])} .`);
 							builder.append(`?isa ${HKUris.CLASSNAME_URI} "${HIERARCHY}" .`);
 						});
@@ -1153,12 +1189,16 @@ function appendUnionFilters(builder, andFilters, idVar = "s")
 
 						builder.closure(() => 
 						{
-							builder.append(`?ref ${HKUris.REFERENCES_URI} ?referedNode .`);
+							builder.append(`{ ?ref ${HKUris.REFERENCES_URI} ?referedNode . }`);
+							builder.appendUnion();
+							builder.append(`{ ?referedNode ${HKUris.REFERENCED_BY_URI} ?ref. }`);
 							builder.append('GRAPH ?gref');
 							builder.closure(() =>
 							{
 								builder.append(`?referedNode ?isa ${_convertToUri(constraint[k])}  .`);
-								builder.append(`?s ${HKUris.REFERENCES_URI} ${_convertToUri(constraint[k])} .`);
+								builder.append(`{ ?s ${HKUris.REFERENCES_URI} ${_convertToUri(constraint[k])} . }`);
+								builder.appendUnion();
+								builder.append(`{ ${_convertToUri(constraint[k])} ${HKUris.REFERENCED_BY_URI} ?s . }`);
 								builder.append(`?s ?p ?o .`);
 							});
 							builder.append(`?isa ${HKUris.CLASSNAME_URI} "${HIERARCHY}" .`);
@@ -1167,7 +1207,9 @@ function appendUnionFilters(builder, andFilters, idVar = "s")
 					}
 					else
 					{
-						builder.append(`?s ${HKUris.REFERENCES_URI} ${_convertToUri(constraint[k])} .`);
+						builder.append(`{ ?s ${HKUris.REFERENCES_URI} ${_convertToUri(constraint[k])} . }`);
+						builder.appendUnion();
+						builder.append(`{ ${_convertToUri(constraint[k])} ${HKUris.REFERENCED_BY_URI} ?s . }`);
 						builder.append(`GRAPH ?g {?s ?p ?o} .`);
 					}
 					break;
