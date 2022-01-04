@@ -1198,16 +1198,14 @@ function appendUnionFilters(builder, andFilters, idVar = "s")
 					{
 						builder.addValues("r", constraintValue, true);
 						builder.append(`
-						OPTIONAL { 
-							BIND(${HKUris.REFERENCES_URI} as ?ref_predicate)
+						{ 
 							?s ${HKUris.REFERENCES_URI} ?r . 
 						}`);
+						builder.appendUnion();
 						builder.append(`
-						OPTIONAL { 
-							BIND(${HKUris.REFERENCED_BY_URI} as ?ref_predicate)
+						{ 
 							?r ${HKUris.REFERENCED_BY_URI} ?s. 
 						}`);
-						builder.append(`FILTER (bound(?ref_predicate))`);
 					}
 					else if(constraint.parent)
 					{
