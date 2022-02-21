@@ -8,15 +8,17 @@
  */
 "use strict";
 
-const Utils             = require("./utils");
-const Constants         = require("./constants");
-const HKUris           = require("./hk");
-const HKSerializer     = require("./hkserializer");
+const Utils = require("./utils");
+const Constants = require("./constants");
+const HKUris = require("./hk");
+const HKSerializer = require("./hkserializer");
 
-const HKTypes          = require("hklib").Types;
+const HKLib = require("hklib");
+const HKTypes = HKLib.Types;
+const { HIERARCHY } = HKLib.ConnectorClass;
 
-const SparqlBuilder    = require("./sparqlbuilder");
-const { HIERARCHY } = require("hklib/connectorclass");
+const SparqlBuilder = require("./sparqlbuilder");
+
 
 const ENTITY_ANCHORS        = ` ?s ${HKUris.HAS_ANCHOR_URI} ?a . GRAPH ?g {?a ?b ?c} `;
 const REFERENCES_FILTERS    = ` ?g = ?g1 || !bound(?g1) `;
@@ -1233,15 +1235,14 @@ function appendUnionFilters(builder, andFilters, idVar = "s")
 							builder.append('GRAPH ?g');
 							builder.closure(() => {
 								builder.append(`
-								OPTIONAL { 
+								{ 
 									BIND(${HKUris.REFERENCES_URI} as ?ref_predicate)
 									?s ${HKUris.REFERENCES_URI} ?referedNode . 
 								}`);
-								builder.append(`OPTIONAL { 
+								builder.append(`UNION { 
 									BIND(${HKUris.REFERENCED_BY_URI} as ?ref_predicate)
 									?referedNode ${HKUris.REFERENCED_BY_URI} ?s . 
 								}`);
-								builder.append(`FILTER (bound(?ref_predicate))`);
 							});
 							builder.append(`?referedNode ?isa ${_convertToUri(referencedNodeURI)} .`);
 							builder.append(`?isa ${HKUris.CLASSNAME_URI} "${HIERARCHY}" .`);
