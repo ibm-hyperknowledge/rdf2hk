@@ -1235,15 +1235,14 @@ function appendUnionFilters(builder, andFilters, idVar = "s")
 							builder.append('GRAPH ?g');
 							builder.closure(() => {
 								builder.append(`
-								OPTIONAL { 
+								{ 
 									BIND(${HKUris.REFERENCES_URI} as ?ref_predicate)
 									?s ${HKUris.REFERENCES_URI} ?referedNode . 
 								}`);
-								builder.append(`OPTIONAL { 
+								builder.append(`UNION { 
 									BIND(${HKUris.REFERENCED_BY_URI} as ?ref_predicate)
 									?referedNode ${HKUris.REFERENCED_BY_URI} ?s . 
 								}`);
-								builder.append(`FILTER (bound(?ref_predicate))`);
 							});
 							builder.append(`?referedNode ?isa ${_convertToUri(referencedNodeURI)} .`);
 							builder.append(`?isa ${HKUris.CLASSNAME_URI} "${HIERARCHY}" .`);
