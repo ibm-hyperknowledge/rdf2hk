@@ -8,18 +8,17 @@ const HKUris = require("./hk");
 const Utils = require("./utils");
 const Constants = require("./constants");
 const xml = require("./xmlschema");
-const hk = require("./hk");
 
-const HK = require("hklib");
-const { CONNECTOR } = require("hklib/types");
+const HKLib = require("hklib");
+const { CONNECTOR } = require("hklib").Types;
 
-const Node = HK.Node;
-const Trail = HK.Trail;
-const Connector = HK.Connector;
-const Link = HK.Link;
-const Context = HK.Context;
-const Reference = HK.Reference;
-const LAMBDA = HK.Constants.LAMBDA;
+const Node = HKLib.Node;
+const Trail = HKLib.Trail;
+const Connector = HKLib.Connector;
+const Link = HKLib.Link;
+const Context = HKLib.Context;
+const Reference = HKLib.Reference;
+const LAMBDA = HKLib.Constants.LAMBDA;
 
 const HYPERKNOWLEDGE_URIS = new Set();
 
