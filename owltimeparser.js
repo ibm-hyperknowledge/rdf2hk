@@ -10,13 +10,13 @@ const time = require("./owltime");
 const Utils = require("./utils");
 
 const Constants = require("./constants");
-const { LAMBDA } = require("hklib/constants");
-const Context = require("hklib/context");
-const Link = require("hklib/link");
+const { LAMBDA } = require("hklib").Constants;
+const Context = require("hklib").Context;
+const Link = require("hklib").Link;
 
 class OwlTimeParser
 {
-  constructor(entities, connectors, blankNodesMap, refNodesMap, options)
+  constructor(entities, options)
   {
     this.entities = entities;
     this.subjectLabel = options.subjectLabel || Constants.DEFAULT_SUBJECT_ROLE;

@@ -8,15 +8,17 @@
  */
 "use strict";
 
-const Utils             = require("./utils");
-const Constants         = require("./constants");
-const HKUris           = require("./hk");
-const HKSerializer     = require("./hkserializer");
+const Utils = require("./utils");
+const Constants = require("./constants");
+const HKUris = require("./hk");
+const HKSerializer = require("./hkserializer");
 
-const HKTypes          = require("hklib").Types;
+const HKLib = require("hklib");
+const HKTypes = HKLib.Types;
+const { HIERARCHY } = HKLib.ConnectorClass;
 
-const SparqlBuilder    = require("./sparqlbuilder");
-const { HIERARCHY } = require("hklib/connectorclass");
+const SparqlBuilder = require("./sparqlbuilder");
+
 
 const ENTITY_ANCHORS        = ` ?s ${HKUris.HAS_ANCHOR_URI} ?a . GRAPH ?g {?a ?b ?c} `;
 const REFERENCES_FILTERS    = ` ?g = ?g1 || !bound(?g1) `;
