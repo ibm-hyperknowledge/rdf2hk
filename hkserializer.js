@@ -22,6 +22,8 @@ function HKSerializer(sharedGraph, options)
   this.graph = sharedGraph;
   this.nodeResourceType = hk.NODE_URI;
   this.contextResourceType = hk.CONTEXT_URI;
+  this.virtualContextResourceType = hk.VIRTUAL_CONTEXT_URI;
+  this.virtualNodeResourceType = hk.VIRTUAL_NODE_URI;
   this.connectorResourceType = hk.CONNECTOR_URI;
   this.linkResourceType = hk.LINK_URI;
   this.trailResourceType = hk.TRAIL_URI;
@@ -75,11 +77,6 @@ HKSerializer.prototype.serialize = function (entity)
 
   let entityUri = entity.id;
 
-  // if(Utils.isBlankNode(entity.id))
-  // {
-  // 	graph.add(entityUri, this.hasBlankId, graph.createBlankid(entity.id), parentUri);
-  // }
-
   switch (entity.type)
   {
     case HKTypes.CONNECTOR:
@@ -123,6 +120,19 @@ HKSerializer.prototype.serialize = function (entity)
           parentContext = this.bodyResource;
         }
         graph.add(entityUri, this.isAPredicate, this.contextResourceType, parentUri);
+        graph.add(entityUri, this.hasParent, parentContext, parentUri);
+
+        _serializeAnchors.call(this, entityUri, entity, parentUri, graph);
+        break;
+      }
+    case HKTypes.VIRTUAL_CONTEXT:
+      {
+        let parentContext = parentUri;
+        if (!parentContext)
+        {
+          parentContext = this.bodyResource;
+        }
+        graph.add(entityUri, this.isAPredicate, this.virtualContextResourceType, parentUri);
         graph.add(entityUri, this.hasParent, parentContext, parentUri);
 
         _serializeAnchors.call(this, entityUri, entity, parentUri, graph);
@@ -184,6 +194,23 @@ HKSerializer.prototype.serialize = function (entity)
         else
         {
           graph.add(entityUri, this.isAPredicate, this.nodeResourceType, parentUri);
+        }
+
+        _serializeAnchors.call(this, entityUri, entity, parentUri, graph);
+        break;
+      }
+    case HKTypes.VIRTUAL_NODE:
+      {
+        if (Utils.isBlankNode(entityUri))
+        {
+          let uri = Utils.createBlankNodeUri(entityUri.substr(2));
+
+          graph.add(uri, this.isAPredicate, this.virtualNodeResourceType, parentUri);
+          graph.add(entityUri, hk.REFERENCED_BY_URI, uri, parentUri);
+        }
+        else
+        {
+          graph.add(entityUri, this.isAPredicate, this.virtualNodeResourceType, parentUri);
         }
 
         _serializeAnchors.call(this, entityUri, entity, parentUri, graph);

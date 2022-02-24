@@ -17,6 +17,8 @@ const Trail = HKLib.Trail;
 const Connector = HKLib.Connector;
 const Link = HKLib.Link;
 const Context = HKLib.Context;
+const VirtualContext = HKLib.VirtualContext;
+const VirtualNode = HKLib.VirtualNode;
 const Reference = HKLib.Reference;
 const LAMBDA = HKLib.Constants.LAMBDA;
 
@@ -476,6 +478,16 @@ function _createEntities(s, p, o, g)
       case HKUris.CONTEXT_URI:
         {
           entity = new Context();
+          break;
+        }
+      case HKUris.VIRTUAL_CONTEXT_URI:
+        {
+          entity = new VirtualContext();
+          break;
+        }
+      case HKUris.VIRTUAL_NODE_URI:
+        {
+          entity = new VirtualNode();
           break;
         }
       case HKUris.CONNECTOR_URI:

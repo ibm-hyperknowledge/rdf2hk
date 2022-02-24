@@ -1444,6 +1444,10 @@ function _filterForType(type, idVar = "s")
 		{
 			return `?${idVar} ${HKUris.ISA_URI} ${HKUris.NODE_URI} . `;
 		}
+    case HKTypes.VIRTUAL_NODE:
+		{
+			return `?${idVar} ${HKUris.ISA_URI} ${HKUris.VIRTUAL_NODE_URI} . `;
+		}
 		case HKTypes.CONNECTOR:
 		{
 			return `?s ${HKUris.ISA_URI} ${HKUris.CONNECTOR_URI} . `;
@@ -1451,6 +1455,10 @@ function _filterForType(type, idVar = "s")
 		case HKTypes.CONTEXT:
 		{
 			return `?${idVar} ${HKUris.ISA_URI} ${HKUris.CONTEXT_URI} . `;
+		}
+		case HKTypes.VIRTUAL_CONTEXT:
+		{
+			return `?${idVar} ${HKUris.ISA_URI} ${HKUris.VIRTUAL_CONTEXT_URI} . `;
 		}
 		case HKTypes.TRAIL:
 		{
