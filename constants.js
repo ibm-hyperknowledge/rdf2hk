@@ -9,13 +9,15 @@ exports.HK_PROTOCOL = "hk";
 exports.DEFAULT_SUBJECT_ROLE = "subject";
 exports.DEFAULT_OBJECT_ROLE = "object";
 
+exports.HK_ID_PREFIX = `${exports.HK_PROTOCOL}://id`;
+
 exports.HK_NULL = `${exports.HK_ID_PREFIX}/null`;
 
-exports.HK_ID_PREFIX = `${exports.HK_PROTOCOL}://id`;
 exports.HK_ANCHOR_PREFIX = `${exports.HK_PROTOCOL}://a`;
 exports.HK_BLANK_NODE_PREFIX = `${exports.HK_PROTOCOL}://b`;
 exports.HK_REFERENCE_PREFIX = `${exports.HK_PROTOCOL}://ref`;
 exports.HK_ROLE_PREFIX = `${exports.HK_PROTOCOL}://role`;
+
 exports.HK_LINK_PREFIX = `${exports.HK_PROTOCOL}://link`;
 exports.HK_NODE_PREFIX = `${exports.HK_PROTOCOL}://node`;
 
