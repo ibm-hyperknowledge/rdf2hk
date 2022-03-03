@@ -36,9 +36,11 @@ const FILTER_HK = `FILTER ( ?p != ${HKUris.ISA_URI} &&
 
 const HKTypeUriMap = {};
 HKTypeUriMap[HKTypes.NODE] = HKUris.NODE_URI;
+HKTypeUriMap[HKTypes.VIRTUAL_NODE] = HKUris.VIRTUAL_NODE_URI;
 HKTypeUriMap[HKTypes.CONNECTOR] = HKUris.CONNECTOR_URI;
 HKTypeUriMap[HKTypes.LINK] = HKUris.LINK_URI;
 HKTypeUriMap[HKTypes.CONTEXT] = HKUris.CONTEXT_URI;
+HKTypeUriMap[HKTypes.VIRTUAL_CONTEXT] = HKUris.VIRTUAL_CONTEXT_URI;
 HKTypeUriMap[HKTypes.REFERENCE] = HKUris.REF_URI;
 HKTypeUriMap[HKTypes.TRAIL] = HKUris.TRAIL_URI;
 
