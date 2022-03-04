@@ -3,15 +3,8 @@
  * Licensed under The MIT License [see LICENSE for details]
  */
 "use strict";
-const HKLib = require("hklib");
-const Node = HKLib.Node;
-const Trail = HKLib.Trail;
-const Connector = HKLib.Connector;
-const Link = HKLib.Link;
-const Context = HKLib.Context;
-const ConnectorClass = HKLib.ConnectorClass;
-const Reference = HKLib.Reference;
-const RoleTypes = HKLib.RolesTypes;
+
+const { Connector, ConnectorClass, Reference, RoleTypes } = require("hklib");
 
 const owl = require("./owl");
 const rdfs = require("./rdfs");

@@ -5,16 +5,7 @@
 
 "use strict";
 
-const HKLib = require("hklib");
-const Node = HKLib.Node;
-const Trail = HKLib.Trail;
-const Connector = HKLib.Connector;
-const Link = HKLib.Link;
-const Context = HKLib.Context;
-const VirtualContext = HKLib.VirtualContext;
-const ConnectorClass = HKLib.ConnectorClass;
-const Reference = HKLib.Reference;
-const RoleTypes = HKLib.RolesTypes;
+const { Node, Connector, Link, Context, Reference, ConnectorClass, RoleTypes } = require("hklib"); 
 
 const Constants = require("./constants");
 const Utils = require("./utils");
@@ -29,9 +20,8 @@ const uuidv1 = require('uuid/v1');
 const RELATION_QUALIFIER_URIS = new Set();
 RELATION_QUALIFIER_URIS.add(owl.INVERSE_OF_URI);
 RELATION_QUALIFIER_URIS.add(rdfs.SUBPROPERTYOF_URI);
-const HK_NULL_URI = `<${Constants.HK_NULL}>`;
 
-const VIRTUAL_SOURCE_PROPERTY = HKLib.VIRTUAL_SOURCE_PROPERTY;
+const HK_NULL_URI = `<${Constants.HK_NULL}>`;
 
 const isUriOrBlankNode = Utils.isUriOrBlankNode;
 
@@ -398,17 +388,6 @@ function _setPropertyFromLiteral(entity, p, o, entities, connectors, subjectLabe
 	let typeInfo = {};
 	let value = Utils.getValueFromLiteral(o, typeInfo, true);
 	let propertyName = Utils.getIdFromResource(p);
-
-  if(propertyName === VIRTUAL_SOURCE_PROPERTY)
-  {
-    const vContext = new VirtualContext(entity.id);
-    vContext.parent = entity.parent;
-    vContext.properties = entity.properties || {};
-    vContext.metaProperties = entity.metaProperties || {};
-    entity = vContext;
-    entities[entity.id] = entity;
-
-  }
 
 	if (typeInfo.lang)
 	{

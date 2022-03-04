@@ -4,13 +4,7 @@
  */
 "use strict";
 
-const HKLib = require("hklib");
-const HKTypes = HKLib.HKTypes;
-const HKEntity = HKLib.HKEntity;
-const Connector = HKLib.Connector;
-const Link = HKLib.Link;
-const Reference = HKLib.Reference;
-const RoleTypes = HKLib.RolesTypes;
+const { HKTypes, HKEntity, Connector, Link, Reference, RoleTypes } = require("hklib");
 
 const Utils = require("./utils");
 const Constants = require("./constants");
@@ -20,7 +14,6 @@ const HKSerializer = require("./hkserializer");
 const OWLSerializer = require("./simpleowlserializer");
 const OLWTimeSerializer = require("./owltimeserializer");
 const hk = require("./hk");
-
 
 
 /**
