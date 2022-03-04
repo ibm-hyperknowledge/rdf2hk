@@ -4,27 +4,16 @@
  */
 "use strict";
 
-const HKLib				= require("hklib");
-const HKEntity          = HKLib.HKEntity;
-const Node              = HKLib.Node;
-const Connector         = HKLib.Connector;
-const Link              = HKLib.Link;
-const Context           = HKLib.Context;
-const Trail             = HKLib.Trail;
-const Reference         = HKLib.Reference;
-const ConnectorClass    = HKLib.ConnectorClass;
-const RoleTypes         = HKLib.RolesTypes;
+const { HKTypes, HKEntity, Connector, Link, Reference, RoleTypes } = require("hklib");
 
-const Utils             = require("./utils");
-const Constants         = require("./constants");
-const xml               = require("./xmlschema");
+const Utils = require("./utils");
+const Constants = require("./constants");
 
-const TriGGraph			= require("./triggraph");
-const HKSerializer      = require("./hkserializer");
-const OWLSerializer		= require("./simpleowlserializer");
+const TriGGraph = require("./triggraph");
+const HKSerializer = require("./hkserializer");
+const OWLSerializer = require("./simpleowlserializer");
 const OLWTimeSerializer = require("./owltimeserializer");
-const hk                = require("./hk");
-
+const hk = require("./hk");
 
 
 /**
@@ -51,343 +40,339 @@ const hk                = require("./hk");
 
 function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap = {}) 
 {
-    if(!entities)
-    {
-        return graph;
-    }
-
-    let connectors = {};
-    let literalAsNodeTriples = {};
-
-    let defaultGraph = options.defaultGraph || null;
-
-
-    if(options.convertHK)
-    {
-		if(!options.hasOwnProperty("reifyArray"))
-		{
-			options.reifyArray = true;
-        	// compressArray = true;
-		}
-    }
-
-    let subjectLabel = null;
-    let objectLabel = null;
-
-	options.owlSerializer = new OWLSerializer(graph, options);
-    options.owlTimeSerializer = new OLWTimeSerializer(graph, options);
-    let hkSerializer = new HKSerializer(graph, options);
-
-    // We can set subjectLabel and objectLabel as null
-    if(options.hasOwnProperty("subjectLabel"))
-    {
-        subjectLabel = options.subjectLabel;
-    }
-    else
-    {
-        subjectLabel = Constants.DEFAULT_SUBJECT_ROLE;
-    }
-
-    if(options.hasOwnProperty("objectLabel"))
-    {
-        objectLabel = options.objectLabel;
-    }
-    else
-    {
-        objectLabel = Constants.DEFAULT_OBJECT_ROLE;
-    }
-    
-    // Collect connectors, references and literal links
-    for(let k in entities)
-    {
-        if(entities.hasOwnProperty(k))
-        {
-            let entity = entities[k];
-            if(entity.type === Connector.type)
-            {
-                connectors[entity.id] = entity;
-
-                _collectProperties(entity, graph, options);
-            }
-            else if(entity.type === Reference.type)
-            {
-                referenceMap[entity.id] = entity;
-            }
-            else if(entity.type === Link.type)
-            {
-                const literalTypeId = hk.DATA_LITERAL_URI;
-                const hasLiteralProperty = entity.properties && entity.properties.hasOwnProperty(literalTypeId);
-                const hasLiteralMetaProperty = entity.metaProperties && entity.metaProperties.hasOwnProperty(literalTypeId);
-                if(hasLiteralProperty || hasLiteralMetaProperty)
-                {
-                    const subject = Object.keys(entity.binds[subjectLabel])[0];
-                    const predicate = entity.connector;
-                    const object = entities[Object.keys(entity.binds[objectLabel])[0]].getProperty('data');
-                    const graph = entity.parent;
-                    literalAsNodeTriples[entity.id] = {subject, predicate, object, graph};    
-                }
-            }
-        }
-    }
-
-    for(let k in entities)
-    {
-        if(entities.hasOwnProperty(k))
-        {
-            let entity = entities[k];
-            
-            switch(entity.type)
-            {
-                case Context.type:
-                case Node.type:
-                {
-                    // Convert literals
-                    _collectProperties(entity, graph, options);
-                    break;
-                }
-                case Reference.type:
-                {
-                    // Convert literals
-
-					if(options.convertHK && !options.skipRefNodes)
-					{
-                    	_collectProperties(entity, graph, options);
-					}
-
-					// Generate triples to the resource from the ref
-                    if(options.convertOwl || ((!options.convertHK || options.compressReification) && entity.parent))
-                    {
-						
-                        let refObj = {
-                            id: entity.ref, 
-                            properties: entity.properties, 
-                            metaProperties: entity.metaProperties,
-                            parent: entity.parent
-                        };
-                        _collectProperties(refObj, graph, options);
-                    }
-                    
-                    break;
-                }
-                case Link.type:
-                {
-                    let connector = connectors[entity.connector];
-
-                    let roles = null;
-
-                    if(connector)
-                    {
-                        let connectorRoles = Connector.prototype.getRoles.call(connector);
-                        let tempRole = {s: null, o: null};
-                        for(let j = 0 ; j < connectorRoles.length; j++)
-                        {
-                            let role = connectorRoles[j];
-                            let t = Connector.prototype.getRoleType.call(connector, role);
-                            if(t === RoleTypes.CHILD || t === RoleTypes.SUBJECT)
-                            {
-                                tempRole.s = role;
-                            }
-                            else if(t === RoleTypes.PARENT || t === RoleTypes.OBJECT)
-                            {
-                                tempRole.o = role;
-                            }
-                        }
-                        if(tempRole.s && tempRole.o)
-                        {
-                            roles = [tempRole.s, tempRole.o];
-                        }
-                    }
-                    else
-                    {
-                        roles = [subjectLabel, objectLabel];
-                    }
-
-                    if(roles)
-                    {
-                        Link.prototype.forEachCrossBind.call(entity, roles, (s, o) =>
-                        {
-                            
-                            let subjId = s;
-                            let objId = o;
-    
-                            //in case we are still using reference nodes
-                            if(referenceMap.hasOwnProperty(s))
-                            {
-                                subjId = referenceMap[s].ref;
-                            }
-                            if(referenceMap.hasOwnProperty(o))
-                            {
-                                objId = referenceMap[o].ref;
-                            }
-    
-                            let context = undefined;
-                            if(entity.parent)
-                            {
-                                context = entity.parent;
-                            }
-							else if(defaultGraph)
-							{
-								context = defaultGraph;
-							}
-                            
-                            if(options.convertOwlTime)
-                            {
-                                options.owlTimeSerializer.serializeTemporalAnchorBind(entity, entities, subjectLabel, objectLabel, subjId, objId, defaultGraph, context);
-                            }
-                            else
-                            {
-                                graph.add(subjId, entity.connector, objId, context);
-                            }
-                        });
-                    }
-
-                    if(options.convertHK)
-                    {
-                        _collectProperties(entity, graph, options);
-                    }
-                    break;
-                }
-                case Connector.type:
-                    break;
-                case Trail.type:
-                    break;
-                default:
-                {
-                    if(entity.properties)
-                    {
-                        _collectProperties(entity, graph, options);
-                    }
-                    break;
-                }
-            }
-
-            if(entity && options.convertHK)
-            {
-                hkSerializer.serialize(entity);
-            }
-            
-        }
-    }
-
-    // reify literal as node triples
-    for(let k in literalAsNodeTriples)
-    {
-        const triple = literalAsNodeTriples[k];
-        const literal = _buildLiteralObject(triple.object);
-        graph.add(triple.subject, triple.predicate, literal, triple.graph);
-    }
-
+  if (!entities)
+  {
     return graph;
+  }
+
+  let connectors = {};
+  let literalAsNodeTriples = {};
+
+  let defaultGraph = options.defaultGraph || null;
+
+
+  if (options.convertHK)
+  {
+    if (!options.hasOwnProperty("reifyArray"))
+    {
+      options.reifyArray = true;
+      // compressArray = true;
+    }
+  }
+
+  let subjectLabel = null;
+  let objectLabel = null;
+
+  options.owlSerializer = new OWLSerializer(graph, options);
+  options.owlTimeSerializer = new OLWTimeSerializer(graph, options);
+  let hkSerializer = new HKSerializer(graph, options);
+
+  // We can set subjectLabel and objectLabel as null
+  if (options.hasOwnProperty("subjectLabel"))
+  {
+    subjectLabel = options.subjectLabel;
+  }
+  else
+  {
+    subjectLabel = Constants.DEFAULT_SUBJECT_ROLE;
+  }
+
+  if (options.hasOwnProperty("objectLabel"))
+  {
+    objectLabel = options.objectLabel;
+  }
+  else
+  {
+    objectLabel = Constants.DEFAULT_OBJECT_ROLE;
+  }
+
+  // Collect connectors, references and literal links
+  for (let k = entities.length; k--;)
+  {
+    let entity = entities[k];
+    if (entity.type === Connector.type)
+    {
+      connectors[entity.id] = entity;
+
+      _collectProperties(entity, graph, options);
+    }
+    else if (entity.type === Reference.type)
+    {
+      referenceMap[entity.id] = entity;
+    }
+    else if (entity.type === Link.type)
+    {
+      const literalTypeId = hk.DATA_LITERAL_URI;
+      const hasLiteralProperty = entity.properties && entity.properties.hasOwnProperty(literalTypeId);
+      const hasLiteralMetaProperty = entity.metaProperties && entity.metaProperties.hasOwnProperty(literalTypeId);
+      if (hasLiteralProperty || hasLiteralMetaProperty)
+      {
+        const subject = Object.keys(entity.binds[subjectLabel])[0];
+        const predicate = entity.connector;
+        const object = entities[Object.keys(entity.binds[objectLabel])[0]].getProperty('data');
+        const graph = entity.parent;
+        literalAsNodeTriples[entity.id] = { subject, predicate, object, graph };
+      }
+    }
+  }
+
+  for (let k = entities.length; k--;)
+  {
+    let entity = entities[k];
+
+    switch (entity.type)
+    {
+      case HKTypes.CONTEXT:
+      case HKTypes.NODE:
+      case HKTypes.VIRTUAL_CONTEXT:
+      case HKTypes.VIRTUAL_NODE:
+        {
+          // Convert literals
+          _collectProperties(entity, graph, options);
+          break;
+        }
+      case HKTypes.REFERENCE:
+        {
+          // Convert literals
+
+          if (options.convertHK && !options.skipRefNodes)
+          {
+            _collectProperties(entity, graph, options);
+          }
+
+          // Generate triples to the resource from the ref
+          if (options.convertOwl || ((!options.convertHK || options.compressReification) && entity.parent))
+          {
+
+            let refObj = {
+              id: entity.ref,
+              properties: entity.properties,
+              metaProperties: entity.metaProperties,
+              parent: entity.parent
+            };
+            _collectProperties(refObj, graph, options);
+          }
+
+          break;
+        }
+      case HKTypes.LINK:
+        {
+          let connector = connectors[entity.connector];
+
+          let roles = null;
+
+          if (connector)
+          {
+            let connectorRoles = Connector.prototype.getRoles.call(connector);
+            let tempRole = { s: null, o: null };
+            for (let j = 0; j < connectorRoles.length; j++)
+            {
+              let role = connectorRoles[j];
+              let t = Connector.prototype.getRoleType.call(connector, role);
+              if (t === RoleTypes.CHILD || t === RoleTypes.SUBJECT)
+              {
+                tempRole.s = role;
+              }
+              else if (t === RoleTypes.PARENT || t === RoleTypes.OBJECT)
+              {
+                tempRole.o = role;
+              }
+            }
+            if (tempRole.s && tempRole.o)
+            {
+              roles = [tempRole.s, tempRole.o];
+            }
+          }
+          else
+          {
+            roles = [subjectLabel, objectLabel];
+          }
+
+          if (roles)
+          {
+            Link.prototype.forEachCrossBind.call(entity, roles, (s, o) =>
+            {
+
+              let subjId = s;
+              let objId = o;
+
+              //in case we are still using reference nodes
+              if (referenceMap.hasOwnProperty(s))
+              {
+                subjId = referenceMap[s].ref;
+              }
+              if (referenceMap.hasOwnProperty(o))
+              {
+                objId = referenceMap[o].ref;
+              }
+
+              let context = undefined;
+              if (entity.parent)
+              {
+                context = entity.parent;
+              }
+              else if (defaultGraph)
+              {
+                context = defaultGraph;
+              }
+
+              if (options.convertOwlTime)
+              {
+                options.owlTimeSerializer.serializeTemporalAnchorBind(entity, entities, subjectLabel, objectLabel, subjId, objId, defaultGraph, context);
+              }
+              else
+              {
+                graph.add(subjId, entity.connector, objId, context);
+              }
+            });
+          }
+
+          if (options.convertHK)
+          {
+            _collectProperties(entity, graph, options);
+          }
+          break;
+        }
+      case HKTypes.CONNECTOR:
+        break;
+      case HKTypes.TRAIL:
+        break;
+      default:
+        {
+          if (entity.properties)
+          {
+            _collectProperties(entity, graph, options);
+          }
+          break;
+        }
+    }
+
+    if (entity && options.convertHK)
+    {
+      hkSerializer.serialize(entity);
+    }
+  }
+
+  // reify literal as node triples
+  for (let k in literalAsNodeTriples)
+  {
+    const triple = literalAsNodeTriples[k];
+    const literal = _buildLiteralObject(triple.object);
+    graph.add(triple.subject, triple.predicate, literal, triple.graph);
+  }
+
+  return graph;
 }
 
 function _addLiteral(entity, graph, predicate, value, metaProperty, graphName)
 {
-    let literal = _buildLiteralObject(value, metaProperty);
+  let literal = _buildLiteralObject(value, metaProperty);
 
-    if (entity.hasOwnProperty('type')){
-        if (entity.type === Reference.type && entity.parent){
-            //we are dealing with a ref node, use reference for the triple 
-            graph.add(entity.ref, predicate, literal, graphName);
-        }        
+  if (entity.hasOwnProperty('type'))
+  {
+    if (entity.type === Reference.type && entity.parent)
+    {
+      //we are dealing with a ref node, use reference for the triple 
+      graph.add(entity.ref, predicate, literal, graphName);
     }
-    graph.add(entity.id, predicate, literal, graphName);
-
+  }
+  graph.add(entity.id, predicate, literal, graphName);
 }
 
 function _buildLiteralObject(value, metaProperty)
 {
-    let typeInfo = {};
+  let typeInfo = {};
 
-    let v = null;
+  let v = null;
 
-    if (value !== null)
-    {
-        v = Utils.getValueFromLiteral(value, typeInfo) || value;
-    }
+  if (value !== null)
+  {
+    v = Utils.getValueFromLiteral(value, typeInfo) || value;
+  }
 
-    else
-    {
-        // Entity with only metaproperties
-        v = `<${Constants.HK_NULL}>`;
-    }
-    let lang = undefined;
+  else
+  {
+    // Entity with only metaproperties
+    v = `<${Constants.HK_NULL}>`;
+  }
+  let lang = undefined;
 
-    let type = typeInfo.type || metaProperty;
+  let type = typeInfo.type || metaProperty;
 
-    if (typeInfo.lang)
-    {
-        lang = typeInfo.lang;
-    }
-    let literal = Utils.createLiteralObject(v, lang, type);
-    return literal;
+  if (typeInfo.lang)
+  {
+    lang = typeInfo.lang;
+  }
+  let literal = Utils.createLiteralObject(v, lang, type);
+  return literal;
 }
 
 function _collectProperties(entity, graph, options)
 {
-	let convertNumber = options.convertNumber || false; 
-	let reifyArray = options.reifyArray || false;
-	let defaultGraph = options.defaultGraph || null;
-    HKEntity.prototype.foreachProperty.call(entity, (key, value, metaProperty) =>
-    {        
-        let graphName = null;
+  let convertNumber = options.convertNumber || false;
+  let reifyArray = options.reifyArray || false;
+  let defaultGraph = options.defaultGraph || null;
+  HKEntity.prototype.foreachProperty.call(entity, (key, value, metaProperty) =>
+  {
+    let graphName = null;
 
-		if(entity.parent)
-        {
-            graphName = entity.parent;
-        }
-        else if(defaultGraph)
-        {
-            graphName = defaultGraph;
-        }
+    if (entity.parent)
+    {
+      graphName = entity.parent;
+    }
+    else if (defaultGraph)
+    {
+      graphName = defaultGraph;
+    }
 
-		if(value === null || value === undefined)
-		{
-			if(metaProperty !== null)
-			{
-				// Update only metaproperty
-				_addLiteral(entity, graph, key, null, metaProperty, graphName);
-			}
-			return;
-		}
+    if (value === null || value === undefined)
+    {
+      if (metaProperty !== null)
+      {
+        // Update only metaproperty
+        _addLiteral(entity, graph, key, null, metaProperty, graphName);
+      }
+      return;
+    }
 
-		if(options.convertOwl && options.owlSerializer.shouldConvertProperty(entity.id, key, value))
-		{
-			options.owlSerializer.convertProperty(entity.id, key, value, metaProperty, graphName);
-			return;
-		}
-        
-        if(reifyArray && Array.isArray(value))
-        {
-            let literal = Utils.createLiteralObject(JSON.stringify(value), null, hk.DATA_LIST_URI);
+    if (options.convertOwl && options.owlSerializer.shouldConvertProperty(entity.id, key, value))
+    {
+      options.owlSerializer.convertProperty(entity.id, key, value, metaProperty, graphName);
+      return;
+    }
 
-			graph.add(entity.id, key, literal, graphName);
-        }
-        // else 
-		if(Array.isArray(value))
+    if (reifyArray && Array.isArray(value))
+    {
+      let literal = Utils.createLiteralObject(JSON.stringify(value), null, hk.DATA_LIST_URI);
+
+      graph.add(entity.id, key, literal, graphName);
+    }
+    // else 
+    if (Array.isArray(value))
+    {
+      value = Array.from(new Set(value));
+      for (let i = 0; i < value.length; i++)
+      {
+        if (metaProperty)
         {
-			value = Array.from(new Set(value));
-            for(let i = 0; i < value.length; i++)
-            {
-                if(metaProperty)
-                {
-                    _addLiteral(entity, graph, key, value[i], metaProperty, graphName);
-                }
-                else
-                {
-                    let currentMetaProperty = Utils.getTypeIfNumberOrBoolean(value[i]);
-                    _addLiteral(entity, graph, key, value[i], currentMetaProperty, graphName);
-                }
-            }
+          _addLiteral(entity, graph, key, value[i], metaProperty, graphName);
         }
         else
         {
-            if(!metaProperty && convertNumber)
-            {
-                metaProperty = Utils.getTypeIfNumberOrBoolean(value);
-            }
-            _addLiteral(entity, graph, key, value, metaProperty, graphName);
+          let currentMetaProperty = Utils.getTypeIfNumberOrBoolean(value[i]);
+          _addLiteral(entity, graph, key, value[i], currentMetaProperty, graphName);
         }
-    });
+      }
+    }
+    else
+    {
+      if (!metaProperty && convertNumber)
+      {
+        metaProperty = Utils.getTypeIfNumberOrBoolean(value);
+      }
+      _addLiteral(entity, graph, key, value, metaProperty, graphName);
+    }
+  });
 }
 
 exports.serialize = serialize;

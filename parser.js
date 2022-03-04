@@ -2,45 +2,26 @@
  * Copyright (c) 2016-present, IBM Research
  * Licensed under The MIT License [see LICENSE for details]
  */
+
 "use strict";
 
-const HKLib = require("hklib");
-const Node = HKLib.Node;
-const Trail = HKLib.Trail;
-const Connector = HKLib.Connector;
-const Link = HKLib.Link;
-const Context = HKLib.Context;
-const VirtualContext = HKLib.VirtualContext;
-const ConnectorClass = HKLib.ConnectorClass;
-const Reference = HKLib.Reference;
-const RoleTypes = HKLib.RolesTypes;
+const { Node, Connector, Link, Context, Reference, ConnectorClass, RoleTypes } = require("hklib"); 
 
-const VIRTUAL_SOURCE_PROPERTY = HKLib.VIRTUAL_SOURCE_PROPERTY;
+const Constants = require("./constants");
+const Utils = require("./utils");
 
-const Constants 		= require("./constants");
-const Utils 			= require("./utils");
+const owl = require("./owl");
+const rdfs = require("./rdfs");
+const xml = require("./xmlschema");
+const hk = require("./hk");
 
-const owl 				= require("./owl");
-const rdfs 				= require("./rdfs");
-const xml 				= require("./xmlschema");
-const skos 				= require("./skos");
-const foaf 				= require("./foaf");
-const dcterms 			= require("./dcterms");
-const hk 				= require("./hk");
-
-const uuidv1 			= require('uuid/v1');
-
-
-// Sub Parsers
-const OWLParser = require("./simpleowlparser");
-const OWLTimeParser = require("./owltimeparser");
-const HKParser = require("./hkparser");
+const uuidv1 = require('uuid/v1');
 
 const RELATION_QUALIFIER_URIS = new Set();
 RELATION_QUALIFIER_URIS.add(owl.INVERSE_OF_URI);
 RELATION_QUALIFIER_URIS.add(rdfs.SUBPROPERTYOF_URI);
-const HK_NULL_URI = `<${Constants.HK_NULL}>`;
 
+const HK_NULL_URI = `<${Constants.HK_NULL}>`;
 
 const isUriOrBlankNode = Utils.isUriOrBlankNode;
 
@@ -53,9 +34,6 @@ const isUriOrBlankNode = Utils.isUriOrBlankNode;
  * @param {boolean} [options.namespaceContext] Contextualize entities based on their namespace.
  * @param {boolean} [options.subjectLabel] Set the subject role name `subject`
  * @param {boolean} [options.objectLabel] Set the object role name `object`
- * @param {boolean} [options.convertOwl] EXPERIMENTAL OWL rules. Default is false.
- * @param {boolean} [options.convertOwlTime] EXPERIMENTAL OWL Time rules. Default is false.
- * @param {boolean} [options.timeContext] Context for OWL Time entities and relationships, if convertOwlTime is true.
  * @param {boolean} [options.preserveBlankNodes] Preserve the blank node ids if true, otherwise replace it by a uuid inteded to be unique in the database. Default is false.
  * @param {boolean} [options.serialize] Serialize output, i. e. remove unnecessary methods and fields from the intances.
  * @param {boolean} [options.convertHK] If set, it will read the Hyperknowledge vocabulary and make special conversion. Default is true.
@@ -90,15 +68,9 @@ function parseGraph(graph, options)
 
 	const preserveBlankNodes = options.preserveBlankNodes || false;
 
-	let convertOwl = options.convertOwl || false;
-	
-	let convertOwlTime = options.convertOwlTime || false;
-
 	let setNodeContext = options.setNodeContext || false;
 
 	let rootContext = options.context;
-	
-	let timeContext = options.timeContext;
 
 	let convertHK = options.convertHK && true;
 
@@ -416,17 +388,6 @@ function _setPropertyFromLiteral(entity, p, o, entities, connectors, subjectLabe
 	let typeInfo = {};
 	let value = Utils.getValueFromLiteral(o, typeInfo, true);
 	let propertyName = Utils.getIdFromResource(p);
-
-  if(propertyName === VIRTUAL_SOURCE_PROPERTY)
-  {
-    const vContext = new VirtualContext(entity.id);
-    vContext.parent = entity.parent;
-    vContext.properties = entity.properties || {};
-    vContext.metaProperties = entity.metaProperties || {};
-    entity = vContext;
-    entities[entity.id] = entity;
-
-  }
 
 	if (typeInfo.lang)
 	{
