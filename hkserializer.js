@@ -7,6 +7,7 @@
 const HK = require("hklib");
 const HKTypes = HK.Types;
 const Link = HK.Link;
+const VirtualLink = HK.VirtualLink;
 const HKConstants = HK.Constants;
 
 
@@ -24,6 +25,7 @@ function HKSerializer(sharedGraph, options)
   this.contextResourceType = hk.CONTEXT_URI;
   this.virtualContextResourceType = hk.VIRTUAL_CONTEXT_URI;
   this.virtualNodeResourceType = hk.VIRTUAL_NODE_URI;
+  this.virtualLinkResourceType = hk.VIRTUAL_LINK_URI;
   this.connectorResourceType = hk.CONNECTOR_URI;
   this.linkResourceType = hk.LINK_URI;
   this.trailResourceType = hk.TRAIL_URI;
@@ -182,6 +184,50 @@ HKSerializer.prototype.serialize = function (entity)
         });
         break;
       }
+      case HKTypes.VIRTUAL_LINK:
+        {
+          let connectorUri = entity.connector;
+          if (!this.compressReification)
+          {
+            graph.add(entityUri, this.isAPredicate, this.virtualLinkResourceType, parentUri);
+          }
+          graph.add(entityUri, this.usesConnector, connectorUri, parentUri);
+  
+          let link = new VirtualLink(entity);
+  
+          // Reificate binds
+          link.forEachBind((role, comp, anchor) =>
+          {
+            let compNode = comp;
+  
+            if (Utils.isBlankNode(compNode))
+            {
+              compNode = Utils.createBlankNodeUri(compNode.substr(2));
+            }
+            if (!this.compressReification)
+            {
+              let bnode = `_:${uuid()}`;
+              let roleLiteral = Utils.createLiteralObject(role);
+              let anchorId = this.preserveAnchorIds ? anchor : Utils.createLiteralObject(anchor);
+              graph.add(entityUri, this.hasBind, bnode, parentUri);
+              graph.add(bnode, this.boundRole, roleLiteral, parentUri);
+              graph.add(bnode, this.boundComponent, compNode, parentUri);
+              graph.add(bnode, this.boundAnchor, anchorId, parentUri);
+            }
+            else
+            {
+              let roleUri = compressRoleInUri(role);
+              graph.add(entityUri, roleUri, compNode, parentUri);
+  
+              if (anchor !== HKConstants.LAMBDA)
+              {
+                let anchorId = this.preserveAnchorIds ? anchor : Utils.createLiteralObject(`${comp}#${anchor}`);
+                graph.add(entityUri, roleUri, anchorId, parentUri);
+              }
+            }
+          });
+          break;
+        }
     case HKTypes.NODE:
       {
         if (Utils.isBlankNode(entityUri))
