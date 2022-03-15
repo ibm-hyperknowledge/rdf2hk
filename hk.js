@@ -18,6 +18,7 @@ exports.REF_URI = '<http://research.ibm.com/ontologies/graph#ref>';
 exports.TRAIL_URI = '<http://research.ibm.com/ontologies/graph#trail>';
 exports.VIRTUAL_CONTEXT_URI = '<http://research.ibm.com/ontologies/graph#virtualcontext>';
 exports.VIRTUAL_NODE_URI = '<http://research.ibm.com/ontologies/graph#virtualnode>';
+exports.VIRTUAL_LINK_URI = '<http://research.ibm.com/ontologies/graph#virtuallink>';
 
 // exports.SUBGRAPH_OF_URI       = '<http://research.ibm.com/ontologies/graph#subGraphOf>';
 

@@ -19,6 +19,7 @@ const Link = HKLib.Link;
 const Context = HKLib.Context;
 const VirtualContext = HKLib.VirtualContext;
 const VirtualNode = HKLib.VirtualNode;
+const VirtualLink = HKLib.VirtualLink;
 const Reference = HKLib.Reference;
 const LAMBDA = HKLib.Constants.LAMBDA;
 
@@ -488,6 +489,11 @@ function _createEntities(s, p, o, g)
       case HKUris.VIRTUAL_NODE_URI:
         {
           entity = new VirtualNode();
+          break;
+        }
+      case HKUris.VIRTUAL_LINK_URI:
+        {
+          entity = new VirtualLink();
           break;
         }
       case HKUris.CONNECTOR_URI:
