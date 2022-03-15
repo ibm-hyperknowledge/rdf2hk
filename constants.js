@@ -23,6 +23,7 @@ exports.HK_NODE_PREFIX = `${exports.HK_PROTOCOL}://node`;
 
 exports.HK_VIRTUAL_NODE_PREFIX = `${exports.HK_PROTOCOL}://virtualnode`;
 exports.HK_VIRTUAL_CONTEXT_PREFIX = `${exports.HK_PROTOCOL}://virtualcontext`;
+exports.HK_VIRTUAL_LINK_PREFIX = `${exports.HK_PROTOCOL}://virtuallink`;
 
 exports.MIMETYPE_APPLICATION_TURTLE = "application/turtle";
 exports.MIMETYPE_TEXT_TURTLE = "text/turtle";
