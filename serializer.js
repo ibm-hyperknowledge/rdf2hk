@@ -87,7 +87,7 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
   }
 
   // Collect connectors, references and literal links
-  for (let k = entities.length; k--;)
+  for (let k in entities)
   {
     let entity = entities[k];
     if (entity.type === Connector.type)
@@ -116,7 +116,7 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
     }
   }
 
-  for (let k = entities.length; k--;)
+  for (let k in entities)
   {
     let entity = entities[k];
 
