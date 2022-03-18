@@ -169,4 +169,21 @@ RDFGraph.prototype.getEntitiesId = function ()
 	return result;
 }
 
+RDFGraph.prototype.suppressDuplicates = function()
+{
+	this.graph = this.graph.reduce((output, quad) =>
+	{
+		const key = JSON.stringify(quad);
+		if (output.keys.indexOf(key) === -1) {
+			output.values.push(quad);
+			output.keys.push(key);
+		}
+		return output;
+	}, 
+	{
+		keys: [],
+		values: []
+	}).values;
+}
+
 module.exports = RDFGraph;
