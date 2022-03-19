@@ -263,7 +263,7 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
     graph.add(triple.subject, triple.predicate, literal, triple.graph);
   }
 
-  if(suppressDuplicates && typeof graph.suppresDuplicates == 'function') graph.suppressDuplicates();
+  if(suppressDuplicates && typeof graph.suppressDuplicates == 'function') graph.suppressDuplicates();
   return graph;
 }
 
