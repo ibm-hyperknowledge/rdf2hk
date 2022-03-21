@@ -170,20 +170,15 @@ RDFGraph.prototype.getEntitiesId = function ()
 }
 
 RDFGraph.prototype.suppressDuplicates = function()
-{
-	this.graph = this.graph.reduce((output, quad) =>
-	{
-		const key = JSON.stringify(quad);
-		if (output.keys.indexOf(key) === -1) {
-			output.values.push(quad);
-			output.keys.push(key);
-		}
-		return output;
-	}, 
-	{
-		keys: [],
-		values: []
-	}).values;
+{	
+	const stringifyiedQuads = new Set();
+
+	this.graph = this.graph.filter((quad) => {
+		const stringifyedQuad = JSON.stringify(quad);
+		const isPresentInSet = stringifyiedQuads.has(stringifyedQuad);
+		stringifyiedQuads.add(stringifyedQuad);
+		return !isPresentInSet;
+	});
 }
 
 module.exports = RDFGraph;
