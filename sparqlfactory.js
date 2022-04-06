@@ -993,8 +993,7 @@ function _filterForBinds(builder, binds, connector = null, parent = undefined)
 		}
 		for (let role in binds) {
 			if (Array.isArray(binds[role])) {
-				builder.addValues("r", binds[role], true);
-
+				builder.filterIn("r", binds[role], true);
 				if (role === "*") {
 
 					builder.append(`?s ?anyRole ?r . `);
