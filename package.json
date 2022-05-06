@@ -1,6 +1,6 @@
 {
   "name": "rdf2hk",
-  "version": "1.8.6",
+  "version": "1.9.0",
   "description": "This library converts RDF to Hyperknowledge Description",
   "main": "index.js",
   "author": "IBM Research",
@@ -33,7 +33,7 @@
   "license": "MIT",
   "dependencies": {
     "@rdfjs/data-model": "^1.1.2",
-    "hklib": "^4.4.0",
+    "hklib": "^4.4.1",
     "md5.js": "^1.3.5",
     "n3": "^1.16.1",
     "ninja-util": "^1.2.3",
