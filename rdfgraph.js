@@ -13,6 +13,7 @@ function RDFGraph(storedGraph, baseUri, mimeType) {
 	this.graph = storedGraph || [];
 	this.baseUri = baseUri || Constants.HK_NULL;
 	this.mimeType = mimeType || "application/rdf+xml";
+	this.statementCounter = 0;
 }
 
 RDFGraph.prototype.add = function (s, p, o, g) {
@@ -27,6 +28,7 @@ RDFGraph.prototype.add = function (s, p, o, g) {
 	else {
 		this.graph.push(DataFactory.quad(s, p, o));
 	}
+	this.statementCounter++;
 
 };
 
@@ -55,6 +57,11 @@ RDFGraph.prototype.forEachStatement = function (callback) {
 		}
 	});
 };
+
+RDFGraph.prototype.graphSize = function (s = null, p = null, o = null, g = null)
+{
+	return this.statementCounter;	
+}
 
 function getValue (term, baseUri) {
 	if (term.termType === "NamedNode") {
@@ -167,6 +174,18 @@ RDFGraph.prototype.getEntitiesId = function ()
 	let result = [...new Set([...entitiesObjects, ...entitiesSubjects, ...entitiesGraphs])];
 
 	return result;
+}
+
+RDFGraph.prototype.suppressDuplicates = function()
+{	
+	const stringifyiedQuads = new Set();
+
+	this.graph = this.graph.filter((quad) => {
+		const stringifyedQuad = JSON.stringify(quad);
+		const isPresentInSet = stringifyiedQuads.has(stringifyedQuad);
+		stringifyiedQuads.add(stringifyedQuad);
+		return !isPresentInSet;
+	});
 }
 
 module.exports = RDFGraph;
