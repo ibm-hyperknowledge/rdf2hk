@@ -10,6 +10,7 @@ function JSONGraph(triples, mimeType = "application/json")
 {
 	this.triples = triples || [];
 	this.mimeType = mimeType;
+	this.statementCounter = 0;
 }
 
 JSONGraph.prototype.add = function (s, p, o, g) 
@@ -39,6 +40,7 @@ JSONGraph.prototype.add = function (s, p, o, g)
 	}
 
 	this.triples.push([s, p, o, g]);
+	this.statementCounter++;
 }
 
 JSONGraph.prototype.forEachStatement = function (callback)
@@ -87,6 +89,11 @@ JSONGraph.prototype.fromBGP = function (s = null, p = null, o = null, g = null)
 
 
 	return new JSONGraph(out, this.mimeType);
+}
+
+JSONGraph.prototype.graphSize = function ()
+{
+	return this.statementCounter;	
 }
 
 module.exports = JSONGraph;
