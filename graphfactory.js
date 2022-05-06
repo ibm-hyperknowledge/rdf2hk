@@ -9,8 +9,9 @@ const RDFGraph = require("./rdfgraph");
 const JSONGraph = require("./jsongraph"); 
 const Constants = require("./constants");
 
-let RDFSParser = require("rdfxml-streaming-parser");
-let N3 = require("n3");
+const RDFSParser = require("rdfxml-streaming-parser");
+const N3 = require("n3");
+const { Store, Parser, Writer } = N3;
 
 function createGraph(mimeType, store = false)
 {
@@ -121,8 +122,8 @@ function rdfStreamParse(inputData, mimeType, callback)
 
 function n3Parse(inputData, mimeType, callback)
 {
-	const parser = new N3.Parser();
-	let store = new N3.Store();
+	const parser = new Parser();
+	let store = new Store();
 
 	try 
 	{
@@ -154,9 +155,7 @@ function n3Serialize(aGraph, callback)
 	let graph = aGraph.graph
 	if (aGraph.store)
 	{
-		const writer = new N3.Writer({format: aGraph.mimeType});
-	
-
+		const writer = new Writer({format: aGraph.mimeType});
 		writer.addQuads(aGraph.graph.getQuads(null, null,null,null))
 
 		graph = writer;
@@ -164,6 +163,29 @@ function n3Serialize(aGraph, callback)
 
 	_end(graph, callback);
 	
+}
+
+function rdfXmlSerialize(aGraph, callback)
+{
+	let graph = aGraph.graph;
+	if (aGraph.store || Array.isArray(aGraph.graph))
+	{
+		const writer = new Writer({format: aGraph.mimeType});
+	
+		aGraph.graph.forEach ((statement) =>
+		{
+			if(statement)
+			{
+				writer.addQuad(statement);
+			}
+
+		});
+
+		graph = writer;
+	}
+
+	_end(graph, callback);
+
 }
 
 function _end(graphOrWriter, callback)
@@ -179,53 +201,6 @@ function _end(graphOrWriter, callback)
 			callback(err);
 		}
 	});
-}
-
-function rdfXmlSerialize(aGraph, callback)
-{
-	if (aGraph.store || Array.isArray(aGraph.graph))
-	{
-		const writer = new N3.Writer({format: aGraph.mimeType});
-	
-		aGraph.graph.forEach ((statement) =>
-		{
-			if(statement)
-			{
-				writer.addQuad(statement);
-			}
-
-		});
-
-		writer.end((err, data) =>
-		{
-			if(!err)
-			{
-				callback(null, data);
-			}
-			else
-			{
-				callback(err);
-			}
-			
-		});
-	}
-	else
-	{
-		// Graph is already a writer
-		aGraph.graph.end((err, data) =>
-		{
-			if(!err)
-			{
-				callback(null, data);
-			}
-			else
-			{
-				callback(err);
-			}
-		});
-
-	}
-	
 }
 
 exports.createGraph = createGraph;
