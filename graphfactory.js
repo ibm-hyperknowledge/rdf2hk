@@ -151,49 +151,34 @@ function n3Parse(inputData, mimeType, callback)
 
 function n3Serialize(aGraph, callback)
 {
+	let graph = aGraph.graph
 	if (aGraph.store)
 	{
 		const writer = new N3.Writer({format: aGraph.mimeType});
 	
-		aGraph.graph.forEach ((statement) =>
-		{
-			if(statement)
-			{
-				writer.addQuad(statement);
-			}
 
-		});
+		writer.addQuads(aGraph.graph.getQuads(null, null,null,null))
 
-		writer.end((err, data) =>
-		{
-			if(!err)
-			{
-				callback(null, data);
-			}
-			else
-			{
-				callback(err);
-			}
-			
-		});
+		graph = writer;
 	}
-	else
-	{
-		// Graph is already a writer
-		aGraph.graph.end((err, data) =>
-		{
-			if(!err)
-			{
-				callback(null, data);
-			}
-			else
-			{
-				callback(err);
-			}
-		});
 
-	}
+	_end(graph, callback);
 	
+}
+
+function _end(graphOrWriter, callback)
+{
+	graphOrWriter.end((err, data) =>
+	{
+		if(!err)
+		{
+			callback(null, data);
+		}
+		else
+		{
+			callback(err);
+		}
+	});
 }
 
 function rdfXmlSerialize(aGraph, callback)

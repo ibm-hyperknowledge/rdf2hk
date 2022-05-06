@@ -13,6 +13,7 @@ function RDFGraph(storedGraph, baseUri, mimeType) {
 	this.graph = storedGraph || [];
 	this.baseUri = baseUri || Constants.HK_NULL;
 	this.mimeType = mimeType || "application/rdf+xml";
+	this.statementCounter = 0;
 }
 
 RDFGraph.prototype.add = function (s, p, o, g) {
@@ -27,6 +28,7 @@ RDFGraph.prototype.add = function (s, p, o, g) {
 	else {
 		this.graph.push(DataFactory.quad(s, p, o));
 	}
+	this.statementCounter++;
 
 };
 
@@ -55,6 +57,11 @@ RDFGraph.prototype.forEachStatement = function (callback) {
 		}
 	});
 };
+
+RDFGraph.prototype.graphSize = function (s = null, p = null, o = null, g = null)
+{
+	return this.statementCounter;	
+}
 
 function getValue (term, baseUri) {
 	if (term.termType === "NamedNode") {
