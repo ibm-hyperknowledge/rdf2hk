@@ -670,7 +670,7 @@ function removeEntities (ids)
 
 	let builder = new SparqlBuilder();
 
-	builder.delete("GRAPH ?g {?s ?p ?o} . GRAPH ?g {?a ?b ?c} ");
+	builder.delete("GRAPH ?g {?s ?p ?o} . GRAPH ?g {?a ?b ?c} . GRAPH ?g_ref {?s ?p ?o} . ");
 
 	builder.where(() =>
 	{
@@ -729,8 +729,15 @@ function removeEntities (ids)
 		FILTER (bound(?ref_predicate_s) && bound(?ref_predicate_o))
 }
 ?p ?subject_role "s";
-		?object_role "o" .`);
-			builder.append(DEFAULT_GRAPH_PATTERN);
+   ?object_role "o" .
+{
+	${DEFAULT_GRAPH_PATTERN}
+}
+UNION
+{
+	GRAPH ?g_ref {?s ?p ?o}
+}`
+			);
 		});
 		
 	});
