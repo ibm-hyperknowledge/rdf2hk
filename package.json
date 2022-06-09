@@ -52,7 +52,7 @@
     "semantic web"
   ],
   "scripts": {
-    "tests": "mocha test/integration test/setup.json --timeout 360000"
+    "test": "mocha test test/setup.json --timeout 360000"
   },
   "devDependencies": {
     "chai": "^4.3.4",
