@@ -2,42 +2,26 @@
  * Copyright (c) 2016-present, IBM Research
  * Licensed under The MIT License [see LICENSE for details]
  */
+
 "use strict";
 
-const HKLib				= require("hklib");
-const Node 				= HKLib.Node;
-const Trail 			= HKLib.Trail;
-const Connector 		= HKLib.Connector;
-const Link 				= HKLib.Link;
-const Context 			= HKLib.Context;
-const ConnectorClass 	= HKLib.ConnectorClass;
-const Reference 		= HKLib.Reference;
-const RoleTypes 		= HKLib.RolesTypes;
+const { Node, Connector, Link, Context, Reference, ConnectorClass, RoleTypes } = require("hklib"); 
 
-const Constants 		= require("./constants");
-const Utils 			= require("./utils");
+const Constants = require("./constants");
+const Utils = require("./utils");
 
-const owl 				= require("./owl");
-const rdfs 				= require("./rdfs");
-const xml 				= require("./xmlschema");
-const skos 				= require("./skos");
-const foaf 				= require("./foaf");
-const dcterms 			= require("./dcterms");
-const hk 				= require("./hk");
+const owl = require("./owl");
+const rdfs = require("./rdfs");
+const xml = require("./xmlschema");
+const hk = require("./hk");
 
-const uuidv1 			= require('uuid/v1');
-
-
-// Sub Parsers
-const OWLParser = require("./simpleowlparser");
-const OWLTimeParser = require("./owltimeparser");
-const HKParser = require("./hkparser");
+const uuidv1 = require('uuid/v1');
 
 const RELATION_QUALIFIER_URIS = new Set();
 RELATION_QUALIFIER_URIS.add(owl.INVERSE_OF_URI);
 RELATION_QUALIFIER_URIS.add(rdfs.SUBPROPERTYOF_URI);
-const HK_NULL_URI = `<${Constants.HK_NULL}>`;
 
+const HK_NULL_URI = `<${Constants.HK_NULL}>`;
 
 const isUriOrBlankNode = Utils.isUriOrBlankNode;
 
@@ -52,6 +36,7 @@ const isUriOrBlankNode = Utils.isUriOrBlankNode;
  * @param {boolean} [options.objectLabel] Set the object role name `object`
  * @param {boolean} [options.convertOwl] EXPERIMENTAL OWL rules. Default is false.
  * @param {boolean} [options.convertOwlTime] EXPERIMENTAL OWL Time rules. Default is false.
+ * @param {boolean} [options.customRdfParser] Use the customizable parser. Default is false.
  * @param {boolean} [options.timeContext] Context for OWL Time entities and relationships, if convertOwlTime is true.
  * @param {boolean} [options.preserveBlankNodes] Preserve the blank node ids if true, otherwise replace it by a uuid inteded to be unique in the database. Default is false.
  * @param {boolean} [options.serialize] Serialize output, i. e. remove unnecessary methods and fields from the intances.
@@ -59,10 +44,15 @@ const isUriOrBlankNode = Utils.isUriOrBlankNode;
  * @param {boolean} [options.onlyHK] If set, it will ONLY read the Hyperknowledge vocabulary and convert those entities, this options override `convertHK`. Default is false.
  * @param {boolean} [options.textLiteralAsNode] If true, string literals will be converted to content nodes, which will be linked to subject using a link whose connector is the predicate.
  * @param {boolean} [options.textLiteralAsNodeEncoding] If 'property', textLiteralAsNode encoding will be made using node and link properties. If 'metaproperty' encoding will be made using node and link metaproperties. Default is 'metaproperty'.
- * @param {string}  [options.strategy] "pre-existing-context", "new-context" or "automatically"
+ * @param {string}  [options.strategy] "pre-existing-context", "new-context" or "automatically."
+ * @param {array}  [options.hierarchyConnectorIds] "List of predicates that should become hierarchy connectors."
+ * @param {object|undefined} [customizableOptions] A dictionary of customizable options while parsing.
+ * @param {array|undefined} [customizableOptions.contextualize] indicates the predicates that should create contexts based on the object.
+ * @param {string|undefined} [customizableOptions.contextualize.p] a predicate that should create a context relation.
+ * @param {string|undefined} [customizableOptions.contextualize.o] the object that should become a context. When undefined, it indicates that any object with that predicate should become context.
  */
 
-function parseGraph(graph, options)
+function parseGraph(graph, options, customizableOptions)
 {
 	if (typeof options === "boolean")
 	{
@@ -87,15 +77,9 @@ function parseGraph(graph, options)
 
 	const preserveBlankNodes = options.preserveBlankNodes || false;
 
-	let convertOwl = options.convertOwl || false;
-	
-	let convertOwlTime = options.convertOwlTime || false;
-
 	let setNodeContext = options.setNodeContext || false;
 
 	let rootContext = options.context;
-	
-	let timeContext = options.timeContext;
 
 	let convertHK = options.convertHK && true;
 
@@ -110,7 +94,7 @@ function parseGraph(graph, options)
 
 	const subjectLabel = options.subjectLabel || Constants.DEFAULT_SUBJECT_ROLE;
 	const objectLabel = options.objectLabel || Constants.DEFAULT_OBJECT_ROLE;
-	const hierarchyConnectorIDs = options.hierarchyConnectorIDs || [rdfs.TYPE_URI, rdfs.SUBCLASSOF_URI, rdfs.SUBPROPERTYOF_URI];
+	const hierarchyConnectorIds = options.hierarchyConnectorIds || [rdfs.TYPE_URI, rdfs.SUBCLASSOF_URI, rdfs.SUBPROPERTYOF_URI];
 
 	let entities = {};
 	let connectors = {};
@@ -122,12 +106,12 @@ function parseGraph(graph, options)
   const parsers = [];
   registeredParsers.forEach(parser => {
     try {
-      const instantiatedParser = new parser(entities, connectors, blankNodesMap, refNodesMap, options);
+      const instantiatedParser = new parser(entities, connectors, blankNodesMap, refNodesMap, options, customizableOptions);
       parsers.push(instantiatedParser);
       // console.log(`new instantiated parser ${instantiatedParser}`);
     }
     catch(err) {
-      console.error(`There was anrror while instatianting the parser ${parser}`);
+      console.error(`There was an error while instatianting the parser ${parser}`);
       throw err;
     }
   });
@@ -165,7 +149,7 @@ function parseGraph(graph, options)
 
     for (let i = 0; i < parsers.length; i++) {
       const parser = parsers[i];
-      if (parser.shouldConvert(s, p, o, parent)) {
+      if (parser.firstLoopShouldConvert(s, p, o, parent)) {
         let shouldContinue = parser.firstLoopCallback(s, p, o, parent);
         if (shouldContinue !== undefined && !shouldContinue) {
           return;
@@ -174,17 +158,21 @@ function parseGraph(graph, options)
     }
 
 		// Create connector?
-
 		if (Utils.isUri(p) && Utils.isUriOrBlankNode(o))
 		{
-			let connector = new Connector();
-			connector.id = Utils.getIdFromResource(p);
-			connector.className = hierarchyConnectorIDs.includes(p) ? ConnectorClass.HIERARCHY : ConnectorClass.FACTS;
-			connector.addRole(subjectLabel, RoleTypes.SUBJECT);
-			connector.addRole(objectLabel, RoleTypes.OBJECT);
-			connectors[connector.id] = connector;
-			entities[connector.id] = connector;
+			let connectorId = Utils.getIdFromResource(p);
+			if (!connectors.hasOwnProperty(connectorId))
+			{
+				let connector = new Connector();
+				connector.id = connectorId;
+				connector.className = hierarchyConnectorIds.includes(p) ? ConnectorClass.HIERARCHY : ConnectorClass.FACTS;
+				connector.addRole(subjectLabel, RoleTypes.SUBJECT);
+				connector.addRole(objectLabel, RoleTypes.OBJECT);
+				connectors[connectorId] = connector;
+				entities[connectorId] = connector;
+			}
 		}
+		
 
 		const isPreExistingContext = strategy === 'pre-existing-context' && parent === rootContext;
 		if (createContext && parent && parent !== HK_NULL_URI && !isPreExistingContext)
@@ -222,7 +210,7 @@ function parseGraph(graph, options)
 
     for(let i = 0; i < parsers.length; i++) {
       const parser = parsers[i];
-      if (parser.shouldConvert(s, p, o, parent)) {
+      if (parser.secondLoopShouldConvert(s, p, o, parent)) {
         let shouldContinue = parser.secondLoopCallback(s, p, o, parent);
         if (shouldContinue !== undefined && !shouldContinue) {
           return;
@@ -268,10 +256,11 @@ function parseGraph(graph, options)
 	graph.forEachStatement((s, p, o, g) =>
 	{
 		const parent = getParent(s, g);
+		const parentIdFromResource = Utils.getIdFromResource(parent);
 
     for(let i = 0; i < parsers.length; i++) {
       const parser = parsers[i];
-      if (parser.shouldConvert(s, p, o, parent)) {
+      if (parser.lastLoopShouldConvert(s, p, o, parent)) {
         let shouldContinue = parser.lastLoopCallback(s, p, o, parent);
         if (shouldContinue !== undefined && !shouldContinue) {
           return;
@@ -292,40 +281,61 @@ function parseGraph(graph, options)
 
 				for (let i = 0; i < roles.length; i++)
 				{
-					let r = roles[i];
+					let role = roles[i];
 
-					let roleType = connector.getRoleType(r);
+					let roleType = connector.getRoleType(role);
 					if (roleType === RoleTypes.SUBJECT || roleType === RoleTypes.CHILD)
 					{
 						let subjId = blankNodesMap.hasOwnProperty(s) ? blankNodesMap[s] : s;
 						subjId = Utils.getIdFromResource(subjId);
-						link.addBind(subjectLabel, subjId);
+
+						const node = entities[subjId];
+
+						if (node.parent === parentIdFromResource)
+						{
+							link.addBind(subjectLabel, subjId);
+						}
+						else
+						{
+							// must use the refnode in the relation
+							const refNodeId = Utils.createRefUri(s, parentIdFromResource);
+							link.addBind(subjectLabel, refNodeId);
+						}		
 					}
 					else if (roleType === RoleTypes.OBJECT || roleType === RoleTypes.PARENT)
 					{
 						let objId = blankNodesMap.hasOwnProperty(o) ? blankNodesMap[o] : o;
 						objId = Utils.getIdFromResource(objId);
-						link.addBind(objectLabel, objId);
+
+						const node = entities[objId];
+						if (node.parent === parentIdFromResource)
+						{
+							link.addBind(objectLabel, objId);
+						}
+						else
+						{
+							// must use the refnode in the relation
+							const refNodeId = Utils.createRefUri(o, parentIdFromResource);
+							link.addBind(objectLabel, refNodeId);
+						}	
 					}
 				}
 
-				// console.log(s, p, o);
 				link.id = Utils.createSpoUri(s, p, o, parent);
 
 				link.connector = connectorId;
 				if (g)
 				{
-					link.parent = Utils.getIdFromResource(parent);
+					link.parent = parentIdFromResource;
 				}
 				entities[link.id] = link;
 			}
 		}
 		else
 		{
-			// Set Entity properties
+			// Since it is a literal the it become a property
 
-			// Define the entity to bind the property
-			let node = null;
+			let entity = null;
 
 			// Get maped blank node
 			if (!preserveBlankNodes && blankNodesMap.hasOwnProperty(s))
@@ -334,36 +344,36 @@ function parseGraph(graph, options)
 			}
 			let subjectId = Utils.getIdFromResource(s);
 
-			if (!Utils.getIdFromResource(parent))
+			if (!parentIdFromResource)
 			{
-				node = entities[subjectId]; // we assume the entity must have been created
+				entity = entities[subjectId]; // we assume the entity must have been created
 			}
 			else
 			{
-				node = entities[subjectId] || null;
+				entity = entities[subjectId] || null;
 
-				if(node !== null)
+				if(entity !== null)
 				{
-					if (node.type !== Connector.type && node.parent !== Utils.getIdFromResource(parent))
+					if (entity.type !== Connector.type && entity.parent !==parentIdFromResource)
 					{
 						// The node already exists and it belongs to another context
 						// This assign will force to look for a reference node
-						node = null;
+						entity = null;
 					}
 				}
 
 				// Check if there is a reference to the resource
-				if (!node)
+				if (!entity)
 				{
 					let refId = Utils.createRefUri(s, parent);
 
-					node = entities[refId] || null;
+					entity = entities[refId] || null;
 				}
 			}
 
 			// If at this point the entity was not set
 			// create a reference to it
-			if (!node)
+			if (!entity)
 			{
 				if (onlyHK)
 				{
@@ -372,11 +382,11 @@ function parseGraph(graph, options)
 					// hyperknowledge entities
 					return;
 				}
-				node = createReference(s, parent);
+				entity = createReference(s, parent);
 			}
 
 			// Convert the literal
-			_setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel, objectLabel, textLiteralAsNode, textLiteralAsNodeEncoding);
+			_setPropertyFromLiteral(entity, p, o, entities, connectors, subjectLabel, objectLabel, textLiteralAsNode, textLiteralAsNodeEncoding);
 			
 		}
 
@@ -408,7 +418,7 @@ function parseGraph(graph, options)
 	return entities;
 }
 
-function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel, objectLabel, textLiteralAsNode = false, textLiteralAsNodeEncoding = 'property')
+function _setPropertyFromLiteral(entity, p, o, entities, connectors, subjectLabel, objectLabel, textLiteralAsNode = false, textLiteralAsNodeEncoding = 'property')
 {
 	let typeInfo = {};
 	let value = Utils.getValueFromLiteral(o, typeInfo, true);
@@ -426,7 +436,7 @@ function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel,
 		{
 			if (literalSlices[1] !== null)
 			{
-				node.setMetaProperty(Utils.getIdFromResource(p), Utils.getIdFromResource(literalSlices[1]));
+				entity.setMetaProperty(Utils.getIdFromResource(p), Utils.getIdFromResource(literalSlices[1]));
 			}
 			return;
 		}
@@ -439,11 +449,11 @@ function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel,
 			const predicateId = Utils.getIdFromResource(p);
 			if(textLiteralAsNodeEncoding === 'property')
 			{
-				node.setProperty(literalTypeId, predicateId);
+				entity.setProperty(literalTypeId, predicateId);
 			}
 			else if(textLiteralAsNodeEncoding === 'metaproperty')
 			{
-				node.setMetaProperty(literalTypeId, predicateId);
+				entity.setMetaProperty(literalTypeId, predicateId);
 			}
 			
 
@@ -451,7 +461,7 @@ function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel,
 			const contentNodeUri = Utils.createContentNodeUri(value);
 			if(!entities.hasOwnProperty(contentNodeUri))
 			{
-				const contentNode = new Node(contentNodeUri, node.parent);
+				const contentNode = new Node(contentNodeUri, entity.parent);
 				contentNode.setProperty('mimeType', 'plain/text');
 				contentNode.setProperty('data', value);
 				entities[contentNodeUri] = contentNode;
@@ -469,9 +479,9 @@ function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel,
 			}
 			
 			// create spo link between subject and content node
-			const linkUri = Utils.createSpoUri(node.id, p, value, node.parent);
-			const contentLink = new Link(linkUri, p, node.parent);
-			contentLink.addBind(subjectLabel, node.id);
+			const linkUri = Utils.createSpoUri(entity.id, p, value, entity.parent);
+			const contentLink = new Link(linkUri, p, entity.parent);
+			contentLink.addBind(subjectLabel, entity.id);
 			contentLink.addBind(objectLabel, contentNodeUri);
 			if(textLiteralAsNodeEncoding === 'property')
 			{
@@ -503,12 +513,12 @@ function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel,
 			}
 
 			// add reference to literal node within context, if needed
-			if(node.parent && node.parent !== "null" && node.parent !== HK_NULL_URI)
+			if(entity.parent && entity.parent !== "null" && entity.parent !== HK_NULL_URI)
 			{
-				const typeReferenceUri = Utils.createRefUri(literalTypeId, node.parent);
+				const typeReferenceUri = Utils.createRefUri(literalTypeId, entity.parent);
 				if(!entities.hasOwnProperty(typeReferenceUri))
 				{
-					typeNode = new Reference(typeReferenceUri, literalTypeId, node.parent);
+					typeNode = new Reference(typeReferenceUri, literalTypeId, entity.parent);
 					entities[typeReferenceUri] = typeNode;
 				}
 				else
@@ -518,8 +528,8 @@ function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel,
 			}
 
 			// create hierarchical link between content node and literal type
-			const typeLinkUri = Utils.createSpoUri(contentNodeUri, rdfs.TYPE_URI, hk.DATA_LITERAL_URI, node.parent);
-			const typeLink = new Link(typeLinkUri, rdfs.TYPE_URI, node.parent);
+			const typeLinkUri = Utils.createSpoUri(contentNodeUri, rdfs.TYPE_URI, hk.DATA_LITERAL_URI, entity.parent);
+			const typeLink = new Link(typeLinkUri, rdfs.TYPE_URI, entity.parent);
 			typeLink.addBind(subjectLabel, contentNodeUri);
 			typeLink.addBind(objectLabel, typeNode.id);
 			entities[typeLinkUri] = typeLink;
@@ -528,11 +538,11 @@ function _setPropertyFromLiteral(node, p, o, entities, connectors, subjectLabel,
 		}
 	}
 
-	node.setOrAppendToProperty(propertyName, value);
+	entity.setOrAppendToProperty(propertyName, value);
 
 	if (typeInfo.type && typeInfo.type !== xml.STRING_URI)
 	{
-		node.setMetaProperty(propertyName, Utils.getIdFromResource(typeInfo.type));
+		entity.setMetaProperty(propertyName, Utils.getIdFromResource(typeInfo.type));
 	}
 }
 

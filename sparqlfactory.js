@@ -8,15 +8,17 @@
  */
 "use strict";
 
-const Utils             = require("./utils");
-const Constants         = require("./constants");
-const HKUris           = require("./hk");
-const HKSerializer     = require("./hkserializer");
+const Utils = require("./utils");
+const Constants = require("./constants");
+const HKUris = require("./hk");
+const HKSerializer = require("./hkserializer");
 
-const HKTypes          = require("hklib").Types;
+const HKLib = require("hklib");
+const HKTypes = HKLib.Types;
+const { HIERARCHY } = HKLib.ConnectorClass;
 
-const SparqlBuilder    = require("./sparqlbuilder");
-const { HIERARCHY } = require("hklib/connectorclass");
+const SparqlBuilder = require("./sparqlbuilder");
+
 
 const ENTITY_ANCHORS        = ` ?s ${HKUris.HAS_ANCHOR_URI} ?a . GRAPH ?g {?a ?b ?c} `;
 const TRAIL_ACTIONS_TIMESTAMPS = ` ?s ?p ?o . GRAPH ?g { ?s ?p ?o } . FILTER (?p = ${HKUris.HAS_TIMESTAMP_URI})`;
@@ -28,15 +30,18 @@ const FILTER_HK = `FILTER ( ?p != ${HKUris.ISA_URI} &&
 		 ?p != ${HKUris.USES_CONNECTOR_URI} &&
 		 ?p != ${HKUris.CLASSNAME_URI} &&
 		 ?p != ${HKUris.REFERENCES_URI} &&
+		 ?p != ${HKUris.REFERENCED_BY_URI} &&
 		 ?p != ${HKUris.HAS_PARENT_URI} &&
 		 !STRSTARTS(STR(?p), "hkrole") &&
 		 ( isIRI(?o) || isBlank(?o) ||  datatype(?o) != ${HKUris.DATA_LIST_URI}))`
 
 const HKTypeUriMap = {};
 HKTypeUriMap[HKTypes.NODE] = HKUris.NODE_URI;
+HKTypeUriMap[HKTypes.VIRTUAL_NODE] = HKUris.VIRTUAL_NODE_URI;
 HKTypeUriMap[HKTypes.CONNECTOR] = HKUris.CONNECTOR_URI;
 HKTypeUriMap[HKTypes.LINK] = HKUris.LINK_URI;
 HKTypeUriMap[HKTypes.CONTEXT] = HKUris.CONTEXT_URI;
+HKTypeUriMap[HKTypes.VIRTUAL_CONTEXT] = HKUris.VIRTUAL_CONTEXT_URI;
 HKTypeUriMap[HKTypes.REFERENCE] = HKUris.REF_URI;
 HKTypeUriMap[HKTypes.TRAIL] = HKUris.TRAIL_URI;
 
@@ -56,6 +61,11 @@ function getAllEntitiesUncompressed ()
 	`;
 	// console.log(query);
 	return query;
+}
+
+function getHKTypeUriMap()
+{
+  return HKTypeUriMap;
 }
 
 function getAllEntities (sparqlType = "construct")
@@ -570,7 +580,15 @@ function updateTriples (changedEntities, changedParents)
 					{
 						let t = newTriples[i];
 
-						builder.append(`GRAPH ${t[3]} { ${t[0]} ${t[1]} ${t[2]} } . `);
+						if(t[2].includes('\n') || (t[2].indexOf("^^") > 0 && ((t[2].match(/"/g) || []).length - (t[2].match(/\\/g) || []).length) > 2))
+						{
+							builder.append(`GRAPH ${t[3]} { ${t[0]} ${t[1]} ${JSON.stringify(t[2])} } . `);
+						}
+						else
+						{
+							builder.append(`GRAPH ${t[3]} { ${t[0]} ${t[1]} ${t[2]} } . `);
+						}
+						
 					}
 				});
 			}
@@ -582,7 +600,14 @@ function updateTriples (changedEntities, changedParents)
 					{
 						let t = newTriples[i];
 
-						builder.append(`GRAPH ?g { ${t[0]} ${t[1]} ${t[2]} } . `);
+						if(t[2].includes('\n') || (t[2].indexOf("^^") > 0 && ((t[2].match(/"/g) || []).length - (t[2].match(/\\/g) || []).length) > 2))
+						{
+							builder.append(`GRAPH ?g { ${t[0]} ${t[1]} ${JSON.stringify(t[2])} } . `);
+						}
+						else
+						{
+							builder.append(`GRAPH ?g { ${t[0]} ${t[1]} ${t[2]} } . `);
+						}
 					}
 				});
 				builder.where(() =>
@@ -652,7 +677,7 @@ function removeEntities (ids)
 
 	let builder = new SparqlBuilder();
 
-	builder.delete("GRAPH ?g {?s ?p ?o} . GRAPH ?g {?a ?b ?c} ");
+	builder.delete("GRAPH ?g {?s ?p ?o} . GRAPH ?g {?a ?b ?c} . GRAPH ?g_ref {?s ?p ?o} . ");
 
 	builder.where(() =>
 	{
@@ -679,6 +704,48 @@ function removeEntities (ids)
 			// builder.optional(ENTITY_ANCHORS);
 		});
 
+		builder.appendUnion();
+
+		// removing triples where entities are predicates
+		builder.closure(() =>
+		{
+			builder.addValues("?l", ids);
+			builder.append(
+`graph ?g {
+	?l ?subject_role ?ref_s ;
+		?object_role ?ref_o ;
+		${HKUris.USES_CONNECTOR_URI} ?p .
+		OPTIONAL {
+			BIND(${HKUris.REFERENCES_URI} as ?ref_predicate_s)
+			?ref_s ${HKUris.REFERENCES_URI}? ?s .
+		}
+		OPTIONAL
+		{
+			BIND(${HKUris.REFERENCED_BY_URI} as ?ref_predicate_s)
+			?s ${HKUris.REFERENCED_BY_URI}? ?ref_s .
+		}
+		OPTIONAL{
+			BIND(${HKUris.REFERENCES_URI} as ?ref_predicate_o)
+			?ref_o ${HKUris.REFERENCES_URI}? ?o .
+		}
+		OPTIONAL
+		{
+			BIND(${HKUris.REFERENCED_BY_URI} as ?ref_predicate_o)
+			?o ${HKUris.REFERENCED_BY_URI}? ?ref_o .
+		}
+		FILTER (bound(?ref_predicate_s) && bound(?ref_predicate_o))
+}
+?p ?subject_role "s";
+   ?object_role "o" .
+{
+	${DEFAULT_GRAPH_PATTERN}
+}
+UNION
+{
+	GRAPH ?g_ref {?s ?p ?o}
+}`
+			);
+		});
 		
 	});
 
@@ -718,7 +785,7 @@ function getContextHierarchy (uris, targetTypes, sparqlType = "construct")
 	switch(sparqlType)
 	{
 		case "describe":
-			builder.describe(["?s ?o"]);
+			builder.describe(["?s"]);
 			break;
 		default :
 			builder.construct(() =>
@@ -859,7 +926,15 @@ function deleteTriples (bgp)
 
 			builder.closure( () =>
 			{
-				builder.append(`?s ${HKUris.REFERENCES_URI} ${bgp[0]} `);
+				let referencedNodeURI = bgp[0];
+				if(Utils.isBlankNode(referencedNodeURI))
+				{
+					builder.append(`${referencedNodeURI} ${HKUris.REFERENCED_BY_URI} ?s . `);
+				}
+				else
+				{
+					builder.append(`?s ${HKUris.REFERENCES_URI} ${referencedNodeURI} . `);
+				}
 				if(bgp[1] !== null)
 				{
 					builder.bindVar(bgp[1], "p");
@@ -938,8 +1013,7 @@ function _filterForBinds(builder, binds, connector = null, parent = undefined)
 		}
 		for (let role in binds) {
 			if (Array.isArray(binds[role])) {
-				builder.addValues("r", binds[role], true);
-
+				builder.filterIn("r", binds[role], true);
 				if (role === "*") {
 
 					builder.append(`?s ?anyRole ?r . `);
@@ -948,16 +1022,34 @@ function _filterForBinds(builder, binds, connector = null, parent = undefined)
 				else {
 					let uri = HKSerializer.compressRoleInUri(role);
 					// builder.append(`?s ${HKUris.USES_CONNECTOR_URI} ?conn . `);
+					let referencedNodeURI = _convertToUri(binds[role]);
 					if(includeReferences)
 					{
 						builder.closure(() => {
-							builder.append(`?s ${uri}/${HKUris.REFERENCES_URI}? ${_convertToUri(binds[role])} . `);	
+							if(Utils.isBlankNode(referencedNodeURI))
+							{
+								builder.append(`${referencedNodeURI} ${uri}/${HKUris.REFERENCED_BY_URI}?  ?s . `);	
+							}
+							else
+							{
+								builder.append(`?s ${uri}/${HKUris.REFERENCES_URI}? ${referencedNodeURI} . `);	
+							}							
 						});
 						builder.appendUnion();
 						builder.closure(() =>
 						{
-							builder.append(`?s ${uri}/${HKUris.REFERENCES_URI}? ?referredNode . `);	
-							builder.append(`?referredNode ?isa ${_convertToUri(binds[role])} .`);
+							builder.append(`
+							OPTIONAL { 
+								BIND (${HKUris.REFERENCES_URI} as ?ref_predicate)
+								?s ${uri}/${HKUris.REFERENCES_URI}? ?referredNode . 
+							}`);	
+							builder.append(`
+							OPTIONAL { 
+							BIND (${HKUris.REFERENCED_BY_URI} as ?ref_predicate)
+								?referredNode ${uri}/${HKUris.REFERENCED_BY_URI}? ?s . 
+							}`);	
+							builder.append(`FILTER (bound(?ref_predicate))`);
+							builder.append(`?referredNode ?isa ${referencedNodeURI} .`);
 							builder.append(`?s ${HKUris.USES_CONNECTOR_URI} ?connector2 .`);
 							builder.append(`?connector2 ${HKUris.CLASSNAME_URI} "${HIERARCHY}" .`);
 						});
@@ -982,16 +1074,33 @@ function _filterForBinds(builder, binds, connector = null, parent = undefined)
 				else {
 					let uri = HKSerializer.compressRoleInUri(role);
 					// builder.append(`?s ${HKUris.USES_CONNECTOR_URI} ?conn . `);
+					let referencedNodeURI = _convertToUri(binds[role]);
 					if(includeReferences)
 					{
 						builder.closure(() => {
-							builder.append(`?s ${uri}/${HKUris.REFERENCES_URI}? ${_convertToUri(binds[role])} . `);	
+							if(Utils.isBlankNode(referencedNodeURI))
+							{
+								builder.append(`${referencedNodeURI} ${uri}/${HKUris.REFERENCED_BY_URI}? ?s . `);	
+							}
+							else
+							{
+								builder.append(`?s ${uri}/${HKUris.REFERENCES_URI}? ${referencedNodeURI} . `);	
+							}
 						});
 						builder.appendUnion();
 						builder.closure(() =>
 						{
-							builder.append(`?s ${uri}/${HKUris.REFERENCES_URI}? ?referredNode . `);	
-							builder.append(`?referredNode ?isa ${_convertToUri(binds[role])} .`);
+							builder.append(`
+							OPTIONAL { 
+							BIND (${HKUris.REFERENCES_URI} as ?ref_predicate)
+								?s ${uri}/${HKUris.REFERENCES_URI}? ?referredNode . 
+							}`);	
+							builder.append(`OPTIONAL { 
+								BIND (${HKUris.REFERENCED_BY_URI} as ?ref_predicate)
+								?referredNode ${uri}/${HKUris.REFERENCED_BY_URI}? ?s . 
+							}`);	
+							builder.append(`FILTER (bound(?ref_predicate))`);
+							builder.append(`?referredNode ?isa ${referencedNodeURI} .`);
 							builder.append(`?s ${HKUris.USES_CONNECTOR_URI} ?connector2 .`);
 							builder.append(`?connector2 ${HKUris.CLASSNAME_URI} "${HIERARCHY}" .`);
 						});
@@ -1001,7 +1110,7 @@ function _filterForBinds(builder, binds, connector = null, parent = undefined)
 					}
 					else
 					{
-						builder.append(`?s ${uri} ${_convertToUri(binds[role])} . `);
+						builder.append(`?s ${uri} ${referencedNodeURI} . `);
 					}
 				}
 			}
@@ -1056,7 +1165,17 @@ function _filterForBinds(builder, binds, connector = null, parent = undefined)
 			{
 				filterForRole(true);
 				filterForConnector(false);
-				builder.append(`GRAPH ?g { ?ref ${HKUris.REFERENCES_URI} ?node }.`);
+				builder.append(`GRAPH ?g { 
+					OPTIONAL { 
+					  BIND (${HKUris.REFERENCES_URI} as ?ref_predicate)
+						?ref ${HKUris.REFERENCES_URI} ?node . 
+					}
+					OPTIONAL { 
+						BIND (${HKUris.REFERENCED_BY_URI} as ?ref_predicate)
+						?node ${HKUris.REFERENCED_BY_URI} ?ref . 
+					}
+					FILTER (bound(?ref_predicate))
+				} .`);
 			});
 			_filterForParent(builder, parent);
 		}
@@ -1097,10 +1216,19 @@ function appendUnionFilters(builder, andFilters, idVar = "s")
 				}
 				case "ref":
 				{
+					let referencedNodeURI = _convertToUri(constraintValue);
 					if(Array.isArray(constraintValue))
 					{
 						builder.addValues("r", constraintValue, true);
-						builder.append(`?s ${HKUris.REFERENCES_URI} ?r .`);
+						builder.append(`
+						{ 
+							?s ${HKUris.REFERENCES_URI} ?r . 
+						}`);
+						builder.appendUnion();
+						builder.append(`
+						{ 
+							?r ${HKUris.REFERENCED_BY_URI} ?s. 
+						}`);
 					}
 					else if(constraint.parent)
 					{
@@ -1109,7 +1237,14 @@ function appendUnionFilters(builder, andFilters, idVar = "s")
 							builder.append('GRAPH ?g');
 							builder.closure(() => 
 							{
-								builder.append(`?s ${HKUris.REFERENCES_URI} ${_convertToUri(constraint[k])} .`)
+								if(Utils.isBlankNode(referencedNodeURI))
+								{
+									builder.append(`${referencedNodeURI} ${HKUris.REFERENCED_BY_URI} ?s . `);
+								}
+								else
+								{
+									builder.append(`?s ${HKUris.REFERENCES_URI} ${referencedNodeURI} . `);
+								}
 								builder.append(`?s ?p ?o .`);
 							});
 						});	
@@ -1119,8 +1254,18 @@ function appendUnionFilters(builder, andFilters, idVar = "s")
 						builder.closure(() => 
 						{
 							builder.append('GRAPH ?g');
-							builder.closure(() => builder.append(`?s ${HKUris.REFERENCES_URI} ?referedNode .`));
-							builder.append(`?referedNode ?isa ${_convertToUri(constraint[k])} .`);
+							builder.closure(() => {
+								builder.append(`
+								{ 
+									BIND(${HKUris.REFERENCES_URI} as ?ref_predicate)
+									?s ${HKUris.REFERENCES_URI} ?referedNode . 
+								}`);
+								builder.append(`UNION { 
+									BIND(${HKUris.REFERENCED_BY_URI} as ?ref_predicate)
+									?referedNode ${HKUris.REFERENCED_BY_URI} ?s . 
+								}`);
+							});
+							builder.append(`?referedNode ?isa ${_convertToUri(referencedNodeURI)} .`);
 							builder.append(`?isa ${HKUris.CLASSNAME_URI} "${HIERARCHY}" .`);
 						});
 
@@ -1128,12 +1273,28 @@ function appendUnionFilters(builder, andFilters, idVar = "s")
 
 						builder.closure(() => 
 						{
-							builder.append(`?ref ${HKUris.REFERENCES_URI} ?referedNode .`);
+							builder.append(`
+							OPTIONAL { 
+								BIND(${HKUris.REFERENCES_URI} as ?ref_predicate)
+								?ref ${HKUris.REFERENCES_URI} ?referedNode . 
+							}`);
+							builder.append(`OPTIONAL { 
+								BIND(${HKUris.REFERENCED_BY_URI} as ?ref_predicate)
+								?referedNode ${HKUris.REFERENCED_BY_URI} ?ref . 
+							}`);
+							builder.append(`FILTER (bound(?ref_predicate))`);
 							builder.append('GRAPH ?gref');
 							builder.closure(() =>
 							{
 								builder.append(`?referedNode ?isa ${_convertToUri(constraint[k])}  .`);
-								builder.append(`?s ${HKUris.REFERENCES_URI} ${_convertToUri(constraint[k])} .`);
+								if(Utils.isBlankNode(referencedNodeURI))
+								{
+									builder.append(`${referencedNodeURI} ${HKUris.REFERENCED_BY_URI} ?s . `);
+								}
+								else
+								{
+									builder.append(`?s ${HKUris.REFERENCES_URI} ${referencedNodeURI} . `);
+								}
 								builder.append(`?s ?p ?o .`);
 							});
 							builder.append(`?isa ${HKUris.CLASSNAME_URI} "${HIERARCHY}" .`);
@@ -1142,7 +1303,15 @@ function appendUnionFilters(builder, andFilters, idVar = "s")
 					}
 					else
 					{
-						builder.append(`?s ${HKUris.REFERENCES_URI} ${_convertToUri(constraint[k])} .`);
+						if(Utils.isBlankNode(referencedNodeURI))
+						{
+							builder.append(`${referencedNodeURI} ${HKUris.REFERENCED_BY_URI} ?s . `);
+						}
+						else
+						{
+							builder.append(`?s ${HKUris.REFERENCES_URI} ${referencedNodeURI} . `);
+						}
+						builder.append(`GRAPH ?g {?s ?p ?o} .`);
 					}
 					break;
 				}
@@ -1344,6 +1513,10 @@ function _filterForType(type, idVar = "s")
 		{
 			return `?${idVar} ${HKUris.ISA_URI} ${HKUris.NODE_URI} . `;
 		}
+    case HKTypes.VIRTUAL_NODE:
+		{
+			return `?${idVar} ${HKUris.ISA_URI} ${HKUris.VIRTUAL_NODE_URI} . `;
+		}
 		case HKTypes.CONNECTOR:
 		{
 			return `?s ${HKUris.ISA_URI} ${HKUris.CONNECTOR_URI} . `;
@@ -1351,6 +1524,10 @@ function _filterForType(type, idVar = "s")
 		case HKTypes.CONTEXT:
 		{
 			return `?${idVar} ${HKUris.ISA_URI} ${HKUris.CONTEXT_URI} . `;
+		}
+		case HKTypes.VIRTUAL_CONTEXT:
+		{
+			return `?${idVar} ${HKUris.ISA_URI} ${HKUris.VIRTUAL_CONTEXT_URI} . `;
 		}
 		case HKTypes.TRAIL:
 		{
@@ -1437,6 +1614,7 @@ exports.getAllEntitiesLazy = getAllEntitiesLazy;
 exports.getRdf = getRdf;
 exports.getAllEntitiesUncompressed = getAllEntitiesUncompressed;
 exports.getEntities = getEntities;
+exports.getHKTypeUriMap = getHKTypeUriMap;
 exports.removeEntities = removeEntities;
 exports.removeAllEntities = removeAllEntities;
 exports.filterEntities = filterEntities;

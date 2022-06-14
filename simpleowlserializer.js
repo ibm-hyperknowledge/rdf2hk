@@ -13,6 +13,9 @@ const Utils = require("./utils");
 let owlVocabulary = new Set(Object.values(owl));
 owlVocabulary.add(rdfs.DOMAIN_URI);
 owlVocabulary.add(rdfs.RANGE_URI);
+owlVocabulary.add(rdfs.SUBPROPERTYOF_URI);
+owlVocabulary.add(owl.EQUIVALENT_PROPERTY_URI);
+
 
 class SimpleOwlSerializer
 {

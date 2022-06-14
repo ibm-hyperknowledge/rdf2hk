@@ -9,8 +9,9 @@ const RDFGraph = require("./rdfgraph");
 const JSONGraph = require("./jsongraph"); 
 const Constants = require("./constants");
 
-let RDFSParser = require("rdfxml-streaming-parser");
-let N3 = require("n3");
+const RDFSParser = require("rdfxml-streaming-parser");
+const N3 = require("n3");
+const { Store, Parser, Writer } = N3;
 
 function createGraph(mimeType, store = false)
 {
@@ -89,6 +90,9 @@ function serializeGraph(aGraph, callback)
 		case "text/turtle":
 			n3Serialize(aGraph, callback);
 			break;
+		case "application/rdf+xml":
+			rdfXmlSerialize(aGraph, callback);
+			break;
 		default:
 			callback(`The mimeType ${mimeType} is not currently supported for serialization.`);
 	}
@@ -118,8 +122,8 @@ function rdfStreamParse(inputData, mimeType, callback)
 
 function n3Parse(inputData, mimeType, callback)
 {
-	const parser = new N3.Parser();
-	let store = new N3.Store();
+	const parser = new Parser();
+	let store = new Store();
 
 	try 
 	{
@@ -148,9 +152,25 @@ function n3Parse(inputData, mimeType, callback)
 
 function n3Serialize(aGraph, callback)
 {
+	let graph = aGraph.graph
 	if (aGraph.store)
 	{
-		const writer = new N3.Writer({format: aGraph.mimeType});
+		const writer = new Writer({format: aGraph.mimeType});
+		writer.addQuads(aGraph.graph.getQuads(null, null,null,null))
+
+		graph = writer;
+	}
+
+	_end(graph, callback);
+	
+}
+
+function rdfXmlSerialize(aGraph, callback)
+{
+	let graph = aGraph.graph;
+	if (aGraph.store || Array.isArray(aGraph.graph))
+	{
+		const writer = new Writer({format: aGraph.mimeType});
 	
 		aGraph.graph.forEach ((statement) =>
 		{
@@ -161,36 +181,26 @@ function n3Serialize(aGraph, callback)
 
 		});
 
-		writer.end((err, data) =>
-		{
-			if(!err)
-			{
-				callback(null, data);
-			}
-			else
-			{
-				callback(err);
-			}
-			
-		});
+		graph = writer;
 	}
-	else
-	{
-		// Graph is already a writer
-		aGraph.graph.end((err, data) =>
-		{
-			if(!err)
-			{
-				callback(null, data);
-			}
-			else
-			{
-				callback(err);
-			}
-		});
 
-	}
-	
+	_end(graph, callback);
+
+}
+
+function _end(graphOrWriter, callback)
+{
+	graphOrWriter.end((err, data) =>
+	{
+		if(!err)
+		{
+			callback(null, data);
+		}
+		else
+		{
+			callback(err);
+		}
+	});
 }
 
 exports.createGraph = createGraph;

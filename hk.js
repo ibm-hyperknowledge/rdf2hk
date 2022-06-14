@@ -2,41 +2,45 @@
  * Copyright (c) 2016-present, IBM Research
  * Licensed under The MIT License [see LICENSE for details]
  */
+
 "use strict";
 
 
 // Constants
-exports.BODY_URI          = '<http://research.ibm.com/ontologies/graph#body>';
+exports.BODY_URI = '<http://research.ibm.com/ontologies/graph#body>';
 
 // Entity types
-exports.CONNECTOR_URI     = '<http://research.ibm.com/ontologies/graph#connector>';
-exports.CONTEXT_URI       = '<http://research.ibm.com/ontologies/graph#context>';
-exports.NODE_URI          = '<http://research.ibm.com/ontologies/graph#node>';
-exports.LINK_URI          = '<http://research.ibm.com/ontologies/graph#link>';
-exports.REF_URI           = '<http://research.ibm.com/ontologies/graph#ref>';
-exports.TRAIL_URI         = '<http://research.ibm.com/ontologies/graph#trail>';
-// exports.ACTION_URI         = '<http://research.ibm.com/ontologies/graph#action>';
+exports.CONNECTOR_URI = '<http://research.ibm.com/ontologies/graph#connector>';
+exports.CONTEXT_URI = '<http://research.ibm.com/ontologies/graph#context>';
+exports.NODE_URI = '<http://research.ibm.com/ontologies/graph#node>';
+exports.LINK_URI = '<http://research.ibm.com/ontologies/graph#link>';
+exports.REF_URI = '<http://research.ibm.com/ontologies/graph#ref>';
+exports.TRAIL_URI = '<http://research.ibm.com/ontologies/graph#trail>';
+exports.VIRTUAL_CONTEXT_URI = '<http://research.ibm.com/ontologies/graph#virtualcontext>';
+exports.VIRTUAL_NODE_URI = '<http://research.ibm.com/ontologies/graph#virtualnode>';
+exports.VIRTUAL_LINK_URI = '<http://research.ibm.com/ontologies/graph#virtuallink>';
 
 // exports.SUBGRAPH_OF_URI       = '<http://research.ibm.com/ontologies/graph#subGraphOf>';
 
 // Intrinsecs properties
-exports.BOUND_COMPONENT_URI   = '<http://research.ibm.com/ontologies/graph#boundComponent>';
-exports.BOUND_ANCHOR_URI      = '<http://research.ibm.com/ontologies/graph#boundAnchor>';
-exports.BOUND_ROLE_URI        = '<http://research.ibm.com/ontologies/graph#boundRole>';
-exports.CLASSNAME_URI         = '<http://research.ibm.com/ontologies/graph#className>';
-exports.HAS_ROLE_URI          = '<http://research.ibm.com/ontologies/graph#hasRole>';
-exports.HAS_ROLE_NAME_URI     = '<http://research.ibm.com/ontologies/graph#hasRoleName>';
-exports.HAS_ROLE_TYPE_URI     = '<http://research.ibm.com/ontologies/graph#hasRoleType>';
-exports.HAS_BIND_URI          = '<http://research.ibm.com/ontologies/graph#hasBind>';
-exports.HAS_PARENT_URI        = '<http://research.ibm.com/ontologies/graph#hasParent>';
-exports.ISA_URI               = '<http://research.ibm.com/ontologies/graph#isa>';
-exports.REFERENCES_URI        = '<http://research.ibm.com/ontologies/graph#references>';
-exports.USES_CONNECTOR_URI    = '<http://research.ibm.com/ontologies/graph#usesConnector>';
-exports.HAS_BLANK_ID_URI      = '<http://research.ibm.com/ontologies/graph#hasBlankId>';
+exports.BOUND_COMPONENT_URI = '<http://research.ibm.com/ontologies/graph#boundComponent>';
+exports.BOUND_ANCHOR_URI = '<http://research.ibm.com/ontologies/graph#boundAnchor>';
+exports.BOUND_ROLE_URI = '<http://research.ibm.com/ontologies/graph#boundRole>';
+exports.CLASSNAME_URI = '<http://research.ibm.com/ontologies/graph#className>';
+exports.HAS_ROLE_URI = '<http://research.ibm.com/ontologies/graph#hasRole>';
+exports.HAS_ROLE_NAME_URI = '<http://research.ibm.com/ontologies/graph#hasRoleName>';
+exports.HAS_ROLE_TYPE_URI = '<http://research.ibm.com/ontologies/graph#hasRoleType>';
+exports.HAS_BIND_URI = '<http://research.ibm.com/ontologies/graph#hasBind>';
+exports.HAS_PARENT_URI = '<http://research.ibm.com/ontologies/graph#hasParent>';
+exports.ISA_URI = '<http://research.ibm.com/ontologies/graph#isa>';
+exports.REFERENCES_URI = '<http://research.ibm.com/ontologies/graph#references>';
+exports.REFERENCED_BY_URI = '<http://research.ibm.com/ontologies/graph#referencedBy>';
+exports.USES_CONNECTOR_URI = '<http://research.ibm.com/ontologies/graph#usesConnector>';
+exports.HAS_BLANK_ID_URI = '<http://research.ibm.com/ontologies/graph#hasBlankId>';
 
-exports.HAS_ANCHOR_URI        = '<http://research.ibm.com/ontologies/graph#hasAnchor>';
-exports.ANCHOR_KEY_URI        = '<http://research.ibm.com/ontologies/graph#anchorKey>';
-exports.ANCHOR_TYPE_URI       = '<http://research.ibm.com/ontologies/graph#anchorType>';
+exports.HAS_ANCHOR_URI = '<http://research.ibm.com/ontologies/graph#hasAnchor>';
+exports.ANCHOR_KEY_URI = '<http://research.ibm.com/ontologies/graph#anchorKey>';
+exports.ANCHOR_TYPE_URI = '<http://research.ibm.com/ontologies/graph#anchorType>';
 
 // Trails
 exports.AGENT_URI                 = '<http://research.ibm.com/ontologies/trail#agent>';
@@ -50,9 +54,9 @@ exports.TRAIL_BASE_URI            = 'http://research.ibm.com/ontologies/trail';
 
 
 // List
-exports.LIST_ENTRY_URI        = '<http://research.ibm.com/ontologies/graph#listCurrent>';
-exports.LIST_NEXT_URI         = '<http://research.ibm.com/ontologies/graph#listNext>';
+exports.LIST_ENTRY_URI = '<http://research.ibm.com/ontologies/graph#listCurrent>';
+exports.LIST_NEXT_URI = '<http://research.ibm.com/ontologies/graph#listNext>';
 
 
-exports.DATA_LIST_URI         = '<http://research.ibm.com/ontologies/data#list>';
-exports.DATA_LITERAL_URI      = '<http://research.ibm.com/ontologies/data#Literal>';
+exports.DATA_LIST_URI = '<http://research.ibm.com/ontologies/data#list>';
+exports.DATA_LITERAL_URI = '<http://research.ibm.com/ontologies/data#Literal>';

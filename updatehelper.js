@@ -12,7 +12,7 @@ const Utils = require("./utils");
 const Serializer = require("./serializer");
 const GraphFactory = require("./graphfactory");
 const HK = require("./hk");
-const Types = require("hklib/types");
+const HKTypes = require("hklib").Types;
 
 function serializeToUpdate(entities, oldEntities, conversionOptions)
 {
@@ -83,17 +83,17 @@ function _convertEntityToTriples(entity, conversionOptions, interfacesToUpdate, 
 		metaProperties: entity.metaProperties || {},
 		interfaces: interfacesToUpdate};
 
-	if(entity.type === Types.REFERENCE)
+	if(entity.type === HKTypes.REFERENCE)
 	{
-		obj.type = Types.REFERENCE;
+		obj.type = HKTypes.REFERENCE;
 		obj.ref = entity.ref;
 	}
 
-	if(entity.type === Types.CONNECTOR)
+	if(entity.type === HKTypes.CONNECTOR)
 	{
 		propertiesSet.add(HK.CLASSNAME_URI);
 		obj.className = entity.className;
-        	obj.type = Types.CONNECTOR;
+        	obj.type = HKTypes.CONNECTOR;
         	obj.roles = entity.roles;
         
 	}

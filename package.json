@@ -1,45 +1,61 @@
 {
-	"name": "rdf2hk",
-	"version": "1.5.11",
-	"description": "This library converts RDF to Hyperknowledge Description",
-	"main": "index.js",
-	"author": "IBM Research",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/ibm-hyperknowledge/rdf2hk"
-	},
-	"contributors": [
-		{
-			"name": "Marcelo Machado",
-			"email": "marcelo.machado@ibm.com"
-		},
-		{
-			"name": "Marcio Moreno",
-			"email": "mmoreno@br.ibm.com"
-		},
-		{
-			"name": "Rodrigo Costa",
-			"email": "rodrigo.costa@ibm.com"
-		},
-		{
-			"name": "Wallas Santos",
-			"email": "wallas.sousa@ibm.com"
-		},
-		{
-			"name": "Elton Soares",
-			"email": "eltons@ibm.com"
-		}
-	],
-	"license": "MIT",
-	"dependencies": {
-		"@rdfjs/data-model": "^1.1.2",
-		"hklib": "^2.1.2",
-		"md5.js": "^1.3.5",
-		"n3": "^1.8.0",
-		"ninja-util": "^1.1.0",
-		"punycode": "^2.1.1",
-		"rdfxml-streaming-parser": "^1.3.2",
-		"sparqljs": "^3.4.2",
-		"uuid": "^3.1.0"
-	}
+  "name": "rdf2hk",
+  "version": "1.9.1",
+  "description": "This library converts RDF to Hyperknowledge Description",
+  "main": "index.js",
+  "author": "IBM Research",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ibm-hyperknowledge/rdf2hk"
+  },
+  "contributors": [
+    {
+      "name": "Marcelo Machado",
+      "email": "mmachado@ibm.com"
+    },
+    {
+      "name": "Marcio Moreno",
+      "email": "mmoreno@br.ibm.com"
+    },
+    {
+      "name": "Rodrigo Costa",
+      "email": "rodrigo.costa@ibm.com"
+    },
+    {
+      "name": "Wallas Santos",
+      "email": "wallas.sousa@ibm.com"
+    },
+    {
+      "name": "Elton Soares",
+      "email": "eltons@ibm.com"
+    }
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@rdfjs/data-model": "^1.1.2",
+    "hklib": "^4.4.1",
+    "md5.js": "^1.3.5",
+    "n3": "^1.16.1",
+    "ninja-util": "^1.2.3",
+    "punycode": "^2.1.1",
+    "rdfxml-streaming-parser": "^1.3.2",
+    "sparqljs": "^3.4.3",
+    "uuid": "^3.1.0"
+  },
+  "keywords": [
+    "hyperknowledge",
+    "hk",
+    "hyperlinkedgraph",
+    "rdf",
+    "owl",
+    "turtle",
+    "semantic web"
+  ],
+  "scripts": {
+    "test": "mocha test test/setup.json --timeout 360000"
+  },
+  "devDependencies": {
+    "chai": "^4.3.4",
+    "mocha": "^9.1.3"
+  }
 }

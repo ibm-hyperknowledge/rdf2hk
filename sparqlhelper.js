@@ -9,6 +9,7 @@
 "use strict";
 
 
+const { NamedNode } = require("n3");
 const SparqlJS = require("sparqljs");
 
 const BOOLEAN_XSD_URI = "http://www.w3.org/2001/XMLSchema#boolean";
@@ -281,56 +282,6 @@ function setHKFiltered(query)
 			query.where = query.where.concat(filteredQueryObject.where);
 		}
 
-		/**
-		 * Workaround to remove brackets that are automatically added by sparqljs lib in the group by clause.
-		 * This is necessary because triplestores such as Allegrograph do not support queries with round brackets in the group by clause.
-		 * E.g.: from group by (?x) to group by ?x 
-		 * 
-		 * Remove this workaround in case the issue #127 (https://github.com/RubenVerborgh/SPARQL.js/issues/127) is solved.
-		 */
-
-		let groupByResolver = (sparqlObj) => {
-			if(sparqlObj.group)
-			{
-				if(sparqlObj.group.length > 0)
-				{
-					for(let g of sparqlObj.group )
-					{
-						if(g.expression.termType === "Variable" )
-						{
-							g.expression = `?${g.expression.value}`;
-						}
-					}
-				}
-			}
-
-			if(sparqlObj.where)
-			{
-				for(let where of sparqlObj.where)
-				{
-					if(where.patterns)
-					{
-						where.patterns.forEach(p => 
-						{
-							groupByResolver(p);
-						})
-					}	
-				}
-			}
-			else if (sparqlObj.type === 'group')
-			{
-				if(sparqlObj.patterns)
-				{
-					sparqlObj.patterns.forEach(p => 
-					{
-						groupByResolver(p);
-					})
-				}
-			}
-		};
-
-		groupByResolver(sparqlObj);
-
 		return sparqlGenerator.stringify(sparqlObj);
 
 	}
@@ -340,6 +291,41 @@ function setHKFiltered(query)
 	}
 
 }
+
+
+function setFilterFrom(query, namedGraph)
+{
+  try
+  {
+    let sparqlParser = new SparqlJS.Parser();
+    let sparqlGenerator = new SparqlJS.Generator();
+
+    let sparqlObj = sparqlParser.parse(query);
+
+    if (sparqlObj.from === undefined)
+    {
+      sparqlObj.from = { 'default': [new NamedNode(namedGraph)] };
+    }
+    else
+    {
+      if (sparqlObj.from.default)
+      {
+        sparqlObj.from.default.push(new NamedNode(namedGraph));
+      }
+      else
+      {
+        sparqlObj.from.default = [new NamedNode(namedGraph)];
+      }
+    }
+
+    return sparqlGenerator.stringify(sparqlObj);
+  }
+  catch (err)
+  {
+    throw err;
+  }
+}
+
 
 function filterPredicatesForHK (variable, filters)
 {
@@ -354,6 +340,7 @@ function filterPredicatesForHK (variable, filters)
 			${variable} != ${HKUris.USES_CONNECTOR_URI}  &&
 			${variable} != ${HKUris.CLASSNAME_URI} &&
 			${variable} != ${HKUris.REFERENCES_URI} &&
+			${variable} != ${HKUris.REFERENCED_BY_URI} &&
 			${variable} != ${HKUris.HAS_PARENT_URI} &&
 			${variable} != ${HKUris.DATA_LITERAL_URI} &&
 			!STRSTARTS(STR(${variable}), "hk://role") &&
@@ -808,3 +795,4 @@ function optimizeFilter2 (filters)
 exports.optimizeFilter  = optimizeFilter;
 exports.filterForHK = filterPredicatesForHK;
 exports.setHKFiltered = setHKFiltered;
+exports.setFilterFrom = setFilterFrom;

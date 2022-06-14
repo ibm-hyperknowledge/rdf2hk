@@ -321,6 +321,28 @@ SparqlBuilder.prototype.filter = function(value)
 	this.append(` FILTER (${value}) . `);
 }
 
+SparqlBuilder.prototype.filterIn = function(variable, values, isUri = true)
+{
+	let filter = `${variable.startsWith("?") ? variable: `?${variable}`} IN (`;
+
+	for(let i = 0;	i < values.length; i++)
+	{
+		if(isUri)
+		{
+			filter += `${_convertToUri(values[i])} `;
+		}
+		else
+		{
+			filter += `"${values[i]}"`;
+		}
+		
+		if(i + 1 < values.length) filter += ', '
+	}
+	filter += ")";
+
+	this.filter(filter);
+}
+
 function _createPattern(variables)
 {
 

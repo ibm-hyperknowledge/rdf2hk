@@ -5,18 +5,19 @@
 "use strict";
 
 const N3 = require("n3");
+const { DataFactory, Store, Writer } = N3;
+const { namedNode, literal, blankNode } = DataFactory;
+
 const Constants = require("./constants");
 const Utils = require("./utils");
-
-const { DataFactory } = N3;
-const { namedNode, literal, blankNode } = DataFactory;
 
 function TriGGraph( storedGraph, baseUri, mimetype, store = false) 
 {
 	this.mimeType = mimetype || "application/trig";
 	this.store = store;
-	this.graph = storedGraph || (this.store? new N3.Store() : new N3.Writer({format: this.mimeType}));
+	this.graph = storedGraph || (this.store? new Store() : new Writer({format: this.mimeType}));
 	this.baseUri = baseUri || Constants.HK_NULL;
+	this.statementCounter = 0;
 	
 }
 
@@ -48,6 +49,7 @@ TriGGraph.prototype.add = function(s, p, o, g) {
 	{
 		this.graph.addQuad(s, p, o);
 	}
+	this.statementCounter++;
 };
 
 TriGGraph.prototype.forEachStatement = function(callback) {
@@ -86,11 +88,22 @@ TriGGraph.prototype.fromBGP = function(s = null, p = null, o = null, g = null) {
 
 	let quads = this.graph.getQuads(s, p, o, g);
 
-	let newGraph = new N3.Store();
+	let newGraph = new Store();
 	newGraph.addQuads(quads);
 
 	return new TriGGraph(newGraph, this.baseUri, this.mimeType);
 };
+
+TriGGraph.prototype.graphSize = function ()
+{
+
+	if(this.graph instanceof Store) return this.graph.countQuads(null, null, null, null);
+	
+	if(this.graph instanceof Writer) return this.statementCounter;
+
+	return -1;
+	
+}
 
 TriGGraph.prototype.getEntitiesId = function ()
 {
