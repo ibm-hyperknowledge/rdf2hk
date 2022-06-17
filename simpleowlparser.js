@@ -23,7 +23,7 @@ owlVocabulary.add(owl.EQUIVALENT_PROPERTY_URI);
 
 class SimpleOwlParser
 {
-  constructor(entities, connectors, blackNodesMap, refNodesMap, options, ...params)
+  constructor(entities, connectors, blackNodesMap, refNodesMap, options)
   {
     this.entities = entities;
     this.refNodesMap = refNodesMap;
@@ -32,7 +32,7 @@ class SimpleOwlParser
     this.mustConvert = options.convertOwl || false;
   }
 
-  _shouldConvert(s, p, o, g)
+  shouldConvert(s, p, o, g, spo)
   {
     if (!this.mustConvert)
     {
@@ -63,28 +63,12 @@ class SimpleOwlParser
     return false;
   }
 
-  firstLoopShouldConvert(s, p, o, g)
-  {
-    return this._shouldConvert(s, p, o, g)
-  }
-
-  secondLoopShouldConvert(s, p, o, g)
-  {
-    return this._shouldConvert(s, p, o, g)
-  }
-
-  lastLoopShouldConvert(s, p, o, g)
-  {
-    return this._shouldConvert(s, p, o, g)
-  }
-
   createConnectors(s, p, o, g, spo)
   {
     if (
-      !Utils.isBlankNode(s) 
-      && (
-        (p === rdf.TYPE_URI && owl.OBJECT_PROPERTY_URIS.includes(o)) 
-        || owlVocabulary.has(p)
+      !Utils.isBlankNode(s) && (
+        (p === rdf.TYPE_URI && owl.OBJECT_PROPERTY_URIS.includes(o)) || 
+        owlVocabulary.has(p)
       )
     )
     {
@@ -111,21 +95,21 @@ class SimpleOwlParser
       )
     )
     {
-      let refId = Utils.createRefUri(s, g);
+      let refID = Utils.createRefUri(s, g);
       let ref = null;
 
-      if (!this.entities.hasOwnProperty(refId))
+      if (!this.entities.hasOwnProperty(refID))
       {
         ref = new Reference();
-        ref.id = refId;
+        ref.id = refID;
         ref.ref = s;
 
-        this.entities[refId] = ref;
-        this.refNodesMap[refId] = ref;
+        this.entities[refID] = ref;
+        this.refNodesMap[refID] = ref;
       }
       else
       {
-        ref = this.entities[refId];
+        ref = this.entities[refID];
       }
 
       if (Utils.isLiteral(o))

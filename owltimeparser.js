@@ -29,7 +29,7 @@ class OwlTimeParser
     this.mustConvert = options.convertOwlTime || false;
   }
 
-  _shouldConvert(s, p, o, context)
+  shouldConvert(s, p, o, context)
   {
     if (!this.mustConvert)
     {
@@ -53,22 +53,6 @@ class OwlTimeParser
     }
     return false;
   }
-
-  firstLoopShouldConvert(s, p, o, context)
-  {
-    return this._shouldConvert(s, p, o, context);
-  }
-
-  secondLoopShouldConvert(s, p, o, context)
-  {
-    return this._shouldConvert(s, p, o, context);
-  }
-
-  lastLoopShouldConvert(s, p, o, context)
-  {
-    return this._shouldConvert(s, p, o, context);
-  }
-
   createContextAnchor(s, p, o, context)
   {
     this.timeContext = this.entities[context] || new Context(context);
