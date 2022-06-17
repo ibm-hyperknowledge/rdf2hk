@@ -34,16 +34,25 @@ const isUriOrBlankNode = Utils.isUriOrBlankNode;
  * @param {boolean} [options.namespaceContext] Contextualize entities based on their namespace.
  * @param {boolean} [options.subjectLabel] Set the subject role name `subject`
  * @param {boolean} [options.objectLabel] Set the object role name `object`
+ * @param {boolean} [options.convertOwl] EXPERIMENTAL OWL rules. Default is false.
+ * @param {boolean} [options.convertOwlTime] EXPERIMENTAL OWL Time rules. Default is false.
+ * @param {boolean} [options.customRdfParser] Use the customizable parser. Default is false.
+ * @param {boolean} [options.timeContext] Context for OWL Time entities and relationships, if convertOwlTime is true.
  * @param {boolean} [options.preserveBlankNodes] Preserve the blank node ids if true, otherwise replace it by a uuid inteded to be unique in the database. Default is false.
  * @param {boolean} [options.serialize] Serialize output, i. e. remove unnecessary methods and fields from the intances.
  * @param {boolean} [options.convertHK] If set, it will read the Hyperknowledge vocabulary and make special conversion. Default is true.
  * @param {boolean} [options.onlyHK] If set, it will ONLY read the Hyperknowledge vocabulary and convert those entities, this options override `convertHK`. Default is false.
  * @param {boolean} [options.textLiteralAsNode] If true, string literals will be converted to content nodes, which will be linked to subject using a link whose connector is the predicate.
  * @param {boolean} [options.textLiteralAsNodeEncoding] If 'property', textLiteralAsNode encoding will be made using node and link properties. If 'metaproperty' encoding will be made using node and link metaproperties. Default is 'metaproperty'.
- * @param {string}  [options.strategy] "pre-existing-context", "new-context" or "automatically"
+ * @param {string}  [options.strategy] "pre-existing-context", "new-context" or "automatically."
+ * @param {array}  [options.hierarchyConnectorIds] "List of predicates that should become hierarchy connectors."
+ * @param {object|undefined} [customizableOptions] A dictionary of customizable options while parsing.
+ * @param {array|undefined} [customizableOptions.contextualize] indicates the predicates that should create contexts based on the object.
+ * @param {string|undefined} [customizableOptions.contextualize.p] a predicate that should create a context relation.
+ * @param {string|undefined} [customizableOptions.contextualize.o] the object that should become a context. When undefined, it indicates that any object with that predicate should become context.
  */
 
-function parseGraph(graph, options)
+function parseGraph(graph, options, customizableOptions)
 {
 	if (typeof options === "boolean")
 	{
@@ -85,7 +94,7 @@ function parseGraph(graph, options)
 
 	const subjectLabel = options.subjectLabel || Constants.DEFAULT_SUBJECT_ROLE;
 	const objectLabel = options.objectLabel || Constants.DEFAULT_OBJECT_ROLE;
-	const hierarchyConnectorIDs = options.hierarchyConnectorIDs || [rdfs.TYPE_URI, rdfs.SUBCLASSOF_URI, rdfs.SUBPROPERTYOF_URI];
+	const hierarchyConnectorIds = options.hierarchyConnectorIds || [rdfs.TYPE_URI, rdfs.SUBCLASSOF_URI, rdfs.SUBPROPERTYOF_URI];
 
 	let entities = {};
 	let connectors = {};
@@ -97,12 +106,12 @@ function parseGraph(graph, options)
   const parsers = [];
   registeredParsers.forEach(parser => {
     try {
-      const instantiatedParser = new parser(entities, connectors, blankNodesMap, refNodesMap, options);
+      const instantiatedParser = new parser(entities, connectors, blankNodesMap, refNodesMap, options, customizableOptions);
       parsers.push(instantiatedParser);
       // console.log(`new instantiated parser ${instantiatedParser}`);
     }
     catch(err) {
-      console.error(`There was anrror while instatianting the parser ${parser}`);
+      console.error(`There was an error while instatianting the parser ${parser}`);
       throw err;
     }
   });
@@ -140,7 +149,7 @@ function parseGraph(graph, options)
 
     for (let i = 0; i < parsers.length; i++) {
       const parser = parsers[i];
-      if (parser.shouldConvert(s, p, o, parent)) {
+      if (parser.firstLoopShouldConvert(s, p, o, parent)) {
         let shouldContinue = parser.firstLoopCallback(s, p, o, parent);
         if (shouldContinue !== undefined && !shouldContinue) {
           return;
@@ -149,17 +158,21 @@ function parseGraph(graph, options)
     }
 
 		// Create connector?
-
 		if (Utils.isUri(p) && Utils.isUriOrBlankNode(o))
 		{
-			let connector = new Connector();
-			connector.id = Utils.getIdFromResource(p);
-			connector.className = hierarchyConnectorIDs.includes(p) ? ConnectorClass.HIERARCHY : ConnectorClass.FACTS;
-			connector.addRole(subjectLabel, RoleTypes.SUBJECT);
-			connector.addRole(objectLabel, RoleTypes.OBJECT);
-			connectors[connector.id] = connector;
-			entities[connector.id] = connector;
+			let connectorId = Utils.getIdFromResource(p);
+			if (!connectors.hasOwnProperty(connectorId))
+			{
+				let connector = new Connector();
+				connector.id = connectorId;
+				connector.className = hierarchyConnectorIds.includes(p) ? ConnectorClass.HIERARCHY : ConnectorClass.FACTS;
+				connector.addRole(subjectLabel, RoleTypes.SUBJECT);
+				connector.addRole(objectLabel, RoleTypes.OBJECT);
+				connectors[connectorId] = connector;
+				entities[connectorId] = connector;
+			}
 		}
+		
 
 		const isPreExistingContext = strategy === 'pre-existing-context' && parent === rootContext;
 		if (createContext && parent && parent !== HK_NULL_URI && !isPreExistingContext)
@@ -197,7 +210,7 @@ function parseGraph(graph, options)
 
     for(let i = 0; i < parsers.length; i++) {
       const parser = parsers[i];
-      if (parser.shouldConvert(s, p, o, parent)) {
+      if (parser.secondLoopShouldConvert(s, p, o, parent)) {
         let shouldContinue = parser.secondLoopCallback(s, p, o, parent);
         if (shouldContinue !== undefined && !shouldContinue) {
           return;
@@ -243,10 +256,11 @@ function parseGraph(graph, options)
 	graph.forEachStatement((s, p, o, g) =>
 	{
 		const parent = getParent(s, g);
+		const parentIdFromResource = Utils.getIdFromResource(parent);
 
     for(let i = 0; i < parsers.length; i++) {
       const parser = parsers[i];
-      if (parser.shouldConvert(s, p, o, parent)) {
+      if (parser.lastLoopShouldConvert(s, p, o, parent)) {
         let shouldContinue = parser.lastLoopCallback(s, p, o, parent);
         if (shouldContinue !== undefined && !shouldContinue) {
           return;
@@ -267,39 +281,60 @@ function parseGraph(graph, options)
 
 				for (let i = 0; i < roles.length; i++)
 				{
-					let r = roles[i];
+					let role = roles[i];
 
-					let roleType = connector.getRoleType(r);
+					let roleType = connector.getRoleType(role);
 					if (roleType === RoleTypes.SUBJECT || roleType === RoleTypes.CHILD)
 					{
 						let subjId = blankNodesMap.hasOwnProperty(s) ? blankNodesMap[s] : s;
 						subjId = Utils.getIdFromResource(subjId);
-						link.addBind(subjectLabel, subjId);
+
+						const node = entities[subjId];
+
+						if (node.parent === parentIdFromResource)
+						{
+							link.addBind(subjectLabel, subjId);
+						}
+						else
+						{
+							// must use the refnode in the relation
+							const refNodeId = Utils.createRefUri(s, parentIdFromResource);
+							link.addBind(subjectLabel, refNodeId);
+						}		
 					}
 					else if (roleType === RoleTypes.OBJECT || roleType === RoleTypes.PARENT)
 					{
 						let objId = blankNodesMap.hasOwnProperty(o) ? blankNodesMap[o] : o;
 						objId = Utils.getIdFromResource(objId);
-						link.addBind(objectLabel, objId);
+
+						const node = entities[objId];
+						if (node.parent === parentIdFromResource)
+						{
+							link.addBind(objectLabel, objId);
+						}
+						else
+						{
+							// must use the refnode in the relation
+							const refNodeId = Utils.createRefUri(o, parentIdFromResource);
+							link.addBind(objectLabel, refNodeId);
+						}	
 					}
 				}
 
-				// console.log(s, p, o);
 				link.id = Utils.createSpoUri(s, p, o, parent);
 
 				link.connector = connectorId;
 				if (g)
 				{
-					link.parent = Utils.getIdFromResource(parent);
+					link.parent = parentIdFromResource;
 				}
 				entities[link.id] = link;
 			}
 		}
 		else
 		{
-			// Set Entity properties
+			// Since it is a literal the it become a property
 
-			// Define the entity to bind the property
 			let entity = null;
 
 			// Get maped blank node
@@ -309,7 +344,7 @@ function parseGraph(graph, options)
 			}
 			let subjectId = Utils.getIdFromResource(s);
 
-			if (!Utils.getIdFromResource(parent))
+			if (!parentIdFromResource)
 			{
 				entity = entities[subjectId]; // we assume the entity must have been created
 			}
@@ -319,7 +354,7 @@ function parseGraph(graph, options)
 
 				if(entity !== null)
 				{
-					if (entity.type !== Connector.type && entity.parent !== Utils.getIdFromResource(parent))
+					if (entity.type !== Connector.type && entity.parent !==parentIdFromResource)
 					{
 						// The node already exists and it belongs to another context
 						// This assign will force to look for a reference node
