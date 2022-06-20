@@ -34,10 +34,14 @@ const mimeType = "application/trig";
 const filePath = "./data/people_from_jf.ttl";
 let hkEntities;
 let types;
-let graph
+let graph;
+
+const util = require("./common");
+
+const HKDatasource = util.preamble();
 
 describe("Transforming RDF to HK", () => {	
-	before(`Readning ${filePath} about Humans born in Juiz de Fora from Wikidata`, async () => {
+	before(`Reading ${filePath} about Humans born in Juiz de Fora from Wikidata`, async () => {
 		try
 		{
 			/**
@@ -103,12 +107,17 @@ describe("Transforming RDF to HK", () => {
 
 	describe("Custom import", () => 
 	{
-		beforeEach("Parsing", ()=> {
+		beforeEach("Creating context using the <http://www.wikidata.org/prop/direct/P19> relation", ()=> {
 			//Register custom parser
 			Parser.registerParser(require("../customhkparser"));
 
 			let customParserDict = {
-				"contextualize": [{ p: "<http://www.wikidata.org/prop/direct/P19>", allowReference: true} ]
+				"contextualize": [
+					{ 
+						p: "<http://www.wikidata.org/prop/direct/P19>", 
+						allowReference: true
+					} 
+				]
 			}
 
 			let options = Object.assign(DEFAULT_OPTIONS, { customRdfParser: true, hierarchyConnectorIds: ["<http://www.wikidata.org/prop/direct/P31>"] })
@@ -128,14 +137,19 @@ describe("Transforming RDF to HK", () => {
 		});
 	});
 
-	describe.only("Custom import", () => 
+	describe("Custom import", () => 
 	{
 		beforeEach("Parsing", ()=> {
 			//Register custom parser
 			Parser.registerParser(require("../customhkparser"));
 
 			let customParserDict = {
-				"contextualize": [{ p: "<http://www.wikidata.org/prop/direct/P19>", allowReference: false} ]
+				"contextualize": [
+					{
+						p: "<http://www.wikidata.org/prop/direct/P19>", 
+						allowReference: false
+					} 
+				]
 			}
 
 			let options = Object.assign(DEFAULT_OPTIONS, { customRdfParser: true, hierarchyConnectorIds: ["<http://www.wikidata.org/prop/direct/P31>"] })
