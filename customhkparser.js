@@ -106,7 +106,7 @@ class CustomHKParser
     }
 
     const id = Utils.getIdFromResource(o);
-    if (!entities.hasOwnProperty(id) && ! Utils.isBlankNode(o))
+    if (!entities.hasOwnProperty(id) && !Utils.isBlankNode(o))
     {
       context = new Context(id);
     }
@@ -131,12 +131,21 @@ class CustomHKParser
       const contextId = Utils.getIdFromResource(o);
   
       if(entities.hasOwnProperty(id))
-      {
-        
+      {   
         if(entities[id].parent !== contextId)
         { 
           let contextSelector = this.contextualize.find(e => e.p === p);
-          if (!contextSelector.allowReference)
+          if (contextSelector.allowReference)
+          {
+            let ref = new Reference();
+            ref.id = Utils.createRefUri(s, contextId);
+            ref.ref = s;
+            ref.parent = contextId;
+
+            entities[ref.id] = ref;
+            this.refNodesMap[ref.id] = ref;
+          }
+          else
           {
             // Create a refnode to replace it
             const oldParent = entities[id].parent;
@@ -150,6 +159,7 @@ class CustomHKParser
             entities[node.id] = node;
             entities[ref.id] = ref;
             this.refNodesMap[ref.id] = ref;
+
           }
         }
       }
@@ -162,38 +172,12 @@ class CustomHKParser
     }
   }
 
-  createRefNodesIfNeeded(s, p, o, g)
-  {
-    let contextSelector = this.contextualize.find(e => e.p === p);
-    if (contextSelector.allowReference)
-    {
-      let entities = this.entities; 
-      let ref; 
-      const id = Utils.getIdFromResource(s);
-
-      const parent = Utils.getIdFromResource(o);
-      if (entities.hasOwnProperty(id))
-      {
-        if(entities[id].parent !== parent)
-        {
-          ref = new Reference();
-          ref.id = Utils.createRefUri(s, parent);
-          ref.ref = s;
-          ref.parent = parent;
-          entities[ref.id] = ref;
-          this.refNodesMap[ref.id] = ref;
-        }
-      }
-    }
-  }
-
   finish()
   {
     let entities = this.entities;
     Object.values(entities).forEach(entity =>{
       if(entity.type === REFERENCE)
-      {
-        
+      { 
         entity.properties = entities[entity.ref].properties;
         entity.interfaces = entities[entity.ref].interfaces;
         entity.metaProperties = entities[entity.ref].metaProperties;
@@ -202,21 +186,20 @@ class CustomHKParser
   }
 
 
-  firstLoopCallback(s, p, o, parent)
+  firstLoopCallback(s, p, o, g)
   {
-    this.createContext(s, p, o, parent);
+    this.createContext(s, p, o, g);
     return false;
   }
 
-  secondLoopCallback(s, p, o, parent)
+  secondLoopCallback(s, p, o, g)
   {
-    this.createNode(s, p, o, parent)
+    this.createNode(s, p, o, g)
     return false;
   }
 
-  lastLoopCallback(s, p, o, parent)
+  lastLoopCallback(s, p, o, g)
   {
-    this.createRefNodesIfNeeded(s, p, o, parent);
     return false;
   }
 }

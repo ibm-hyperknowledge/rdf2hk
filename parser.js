@@ -44,8 +44,8 @@ const isUriOrBlankNode = Utils.isUriOrBlankNode;
  * @param {boolean} [options.onlyHK] If set, it will ONLY read the Hyperknowledge vocabulary and convert those entities, this options override `convertHK`. Default is false.
  * @param {boolean} [options.textLiteralAsNode] If true, string literals will be converted to content nodes, which will be linked to subject using a link whose connector is the predicate.
  * @param {boolean} [options.textLiteralAsNodeEncoding] If 'property', textLiteralAsNode encoding will be made using node and link properties. If 'metaproperty' encoding will be made using node and link metaproperties. Default is 'metaproperty'.
- * @param {string}  [options.strategy] "pre-existing-context", "new-context" or "automatically."
- * @param {array}  [options.hierarchyConnectorIds] "List of predicates that should become hierarchy connectors."
+ * @param {string} [options.strategy] "pre-existing-context", "new-context" or "automatically."
+ * @param {array} [options.hierarchyConnectorIds] "List of predicates that should become hierarchy connectors."
  * @param {object|undefined} [customizableOptions] A dictionary of customizable options while parsing.
  * @param {array|undefined} [customizableOptions.contextualize] indicates the predicates that should create contexts based on the object.
  * @param {string|undefined} [customizableOptions.contextualize.p] a predicate that should create a context relation.
@@ -262,7 +262,7 @@ function parseGraph(graph, options, customizableOptions)
       const parser = parsers[i];
       if (parser.lastLoopShouldConvert(s, p, o, parent)) {
         let shouldContinue = parser.lastLoopCallback(s, p, o, parent);
-        if (shouldContinue !== undefined && !shouldContinue) {
+        if (!shouldContinue) {
           return;
         }
       }
