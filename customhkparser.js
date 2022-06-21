@@ -70,13 +70,13 @@ class CustomHKParser
 
   createContext(s, p, o, g)
   {
-    let entities = this.entities; 
-    let context; 
+    let entities = this.entities;
+    let context;
 
     // TODO replace "find" to "any" and iterate over the array
     let contextSelector = this.contextualize.find(e => e.p === p);
 
-    if(contextSelector.o && contextSelector.o !== o)
+    if (contextSelector.o && contextSelector.o !== o)
     {
       return;
     }
@@ -99,17 +99,17 @@ class CustomHKParser
 
   createNode(s, p, o, g)
   {
-    if(!Utils.isLiteral(o))
+    if (!Utils.isLiteral(o))
     {
-      let entities = this.entities; 
-      let node; 
+      let entities = this.entities;
+      let node;
       const id = Utils.getIdFromResource(s);
       const contextId = Utils.getIdFromResource(o);
-  
-      if(entities.hasOwnProperty(id))
-      {   
-        if(entities[id].parent !== contextId)
-        { 
+
+      if (entities.hasOwnProperty(id))
+      {
+        if (entities[id].parent !== contextId)
+        {
           let contextSelector = this.contextualize.find(e => e.p === p);
           if (contextSelector.allowReference)
           {
@@ -127,7 +127,7 @@ class CustomHKParser
             const oldParent = entities[id].parent;
             node = entities[id];
             node.parent = contextId;
-    
+
             let ref = new Reference();
             ref.id = Utils.createRefUri(s, oldParent);
             ref.ref = id;
@@ -139,7 +139,7 @@ class CustomHKParser
         }
       }
       else
-      {  
+      {
         id = this.blankNodesMap.hasOwnProperty(s) ? this.blankNodesMap[s] : id;
         node = new Node(id, contextId);
         entities[node.id] = node;
@@ -150,9 +150,10 @@ class CustomHKParser
   finish()
   {
     let entities = this.entities;
-    Object.values(entities).forEach(entity =>{
-      if(entity.type === REFERENCE)
-      { 
+    Object.values(entities).forEach(entity =>
+    {
+      if (entity.type === REFERENCE)
+      {
         entity.properties = entities[entity.ref].properties;
         entity.interfaces = entities[entity.ref].interfaces;
         entity.metaProperties = entities[entity.ref].metaProperties;
@@ -177,17 +178,17 @@ class CustomHKParser
   {
     const parentIdFromResource = Utils.getIdFromResource(g);
     if (Utils.isUriOrBlankNode(o))
-		{
+    {
       let connectorId = Utils.getIdFromResource(p);
       if (this.connectors.hasOwnProperty(connectorId))
-			{
-				let connector = this.connectors[connectorId];
-				let link = new Link();
+      {
+        let connector = this.connectors[connectorId];
+        let link = new Link();
         let roles = connector.getRoles();
         for (let i = 0; i < roles.length; i++)
         {
           let role = roles[i];
-  
+
           let roleType = connector.getRoleType(role);
           if (roleType === RoleTypes.SUBJECT || roleType === RoleTypes.CHILD)
           {
@@ -195,33 +196,33 @@ class CustomHKParser
             subjId = Utils.getIdFromResource(subjId);
             const node = this.entities[subjId];
 
-						if (node.parent === parentIdFromResource)
-						{
-							link.addBind(this.subjectLabel, subjId);
-						}
-						else
-						{
-							// must use the refnode in the relation
-							const refNodeId = Utils.createRefUri(s, parentIdFromResource);
-							link.addBind(this.subjectLabel, refNodeId);
-						}
+            if (node.parent === parentIdFromResource)
+            {
+              link.addBind(this.subjectLabel, subjId);
+            }
+            else
+            {
+              // must use the refnode in the relation
+              const refNodeId = Utils.createRefUri(s, parentIdFromResource);
+              link.addBind(this.subjectLabel, refNodeId);
+            }
           }
           else if (roleType === RoleTypes.OBJECT || roleType === RoleTypes.PARENT)
           {
             let objId = this.blankNodesMap.hasOwnProperty(o) ? this.blankNodesMap[o] : o;
             objId = Utils.getIdFromResource(objId);
-  
+
             const node = this.entities[objId];
-						if (node.parent === parentIdFromResource)
-						{
-							link.addBind(this.objectLabel, objId);
-						}
-						else
-						{
-							// must use the refnode in the relation
-							const refNodeId = Utils.createRefUri(o, parentIdFromResource);
-							link.addBind(this.objectLabel, refNodeId);
-						}			
+            if (node.parent === parentIdFromResource)
+            {
+              link.addBind(this.objectLabel, objId);
+            }
+            else
+            {
+              // must use the refnode in the relation
+              const refNodeId = Utils.createRefUri(o, parentIdFromResource);
+              link.addBind(this.objectLabel, refNodeId);
+            }
           }
           link.id = Utils.createSpoUri(s, p, o, g);
 
