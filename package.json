@@ -1,6 +1,6 @@
 {
   "name": "rdf2hk",
-  "version": "1.9.1",
+  "version": "1.10.1",
   "description": "This library converts RDF to Hyperknowledge Description",
   "main": "index.js",
   "author": "IBM Research",
@@ -40,6 +40,7 @@
     "punycode": "^2.1.1",
     "rdfxml-streaming-parser": "^1.3.2",
     "sparqljs": "^3.4.3",
+    "tslib": "^2.4.0",
     "uuid": "^3.1.0"
   },
   "keywords": [
@@ -52,7 +53,7 @@
     "semantic web"
   ],
   "scripts": {
-    "test": "mocha test test/setup.json --timeout 360000"
+    "tests": "mocha test/integration test/setup.json --timeout 360000"
   },
   "devDependencies": {
     "chai": "^4.3.4",
