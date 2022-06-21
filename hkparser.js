@@ -86,19 +86,18 @@ class HKParser
       return true;
     }
 
-    // else if(this.onlyHK && Utils.isUriOrBlankNode(o))
-    else if (this.onlyHK && (Utils.isUriOrBlankNode(o)))
+    if (this.onlyHK && (Utils.isUriOrBlankNode(o)))
     {
       return true;
     }
-    else if (this.interfaces.hasOwnProperty(s))
+   
+    if (this.interfaces.hasOwnProperty(s))
     {
       return true;
     }
 
     if (!Utils.isUriOrBlankNode(o))
     {
-
       let info = {};
       Utils.getValueFromLiteral(o, info);
 
@@ -107,7 +106,6 @@ class HKParser
         return true;
       }
     }
-
 
     return false;
   }
@@ -140,7 +138,8 @@ class HKParser
       case HKUris.HAS_ANCHOR_URI:
         _createInterface.call(this, s, p, o, g);
         break;
-      case p === HKUris.HAS_BIND_URI || p === HKUris.HAS_ANCHOR_URI:
+      case HKUris.HAS_BIND_URI:
+      case HKUris.HAS_ANCHOR_URI:
         this.setIntrinsicProperties(s, p, o, g);
         break;
     }
@@ -184,9 +183,7 @@ class HKParser
               entity.binds[role][comp] = null;
             }
             this.linksWithCompressedBinds.add(entityId);
-
           }
-
           else
           {
             let v = Utils.getValueFromLiteral(o);
@@ -199,7 +196,6 @@ class HKParser
             {
               entity.binds[role][comp] = [anchorKey];
             }
-
             else
             {
               entity.binds[role][comp].push(anchorKey);
@@ -476,10 +472,6 @@ class HKParser
   }
 }
 
-
-
-
-
 function _createCompressedLink(s, p, o, g)
 {
   let linkId = Utils.getIdFromResource(s);
@@ -621,8 +613,5 @@ function decompressRoleUri(uri)
 {
   return decodeURIComponent(uri.slice(Constants.HK_ROLE_PREFIX.length + 2, -1));
 }
-
-
-
 
 module.exports = HKParser;

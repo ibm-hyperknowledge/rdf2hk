@@ -8,7 +8,6 @@ const path = require("path");
 
 const { NODE, LINK, CONTEXT, CONNECTOR, TRAIL, VIRTUAL_CONTEXT } = require("hklib").Types;
 
-
 const { promisify } = require("util");
 
 const Parser = require("../parser");
@@ -161,8 +160,6 @@ describe("Transforming RDF to HK", () => {
 		it("", ()=> {
 
 			let onlyValues = Object.values(hkEntities);
-
-			console.log(JSON.stringify(onlyValues));
 			
 			const numbers = onlyValues.reduce((acc, cur) => cur.type === CONTEXT ? ++acc : acc, 0);
 			expect(numbers).to.be.equal(1);
