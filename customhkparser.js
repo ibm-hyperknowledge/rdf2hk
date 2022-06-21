@@ -21,34 +21,8 @@ const VirtualContext = HKLib.VirtualContext;
 const VirtualNode = HKLib.VirtualNode;
 const VirtualLink = HKLib.VirtualLink;
 const Reference = HKLib.Reference;
+const RoleTypes = HKLib.RoleTypes;
 const LAMBDA = HKLib.Constants.LAMBDA;
-
-const HYPERKNOWLEDGE_URIS = new Set();
-
-HYPERKNOWLEDGE_URIS.add(HKUris.HAS_PARENT_URI);
-HYPERKNOWLEDGE_URIS.add(HKUris.REFERENCES_URI);
-HYPERKNOWLEDGE_URIS.add(HKUris.REFERENCED_BY_URI);
-HYPERKNOWLEDGE_URIS.add(HKUris.USES_CONNECTOR_URI);
-
-HYPERKNOWLEDGE_URIS.add(HKUris.HAS_BIND_URI);
-HYPERKNOWLEDGE_URIS.add(HKUris.BOUND_ROLE_URI);
-HYPERKNOWLEDGE_URIS.add(HKUris.BOUND_ANCHOR_URI);
-HYPERKNOWLEDGE_URIS.add(HKUris.BOUND_COMPONENT_URI);
-HYPERKNOWLEDGE_URIS.add(HKUris.CLASSNAME_URI);
-HYPERKNOWLEDGE_URIS.add(HKUris.ISA_URI);
-HYPERKNOWLEDGE_URIS.add(HKUris.LIST_ENTRY_URI);
-HYPERKNOWLEDGE_URIS.add(HKUris.LIST_NEXT_URI);
-HYPERKNOWLEDGE_URIS.add(HKUris.HAS_ANCHOR_URI);
-HYPERKNOWLEDGE_URIS.add(HKUris.ANCHOR_KEY_URI);
-HYPERKNOWLEDGE_URIS.add(HKUris.ANCHOR_TYPE_URI);
-
-const NUMBER_DATATYPES = new Set();
-NUMBER_DATATYPES.add(xml.INTEGER_URI);
-NUMBER_DATATYPES.add(xml.NONNEGATIVEINTEGER_URI);
-NUMBER_DATATYPES.add(xml.DECIMAL_URI);
-NUMBER_DATATYPES.add(xml.DOUBLE_URI);
-NUMBER_DATATYPES.add(xml.FLOAT_URI);
-
 
 class CustomHKParser
 {
@@ -60,6 +34,8 @@ class CustomHKParser
     this.refNodesMap = refNodesMap;
     this.contextualize = customizableOptions.contextualize;
     this.mustConvert = options.customRdfParser || false;
+    this.subjectLabel = options.subjectLabel || Constants.DEFAULT_SUBJECT_ROLE;
+    this.objectLabel = options.objectLabel || Constants.DEFAULT_OBJECT_ROLE;
   }
 
   _shouldConvert(s, p, o, g)
@@ -89,7 +65,7 @@ class CustomHKParser
 
   lastLoopShouldConvert(s, p, o, g)
   {
-    return this._shouldConvert(s, p, o, g);
+    return this.mustConvert && Utils.isUriOrBlankNode(o);
   }
 
   createContext(s, p, o, g)
@@ -159,7 +135,6 @@ class CustomHKParser
             entities[node.id] = node;
             entities[ref.id] = ref;
             this.refNodesMap[ref.id] = ref;
-
           }
         }
       }
@@ -200,6 +175,66 @@ class CustomHKParser
 
   lastLoopCallback(s, p, o, g)
   {
+    const parentIdFromResource = Utils.getIdFromResource(g);
+    if (Utils.isUriOrBlankNode(o))
+		{
+      let connectorId = Utils.getIdFromResource(p);
+      if (this.connectors.hasOwnProperty(connectorId))
+			{
+				let connector = this.connectors[connectorId];
+				let link = new Link();
+        let roles = connector.getRoles();
+        for (let i = 0; i < roles.length; i++)
+        {
+          let role = roles[i];
+  
+          let roleType = connector.getRoleType(role);
+          if (roleType === RoleTypes.SUBJECT || roleType === RoleTypes.CHILD)
+          {
+            let subjId = this.blankNodesMap.hasOwnProperty(s) ? this.blankNodesMap[s] : s;
+            subjId = Utils.getIdFromResource(subjId);
+            const node = this.entities[subjId];
+
+						if (node.parent === parentIdFromResource)
+						{
+							link.addBind(this.subjectLabel, subjId);
+						}
+						else
+						{
+							// must use the refnode in the relation
+							const refNodeId = Utils.createRefUri(s, parentIdFromResource);
+							link.addBind(this.subjectLabel, refNodeId);
+						}
+          }
+          else if (roleType === RoleTypes.OBJECT || roleType === RoleTypes.PARENT)
+          {
+            let objId = this.blankNodesMap.hasOwnProperty(o) ? this.blankNodesMap[o] : o;
+            objId = Utils.getIdFromResource(objId);
+  
+            const node = this.entities[objId];
+						if (node.parent === parentIdFromResource)
+						{
+							link.addBind(this.objectLabel, objId);
+						}
+						else
+						{
+							// must use the refnode in the relation
+							const refNodeId = Utils.createRefUri(o, parentIdFromResource);
+							link.addBind(this.objectLabel, refNodeId);
+						}			
+          }
+          link.id = Utils.createSpoUri(s, p, o, g);
+
+          link.connector = connectorId;
+          if (g)
+          {
+            link.parent = parentIdFromResource;
+          }
+          this.entities[link.id] = link;
+        }
+      }
+    }
+
     return false;
   }
 }

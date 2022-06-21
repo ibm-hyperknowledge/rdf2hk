@@ -151,7 +151,7 @@ function parseGraph(graph, options, customizableOptions)
       const parser = parsers[i];
       if (parser.firstLoopShouldConvert(s, p, o, parent)) {
         let shouldContinue = parser.firstLoopCallback(s, p, o, parent);
-        if (shouldContinue !== undefined && !shouldContinue) {
+        if (!shouldContinue) {
           return;
         }
       }
@@ -172,7 +172,6 @@ function parseGraph(graph, options, customizableOptions)
 				entities[connectorId] = connector;
 			}
 		}
-		
 
 		const isPreExistingContext = strategy === 'pre-existing-context' && parent === rootContext;
 		if (createContext && parent && parent !== HK_NULL_URI && !isPreExistingContext)
@@ -212,7 +211,7 @@ function parseGraph(graph, options, customizableOptions)
       const parser = parsers[i];
       if (parser.secondLoopShouldConvert(s, p, o, parent)) {
         let shouldContinue = parser.secondLoopCallback(s, p, o, parent);
-        if (shouldContinue !== undefined && !shouldContinue) {
+        if (!shouldContinue) {
           return;
         }
       }
@@ -289,35 +288,14 @@ function parseGraph(graph, options, customizableOptions)
 						let subjId = blankNodesMap.hasOwnProperty(s) ? blankNodesMap[s] : s;
 						subjId = Utils.getIdFromResource(subjId);
 
-						const node = entities[subjId];
-
-						if (node.parent === parentIdFromResource)
-						{
-							link.addBind(subjectLabel, subjId);
-						}
-						else
-						{
-							// must use the refnode in the relation
-							const refNodeId = Utils.createRefUri(s, parentIdFromResource);
-							link.addBind(subjectLabel, refNodeId);
-						}		
+						link.addBind(subjectLabel, subjId);
 					}
 					else if (roleType === RoleTypes.OBJECT || roleType === RoleTypes.PARENT)
 					{
 						let objId = blankNodesMap.hasOwnProperty(o) ? blankNodesMap[o] : o;
 						objId = Utils.getIdFromResource(objId);
 
-						const node = entities[objId];
-						if (node.parent === parentIdFromResource)
-						{
-							link.addBind(objectLabel, objId);
-						}
-						else
-						{
-							// must use the refnode in the relation
-							const refNodeId = Utils.createRefUri(o, parentIdFromResource);
-							link.addBind(objectLabel, refNodeId);
-						}	
+						link.addBind(objectLabel, objId);				
 					}
 				}
 
