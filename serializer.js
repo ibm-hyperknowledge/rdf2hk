@@ -238,7 +238,16 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
       case HKTypes.CONNECTOR:
         break;
       case HKTypes.TRAIL:
-        break;
+
+          if(entity.properties)
+          {
+            _collectProperties(entity, graph, options);
+          }
+          if(entity.actions)
+          {
+            _collectActions(entity, graph, options);
+          }
+          break;
       default:
         {
           if (entity.properties)
@@ -308,6 +317,49 @@ function _buildLiteralObject(value, metaProperty)
   }
   let literal = Utils.createLiteralObject(v, lang, type);
   return literal;
+}
+
+function _collectActions(trailEntity, graph, options)
+{
+    var graphName = options.defaultGraph || null;
+
+    if(trailEntity.parent)
+    {
+        graphName = trailEntity.parent;
+    }
+    
+    if(trailEntity.actions && trailEntity.actions.length>0)
+    {
+        //does not have effect in triplestore injection
+        //let actions = Trail.sort(trailEntity.actions);
+        let actions = trailEntity.actions;
+
+        for(let i = 0; i < actions.length; i++)
+        {
+            let action = actions[i];
+            let from = action.from;
+            let to = action.to;
+            let agent = action.agent;
+            let event = action.event;
+            let parent = trailEntity.parent;
+        
+            // add parent trail
+            if (parent)
+            {
+                graph.add(trailEntity.id, hk.HAS_PARENT_URI, parent, trailEntity.id);
+            }
+            
+            // add actions to trail subgraph
+            graph.add(trailEntity.id, hk.ISA_URI, hk.TRAIL_URI, trailEntity.id);
+            graph.add(trailEntity.id, hk.HAS_ACTION_URI, event.id, trailEntity.id);
+            _addLiteral(event, graph, hk.AGENT_URI, agent, null, trailEntity.id);
+            _addLiteral(event, graph, hk.EVENT_TYPE_URI, event.type, null, trailEntity.id);
+            _addLiteral(event, graph, hk.EVENT_PROPERTIES_URI, JSON.stringify(event.properties), null, trailEntity.id);
+            _addLiteral(event, graph, hk.FROM_URI, JSON.stringify(from), null, trailEntity.id);
+            _addLiteral(event, graph, hk.TO_URI, JSON.stringify(to), null, trailEntity.id);
+            _addLiteral(event, graph, hk.HAS_TIMESTAMP_URI, event.timestamp, Utils.getTypeIfNumberOrBoolean(event.timestamp), trailEntity.id);
+        }
+    }
 }
 
 function _collectProperties(entity, graph, options)

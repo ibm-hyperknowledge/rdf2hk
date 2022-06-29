@@ -150,6 +150,22 @@ SparqlBuilder.prototype.insert = function(input = null)
 	}
 }
 
+SparqlBuilder.prototype.orderBy = function(comparator, offset=0, limit=null)
+{
+	let chunk = `\nORDER BY ${comparator}`;
+	
+	if (offset>0) 
+	{
+		chunk += `\nOFFSET ${offset}`;
+	}
+	if (limit && limit>0) 
+	{
+		chunk += `\nLIMIT ${limit}\n`;
+	}
+	this.addIdentation();
+	this.append(chunk);
+}
+
 SparqlBuilder.prototype.where = function(callback)
 {
 	this.query += this.identation + "\nWHERE {\n";
