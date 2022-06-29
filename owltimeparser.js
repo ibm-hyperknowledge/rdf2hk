@@ -16,7 +16,7 @@ const Link = require("hklib").Link;
 
 class OwlTimeParser
 {
-  constructor(entities, options)
+  constructor(entities, connectors, blankNodesMap, refNodesMap, options, ...params)
   {
     this.entities = entities;
     this.subjectLabel = options.subjectLabel || Constants.DEFAULT_SUBJECT_ROLE;

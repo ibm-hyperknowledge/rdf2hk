@@ -19,7 +19,7 @@ const { HIERARCHY } = HKLib.ConnectorClass;
 
 const SparqlBuilder = require("./sparqlbuilder");
 
-
+const ANY = "*";
 const ENTITY_ANCHORS        = ` ?s ${HKUris.HAS_ANCHOR_URI} ?a . GRAPH ?g {?a ?b ?c} `;
 const TRAIL_ACTIONS_TIMESTAMPS = ` ?s ?p ?o . GRAPH ?g { ?s ?p ?o } . FILTER (?p = ${HKUris.HAS_TIMESTAMP_URI})`;
 const REFERENCES_FILTERS    = ` ?g = ?g1 || !bound(?g1) `;
@@ -1014,7 +1014,7 @@ function _filterForBinds(builder, binds, connector = null, parent = undefined)
 		for (let role in binds) {
 			if (Array.isArray(binds[role])) {
 				builder.filterIn("r", binds[role], true);
-				if (role === "*") {
+				if (role === ANY) {
 
 					builder.append(`?s ?anyRole ?r . `);
 				}
@@ -1066,7 +1066,7 @@ function _filterForBinds(builder, binds, connector = null, parent = undefined)
 			}
 
 			else {
-				if (role === "*") {
+				if (role === ANY) {
 					// builder.append(`?s ${HKUris.USES_CONNECTOR_URI} ?conn . `);
 					builder.append(`?s ?anyRole ${_convertToUri(binds[role])} . `);
 				}
@@ -1558,11 +1558,16 @@ function _filterForProperties(properties)
 
 		let valueType = typeof v;
 
-		if(Array.isArray(v))
+		const property = k == ANY ? '?filteredProperty' : _convertToUri(k);
+		if(v == ANY)
+		{
+			out += `?s ${property} ?${Utils.getLabelFromUri(k)}_label . `;
+		}
+		else if(Array.isArray(v))
 		{
 			for(let i = 0; i < v.length; i++)
 			{
-				out += `{ ?s ${_convertToUri(k)} "${v[i]}" . } `;
+				out += `{ ?s ${property} "${v[i]}" . } `;
 				if(i + 1 < v.length)
 				{
 					out += ' UNION ';
@@ -1572,15 +1577,15 @@ function _filterForProperties(properties)
 		else if(valueType === "object")
 		{
 			// Assume $exist = true
-			out += `?s ${_convertToUri(k)} ?x . `;
+			out += `?s ${property} ?x . `;
 		}
 		else if(valueType === "number" || valueType === "boolean")
 		{
-			out += `?s ${_convertToUri(k)} ${v} . `;
+			out += `?s ${property} ${v} . `;
 		}
 		else
 		{
-			out += `?s ${_convertToUri(k)} "${v}" . `;
+			out += `?s ${property} "${v}" . `;
 		}
 	}
 	return out;
