@@ -150,12 +150,17 @@ class HKParser
       case HKUris.HAS_ANCHOR_URI:
         _createInterface.call(this, s, p, o, g);
         break;
-      case HKUris.TRAIL_BASE_URI:
-        _createActions.call(this, s, p, o, g);
-        break;
-      case p === HKUris.HAS_BIND_URI || p === HKUris.HAS_ANCHOR_URI:
-        this.setIntrinsicProperties(s, p, o, g);
-        break;
+      default:
+        if(p.includes(HKUris.TRAIL_BASE_URI))
+        {
+          _createActions.call(this, s, p, o, g);
+          break;
+        }
+        else if(p === HKUris.HAS_BIND_URI || p === HKUris.HAS_ANCHOR_URI)
+        {
+          this.setIntrinsicProperties(s, p, o, g);
+          break;
+        }
     }
   }
 
@@ -637,6 +642,9 @@ function _createActions(s, p, o, g)
     this.entities[graph] = new Trail(graph);
   }
   let trail = this.entities[graph];
+  if(trail.type !== Trail.type){
+    return
+  }
   let action = null;
 
   // aux function to check actions
@@ -660,37 +668,37 @@ function _createActions(s, p, o, g)
 
   switch(p)
   {
-    case hk.HAS_ACTION_URI:
+    case HKUris.HAS_ACTION_URI:
       let actionId = Utils.getIdFromResource(o);
       action = checkAction.call(this, trail, actionId);
 
       break;
-    case hk.FROM_URI:
+    case HKUris.FROM_URI:
       action = checkAction.call(this, trail, subject);
       action['from'] = JSON.parse(value);
 
       break;
-    case hk.TO_URI:
+    case HKUris.TO_URI:
       action = checkAction.call(this, trail, subject);
       action['to'] = JSON.parse(value);
 
       break;
-    case hk.EVENT_TYPE_URI:
+    case HKUris.EVENT_TYPE_URI:
       action = checkAction.call(this, trail, subject);
       action.event['type'] = value;
 
       break;
-    case hk.EVENT_PROPERTIES_URI:
+    case HKUris.EVENT_PROPERTIES_URI:
       action = checkAction.call(this, trail, subject);
       action.event['properties'] = value;
 
       break;
-    case hk.HAS_TIMESTAMP_URI:
+    case HKUris.HAS_TIMESTAMP_URI:
       action = checkAction.call(this, trail, subject);
       action.event['timestamp'] = value;
 
       break;
-    case hk.AGENT_URI:
+    case HKUris.AGENT_URI:
       action = checkAction.call(this, trail, subject);
       action['agent'] = value;
 

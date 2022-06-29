@@ -98,7 +98,7 @@ function _convertEntityToTriples(entity, conversionOptions, interfacesToUpdate, 
         
 	}
 
-	if(entity.type === Types.TRAIL)
+	if(entity.type === HKTypes.TRAIL)
 	{
 		obj.type = Types.TRAIL;
 		obj.actions = entity.actions;
