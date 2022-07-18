@@ -1316,16 +1316,16 @@ function appendUnionFilters(builder, andFilters, idVar = "s")
 					break;
 				}
 				case "trail":
+				{
+					if(Array.isArray(constraintValue))
 					{
-						if(Array.isArray(constraintValue))
-						{
-							builder.append(_filterForTypeArray(constraintValue, idVar), true);	
-						}
-						else
-						{
-							_filterForTrail(builder, [constraintValue]);
-						}
-						break;
+						builder.append(_filterForTypeArray(constraintValue, idVar), true);	
+					}
+					else
+					{
+						_filterForTrail(builder, [constraintValue]);
+					}
+					break;
 				}
 				case "type":
 				{
