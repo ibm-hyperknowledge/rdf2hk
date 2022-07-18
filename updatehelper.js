@@ -41,7 +41,7 @@ function serializeToUpdate(entities, oldEntities, conversionOptions)
 			
 			let interfaceChanges = _evaluateInterfacesChanges(entity);
 
-			if(propertiesSet.size > 0 || interfaceChanges.interfacesKeys.length > 0 || entity.className)
+			if(propertiesSet.size > 0 || interfaceChanges.interfacesKeys.length > 0 || entity.className || entity.actions)
 			{
 				triples = _convertEntityToTriples(entity, conversionOptions, interfaceChanges.interfacesToUpdate, propertiesSet);
 				
@@ -96,6 +96,12 @@ function _convertEntityToTriples(entity, conversionOptions, interfacesToUpdate, 
         	obj.type = HKTypes.CONNECTOR;
         	obj.roles = entity.roles;
         
+	}
+
+	if(entity.type === HKTypes.TRAIL)
+	{
+		obj.type = Types.TRAIL;
+		obj.actions = entity.actions;
 	}
 
 	if(entity.hasOwnProperty("parent"))

@@ -119,6 +119,7 @@ class SimpleOwlParser
         ref = new Reference();
         ref.id = refId;
         ref.ref = s;
+        ref.parent = g;
 
         this.entities[refId] = ref;
         this.refNodesMap[refId] = ref;

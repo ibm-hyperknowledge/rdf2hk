@@ -284,7 +284,16 @@ HKSerializer.prototype.serialize = function (entity)
       }
     case HKTypes.TRAIL:
       {
+        let parentTrail = parentUri;
+        if(!parentTrail)
+        {
+            parentTrail = this.bodyResource;
+        }
+
         graph.add(entityUri, this.isAPredicate, this.trailResourceType, parentUri);
+        graph.add(entityUri, this.hasParent, parentTrail, parentUri);
+
+        _serializeAnchors.call(this, entityUri, entity, parentUri, graph);
         break;
       }
     default:
