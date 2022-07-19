@@ -14,7 +14,6 @@ const { CONNECTOR } = require("hklib").Types;
 
 const Node = HKLib.Node;
 const Trail = HKLib.Trail;
-const Action = Trail.Action;
 const Connector = HKLib.Connector;
 const Link = HKLib.Link;
 const Context = HKLib.Context;
@@ -42,15 +41,6 @@ HYPERKNOWLEDGE_URIS.add(HKUris.LIST_NEXT_URI);
 HYPERKNOWLEDGE_URIS.add(HKUris.HAS_ANCHOR_URI);
 HYPERKNOWLEDGE_URIS.add(HKUris.ANCHOR_KEY_URI);
 HYPERKNOWLEDGE_URIS.add(HKUris.ANCHOR_TYPE_URI);
-
-// Trails
-HYPERKNOWLEDGE_URIS.add(HKUris.AGENT_URI);
-HYPERKNOWLEDGE_URIS.add(HKUris.EVENT_PROPERTIES_URI);
-HYPERKNOWLEDGE_URIS.add(HKUris.EVENT_TYPE_URI);
-HYPERKNOWLEDGE_URIS.add(HKUris.FROM_URI);
-HYPERKNOWLEDGE_URIS.add(HKUris.HAS_ACTION_URI);
-HYPERKNOWLEDGE_URIS.add(HKUris.HAS_TIMESTAMP_URI);
-HYPERKNOWLEDGE_URIS.add(HKUris.TO_URI);
 
 const NUMBER_DATATYPES = new Set();
 NUMBER_DATATYPES.add(xml.INTEGER_URI);
@@ -152,12 +142,6 @@ class HKParser
       case HKUris.HAS_ANCHOR_URI:
         this.setIntrinsicProperties(s, p, o, g);
         break;
-      default:
-        if(p.includes(HKUris.TRAIL_BASE_URI))
-        {
-          _createActions.call(this, s, p, o, g);
-          break;
-        }
     }
   }
 
@@ -450,24 +434,21 @@ class HKParser
       }
 
       const literalTypeId = HKUris.DATA_LITERAL_URI;
-      if(!this.textLiteralAsNode && (entity.type === Node.type || entity.type === Link.type))
+      if (!this.textLiteralAsNode && (entity.type === Node.type || entity.type === Link.type))
       {
         let propertyName = null;
-        if(entity.hasProperty(literalTypeId))
+        if (entity.hasProperty(literalTypeId))
         {
           propertyName = entity.getProperty(literalTypeId);
           delete entity.properties[literalTypeId];
         }
-        else if(entity.getMetaProperty(literalTypeId))
+        else if (entity.getMetaProperty(literalTypeId))
         {
           propertyName = entity.getMetaProperty(literalTypeId);
           delete entity.metaProperties[literalTypeId];
         }
-        if(propertyName) delete entity.properties[propertyName];  
-      }
-      else if(entity.type === Trail.type && entity.size()>0)
-      {
-        entity.actions = entity.loadActions(entity.actions.toArray());
+        if (propertyName)
+          delete entity.properties[propertyName];
       }
     }
   }
@@ -568,17 +549,7 @@ function _createEntities(s, p, o, g)
         }
       case HKUris.TRAIL_URI:
         {
-          // check if trail already exists
-          if (!this.entities[id]) 
-          {
-            entity = new Trail(id);
-            entities[id] = entity;
-          }
-          else 
-          {
-            entity = this.entities[id]
-          }
-          
+          entity = new Trail();
           break;
         }
     }
@@ -617,86 +588,6 @@ function _bindBlankNodes(s, p, o, g)
 function _createInterface(s, p, o, g)
 {
   this.interfaces[o] = { entityId: s, properties: {}, key: null, type: null };
-}
-
-function _createActions(s, p, o, g)
-{
-  let graph = Utils.getIdFromResource(g);
-  let subject = Utils.getIdFromResource(s);
-  let property = Utils.getLabelFromUri(p);
-  let value = Utils.getValueFromLiteral(o);
-
-  // check if parent trail exists
-  if (!this.entities.hasOwnProperty(graph))
-  {
-    this.entities[graph] = new Trail(graph);
-  }
-  let trail = this.entities[graph];
-  if(trail.type !== Trail.type){
-    return
-  }
-  let action = null;
-
-  // aux function to check actions
-  function checkAction(trail, actionId)
-  {
-    // if we already have this action reference
-    if(this.action && this.action.id == actionId)
-    {
-      return this.action;
-    }
-
-    // search action in trail
-    this.action = trail.search(actionId);
-
-    if(!this.action)
-    {
-      this.action = trail.append(new Action({event: { "id": actionId }}));
-    }
-    return this.action;
-  }
-
-  switch(p)
-  {
-    case HKUris.HAS_ACTION_URI:
-      let actionId = Utils.getIdFromResource(o);
-      action = checkAction.call(this, trail, actionId);
-
-      break;
-    case HKUris.FROM_URI:
-      action = checkAction.call(this, trail, subject);
-      action['from'] = JSON.parse(value);
-
-      break;
-    case HKUris.TO_URI:
-      action = checkAction.call(this, trail, subject);
-      action['to'] = JSON.parse(value);
-
-      break;
-    case HKUris.EVENT_TYPE_URI:
-      action = checkAction.call(this, trail, subject);
-      action.event['type'] = value;
-
-      break;
-    case HKUris.EVENT_PROPERTIES_URI:
-      action = checkAction.call(this, trail, subject);
-      action.event['properties'] = value;
-
-      break;
-    case HKUris.HAS_TIMESTAMP_URI:
-      action = checkAction.call(this, trail, subject);
-      action.event['timestamp'] = value;
-
-      break;
-    case HKUris.AGENT_URI:
-      action = checkAction.call(this, trail, subject);
-      action['agent'] = value;
-
-      break;
-    default:
-      action = checkAction.call(this, trail, subject);
-      action[property] = value;
-  }
 }
 
 function isCompressedRoleUri(uri)
