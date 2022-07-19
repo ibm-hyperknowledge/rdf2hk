@@ -21,7 +21,6 @@ const SparqlBuilder = require("./sparqlbuilder");
 
 const ANY = "*";
 const ENTITY_ANCHORS        = ` ?s ${HKUris.HAS_ANCHOR_URI} ?a . GRAPH ?g {?a ?b ?c} `;
-const TRAIL_ACTIONS_TIMESTAMPS = ` ?s ?p ?o . GRAPH ?g { ?s ?p ?o } . FILTER (?p = ${HKUris.HAS_TIMESTAMP_URI})`;
 const REFERENCES_FILTERS    = ` ?g = ?g1 || !bound(?g1) `;
 
 const DEFAULT_GRAPH_PATTERN = `GRAPH ?g { ?s ?p ?o } .`;
@@ -158,14 +157,6 @@ function getEntities (ids)
 			builder.append(ENTITY_ANCHORS);
 		});
 
-		builder.appendUnion();
-
-		builder.closure(() =>
-		{
-			builder.addValues("?g", ids);
-			builder.append(TRAIL_ACTIONS_TIMESTAMPS);
-		});
-
 		builder.filter(REFERENCES_FILTERS);
 	});
 
@@ -223,10 +214,12 @@ function filterEntities (filters)
 						appendUnionFilters(builder, andFilters);	
 					});
 				}
+
+
 			})
 		}
 	});
-	
+
 	let query = builder.getQuery();
 
 	return query;
@@ -883,12 +876,6 @@ function getLinks (ids, sparqlType = "construct")
 
 function deleteTriples (bgp)
 {
-	// check if all we have is a graph reference, then drop it
-	if (bgp[3] !== null && bgp[0] == null && bgp[1] == null && bgp[2] == null)
-	{
-		return `DROP GRAPH ${bgp[3]}`;
-	}
-
 	let builder = new SparqlBuilder();
 
 	builder.delete(() =>
@@ -1315,18 +1302,6 @@ function appendUnionFilters(builder, andFilters, idVar = "s")
 					}
 					break;
 				}
-				case "trail":
-				{
-					if(Array.isArray(constraintValue))
-					{
-						builder.append(_filterForTypeArray(constraintValue, idVar), true);	
-					}
-					else
-					{
-						_filterForTrail(builder, [constraintValue]);
-					}
-					break;
-				}
 				case "type":
 				{
 					if(Array.isArray(constraintValue))
@@ -1349,15 +1324,6 @@ function appendUnionFilters(builder, andFilters, idVar = "s")
 					{
 						builder.bindVar(_convertToUri(constraintValue), idVar, true);
 					}
-
-					// trail subgraph timestamps
-					builder.appendUnion();
-					builder.closure(() =>
-					{
-						builder.addValues("?g", [constraintValue]);
-						builder.append(TRAIL_ACTIONS_TIMESTAMPS);
-					});
-
 					break;
 				}
 				case "connector":
@@ -1404,13 +1370,13 @@ function _checkIfHasNodeInConstraint(andFilters)
 		let item = andFilters[i];
 		for(let k in item)
 		{
-			if(k === "id" || k === "properties" || k === "parent" || k === "trail")
+			if(k === "id" || k === "properties" || k === "parent")
 			{
 				return true;
 			}
 			else if(k === "type")
 			{
-				if(item[k] === "node" || item[k] === "context" || item[k] === "ref" || item[k] === "trail")
+				if(item[k] === "node" || item[k] === "context" || item[k] === "ref")
 				{
 					return true;
 				}
@@ -1418,33 +1384,6 @@ function _checkIfHasNodeInConstraint(andFilters)
 		}
 	}
 	return false;
-}
-
-function _filterForTrail(builder, trailId){
-	// fetch trail subgraph
-	builder.closure(() => 
-	{
-		builder.addValues("g", trailId, true);
-		builder.append('GRAPH ?g');
-		builder.closure(() => 
-		{
-			builder.append(`?s ?p ?o .`);
-			//` ?s ?p ?o . GRAPH ?g { ?s ?p ?o } . FILTER (?p = ${HKUris.HAS_TIMESTAMP_URI})`
-		});
-	});	
-
-	// fetch extra info from parent subgraph
-	builder.appendUnion();
-	builder.closure(() => 
-	{
-		builder.addValues("s", trailId, true);
-		builder.append('GRAPH ?g');
-		builder.closure(() => 
-		{
-			builder.append(`?s ?p ?o .`);
-			builder.append(`?s ${HKUris.HAS_ANCHOR_URI} ?a . GRAPH ?g {?a ?b ?c}`, true);
-		});
-	});	
 }
 
 function _filterForParent(builder, parent) {
@@ -1531,7 +1470,7 @@ function _filterForType(type, idVar = "s")
 		}
 		case HKTypes.TRAIL:
 		{
-			return `?s ${HKUris.ISA_URI} ${HKUris.TRAIL_URI} . ` ;
+			return `?s ${HKUris.ISA_URI} ${HKUris.TRAIL_URI} . `;
 		}
 		case HKTypes.REFERENCE:
 		{
