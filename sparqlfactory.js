@@ -1179,8 +1179,9 @@ function appendUnionFilters(builder, andFilters, idVar = "s")
 	{
 		let constraint = andFilters[j];
 
+		const constraintKeys = Object.keys(constraint).sort();
 		
-		if(Object.keys(constraint).length >= 2)
+		if(constraintKeys.length >= 2)
 		{
 			if(constraint.binds && constraint.connector)
 			{
@@ -1189,7 +1190,7 @@ function appendUnionFilters(builder, andFilters, idVar = "s")
 			}
 		}
 
-		for(let k in constraint)
+		for(let k of constraintKeys)
 		{
 			let constraintValue = constraint[k];
 
