@@ -13,16 +13,10 @@ const HKLib = require("hklib");
 const { CONNECTOR, CONTEXT, NODE, REFERENCE, LINK } = require("hklib").Types;
 
 const Node = HKLib.Node;
-const Trail = HKLib.Trail;
-const Connector = HKLib.Connector;
 const Link = HKLib.Link;
 const Context = HKLib.Context;
-const VirtualContext = HKLib.VirtualContext;
-const VirtualNode = HKLib.VirtualNode;
-const VirtualLink = HKLib.VirtualLink;
 const Reference = HKLib.Reference;
 const RoleTypes = HKLib.RoleTypes;
-const LAMBDA = HKLib.Constants.LAMBDA;
 
 class CustomHKParser
 {
