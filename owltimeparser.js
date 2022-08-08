@@ -16,7 +16,7 @@ const Link = require("hklib").Link;
 
 class OwlTimeParser
 {
-  constructor(entities, options)
+  constructor(entities, connectors, blankNodesMap, refNodesMap, options, ...params)
   {
     this.entities = entities;
     this.subjectLabel = options.subjectLabel || Constants.DEFAULT_SUBJECT_ROLE;
@@ -29,7 +29,7 @@ class OwlTimeParser
     this.mustConvert = options.convertOwlTime || false;
   }
 
-  shouldConvert(s, p, o, context)
+  _shouldConvert(s, p, o, context)
   {
     if (!this.mustConvert)
     {
@@ -53,6 +53,22 @@ class OwlTimeParser
     }
     return false;
   }
+
+  firstLoopShouldConvert(s, p, o, context)
+  {
+    return this._shouldConvert(s, p, o, context);
+  }
+
+  secondLoopShouldConvert(s, p, o, context)
+  {
+    return this._shouldConvert(s, p, o, context);
+  }
+
+  lastLoopShouldConvert(s, p, o, context)
+  {
+    return this._shouldConvert(s, p, o, context);
+  }
+
   createContextAnchor(s, p, o, context)
   {
     this.timeContext = this.entities[context] || new Context(context);

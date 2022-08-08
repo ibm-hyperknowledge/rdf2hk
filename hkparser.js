@@ -50,389 +50,425 @@ NUMBER_DATATYPES.add(xml.DOUBLE_URI);
 NUMBER_DATATYPES.add(xml.FLOAT_URI);
 
 
-function HKParser(sharedEntities, connectors, sharedBlankNodeMap, sharedRefNodesMap, options)
+class HKParser
 {
-  this.entities = sharedEntities;
-
-  this.onlyHK = options.onlyHK || false;
-  this.binds = {};
-  this.bindLinks = {};
-  this.connectors = connectors;
-  this.blankNodesMap = sharedBlankNodeMap;
-  this.refNodesMap = sharedRefNodesMap;
-
-  this.linksWithCompressedBinds = new Set();
-
-  this.interfaces = {};
-
-  this.mustConvert = options.onlyHK || options.convertHK;
-  this.textLiteralAsNode = options.textLiteralAsNode || false;
-}
-
-HKParser.prototype.shouldConvert = function (s, p, o, g)
-{
-  if (!this.mustConvert)
+  constructor(sharedEntities, connectors, sharedBlankNodeMap, sharedRefNodesMap, options, ...params)
   {
-    return false;
+    this.entities = sharedEntities;
+
+    this.onlyHK = options.onlyHK || false;
+    this.binds = {};
+    this.bindLinks = {};
+    this.connectors = connectors;
+    this.blankNodesMap = sharedBlankNodeMap;
+    this.refNodesMap = sharedRefNodesMap;
+
+    this.linksWithCompressedBinds = new Set();
+
+    this.interfaces = {};
+
+    this.mustConvert = options.onlyHK || options.convertHK;
+    this.textLiteralAsNode = options.textLiteralAsNode || false;
   }
 
-  if (HYPERKNOWLEDGE_URIS.has(p) || HYPERKNOWLEDGE_URIS.has(o) ||
-    isCompressedRoleUri(p) ||
-    isCompressedRoleUri(o) ||
-    isCompressedAnchor(s))
+  _shouldConvert(s, p, o, g)
   {
-    return true;
-  }
-  // else if(this.onlyHK && Utils.isUriOrBlankNode(o))
-  else if (this.onlyHK && (Utils.isUriOrBlankNode(o)))
-  {
-    return true;
-  }
-  else if (this.interfaces.hasOwnProperty(s))
-  {
-    return true;
-  }
+    if (!this.mustConvert)
+    {
+      return false;
+    }
 
-  if (!Utils.isUriOrBlankNode(o))
-  {
-
-    let info = {};
-    Utils.getValueFromLiteral(o, info);
-
-    if (info.type === HKUris.DATA_LIST_URI)
+    if (HYPERKNOWLEDGE_URIS.has(p) || HYPERKNOWLEDGE_URIS.has(o) ||
+      isCompressedRoleUri(p) ||
+      isCompressedRoleUri(o) ||
+      isCompressedAnchor(s))
     {
       return true;
     }
-  }
 
-
-  return false;
-}
-
-HKParser.prototype.createEntities = function (s, p, o, g, spo)
-{
-  if (p === HKUris.ISA_URI)
-  {
-    _createEntities.call(this, s, p, o, g);
-  }
-  else if (p === HKUris.USES_CONNECTOR_URI)
-  {
-    _createCompressedLink.call(this, s, p, o, g);
-  }
-  else if (p === HKUris.HAS_ANCHOR_URI)
-  {
-    _createInterface.call(this, s, p, o, g);
-  }
-  else if (p === HKUris.HAS_BIND_URI || p === HKUris.HAS_ANCHOR_URI)
-  {
-    this.setIntrinsicProperties(s, p, o, g);
-  }
-}
-
-HKParser.prototype.setIntrinsicProperties = function (s, p, o, g, spo)
-{
-  if (p !== HKUris.ISA_URI)
-  {
-    let entities = this.entities;
-    let entityId = Utils.getIdFromResource(s);
-    let entity = entities[entityId];
-
-    const isAnchor = isCompressedAnchor(s) || this.interfaces.hasOwnProperty(s);
-    if (!entity && !this.binds.hasOwnProperty(s) && !isAnchor)
+    if (this.onlyHK && (Utils.isUriOrBlankNode(o)))
     {
-      return;
+      return true;
+    }
+   
+    if (this.interfaces.hasOwnProperty(s))
+    {
+      return true;
     }
 
-    if (isCompressedRoleUri(p))
+    if (!Utils.isUriOrBlankNode(o))
     {
-      let role = decompressRoleUri(p);
+      let info = {};
+      Utils.getValueFromLiteral(o, info);
 
-      if (entity.type === Link.type)
+      if (info.type === HKUris.DATA_LIST_URI)
       {
-        if (!entity.binds)
-        {
-          entity.binds = {};
-        }
+        return true;
+      }
+    }
 
-        if (!entity.binds.hasOwnProperty(role))
-        {
-          entity.binds[role] = {};
-        }
+    return false;
+  }
 
-        if (Utils.isUriOrBlankNode(o))
+  firstLoopShouldConvert(s, p, o, g)
+  {
+    return this._shouldConvert(s, p, o, g);
+  }
+
+  secondLoopShouldConvert(s, p, o, g)
+  {
+    return this._shouldConvert(s, p, o, g);
+  }
+
+  lastLoopShouldConvert(s, p, o, g)
+  {
+    return this._shouldConvert(s, p, o, g);
+  }
+
+  createEntities(s, p, o, g, spo)
+  {
+    switch (p)
+    {
+      case HKUris.ISA_URI:
+        _createEntities.call(this, s, p, o, g);
+        break;
+      case HKUris.USES_CONNECTOR_URI:
+        _createCompressedLink.call(this, s, p, o, g);
+        break;
+      case HKUris.HAS_ANCHOR_URI:
+        _createInterface.call(this, s, p, o, g);
+        break;
+      case HKUris.HAS_BIND_URI:
+      case HKUris.HAS_ANCHOR_URI:
+        this.setIntrinsicProperties(s, p, o, g);
+        break;
+    }
+  }
+
+  setIntrinsicProperties(s, p, o, g, spo)
+  {
+    if (p !== HKUris.ISA_URI)
+    {
+      let entities = this.entities;
+      let entityId = Utils.getIdFromResource(s);
+      let entity = entities[entityId];
+
+      const isAnchor = isCompressedAnchor(s) || this.interfaces.hasOwnProperty(s);
+      if (!entity && !this.binds.hasOwnProperty(s) && !isAnchor)
+      {
+        return;
+      }
+
+      if (isCompressedRoleUri(p))
+      {
+        let role = decompressRoleUri(p);
+
+        if (entity.type === Link.type)
         {
-          let comp = Utils.getIdFromResource(o);
-          if (!entity.binds[role][comp])
+          if (!entity.binds)
           {
-            entity.binds[role][comp] = null;
+            entity.binds = {};
           }
-          this.linksWithCompressedBinds.add(entityId);
 
-        }
-        else
-        {
-          let v = Utils.getValueFromLiteral(o);
-          let idx = v.lastIndexOf("#");
-
-          let comp = v.substr(0, idx);
-          let anchorKey = v.substr(idx + 1);
-
-          if (!entity.binds[role][comp])
+          if (!entity.binds.hasOwnProperty(role))
           {
-            entity.binds[role][comp] = [anchorKey]
+            entity.binds[role] = {};
+          }
+
+          if (Utils.isUriOrBlankNode(o))
+          {
+            let comp = Utils.getIdFromResource(o);
+            if (!entity.binds[role][comp])
+            {
+              entity.binds[role][comp] = null;
+            }
+            this.linksWithCompressedBinds.add(entityId);
           }
           else
           {
-            entity.binds[role][comp].push(anchorKey);
-          }
-        }
-      }
-      else if (entity.type === Connector.type)
-      {
-        entity.addRole(role, Utils.getValueFromLiteral(o));
-        // entity.addRole(role, o);
-      }
-      return;
-    }
+            let v = Utils.getValueFromLiteral(o);
+            let idx = v.lastIndexOf("#");
 
-    switch (p)
-    {
-      case HKUris.HAS_PARENT_URI:
-        {
-          entity.parent = Utils.getIdFromResource(g);
-          break;
-        }
-      case HKUris.ANCHOR_KEY_URI:
-        {
-          let interf = this.interfaces[s];
-          if (interf)
-          {
-            interf.key = Utils.getValueFromLiteral(o);
-          }
-          break;
-        }
-      case HKUris.ANCHOR_TYPE_URI:
-        {
-          let interf = this.interfaces[s];
-          if (interf)
-          {
-            interf.type = Utils.getValueFromLiteral(o);
-          }
-          break;
-        }
-      case HKUris.REFERENCES_URI:
-        {
-          entity.ref = Utils.getIdFromResource(o);
-          break;
-        }
-      case HKUris.REFERENCED_BY_URI:
-      {
-        entity.ref = Utils.getIdFromResource(s);
-        break;
-      }
-      case HKUris.USES_CONNECTOR_URI:
-        {
-          entity.connector = Utils.getIdFromResource(o);
-          break;
-        }
-      case HKUris.CLASSNAME_URI:
-        {
-          entity.className = Utils.getValueFromLiteral(o);
-          break;
-        }
-      case HKUris.HAS_BIND_URI:
-        {
-          if (!this.binds.hasOwnProperty(o))
-          {
-            let bind = { role: null, comp: null, anchor: null };
-            this.binds[o] = bind;
+            let comp = v.substr(0, idx);
+            let anchorKey = v.substr(idx + 1);
 
-            let link = null;
-            if (!this.bindLinks.hasOwnProperty(s))
+            if (!entity.binds[role][comp])
             {
-              link = [];
-              this.bindLinks[s] = link;
+              entity.binds[role][comp] = [anchorKey];
             }
             else
             {
-              link = this.bindLinks[s];
+              entity.binds[role][comp].push(anchorKey);
             }
-            link.push(bind);
           }
+        }
+        else if (entity.type === Connector.type)
+        {
+          entity.addRole(role, Utils.getValueFromLiteral(o));
+          // entity.addRole(role, o);
+        }
+        return;
+      }
 
-          break;
-        }
-      case HKUris.BOUND_ROLE_URI:
-        {
-          if (this.binds.hasOwnProperty(s))
+      switch (p)
+      {
+        case HKUris.HAS_PARENT_URI:
           {
-            this.binds[s].role = Utils.getValueFromLiteral(o);
+            entity.parent = Utils.getIdFromResource(g);
+            break;
           }
-          break;
-        }
-      case HKUris.BOUND_ANCHOR_URI:
-        {
-          if (this.binds.hasOwnProperty(s))
-          {
-            this.binds[s].anchor = Utils.getValueFromLiteral(o);
-          }
-          break;
-
-        }
-      case HKUris.BOUND_COMPONENT_URI:
-        {
-          if (this.binds.hasOwnProperty(s))
-          {
-            this.binds[s].comp = Utils.getValueFromLiteral(o);
-          }
-          break;
-        }
-      default:
-        {
-          // Set properties of an anchor
-          if (this.interfaces.hasOwnProperty(s))
+        case HKUris.ANCHOR_KEY_URI:
           {
             let interf = this.interfaces[s];
             if (interf)
             {
-              let properties = interf.properties;
-
-              let value = Utils.isUri(o) ? o : Utils.getValueFromLiteral(o, null, true);
-
-              properties[Utils.getIdFromResource(p)] = value;
+              interf.key = Utils.getValueFromLiteral(o);
             }
+            break;
           }
-          break;
-        }
+        case HKUris.ANCHOR_TYPE_URI:
+          {
+            let interf = this.interfaces[s];
+            if (interf)
+            {
+              interf.type = Utils.getValueFromLiteral(o);
+            }
+            break;
+          }
+        case HKUris.REFERENCES_URI:
+          {
+            entity.ref = Utils.getIdFromResource(o);
+            break;
+          }
+        case HKUris.REFERENCED_BY_URI:
+          {
+            entity.ref = Utils.getIdFromResource(s);
+            break;
+          }
+        case HKUris.USES_CONNECTOR_URI:
+          {
+            entity.connector = Utils.getIdFromResource(o);
+            break;
+          }
+        case HKUris.CLASSNAME_URI:
+          {
+            entity.className = Utils.getValueFromLiteral(o);
+            break;
+          }
+        case HKUris.HAS_BIND_URI:
+          {
+            if (!this.binds.hasOwnProperty(o))
+            {
+              let bind = { role: null, comp: null, anchor: null };
+              this.binds[o] = bind;
 
-    }
-  }
-}
+              let link = null;
+              if (!this.bindLinks.hasOwnProperty(s))
+              {
+                link = [];
+                this.bindLinks[s] = link;
+              }
 
-HKParser.prototype.finish = function ()
-{
-  let entities = this.entities;
+              else
+              {
+                link = this.bindLinks[s];
+              }
+              link.push(bind);
+            }
 
-  // Set interfaces
-  for (let k in this.interfaces)
-  {
-    let interf = this.interfaces[k];
+            break;
+          }
+        case HKUris.BOUND_ROLE_URI:
+          {
+            if (this.binds.hasOwnProperty(s))
+            {
+              this.binds[s].role = Utils.getValueFromLiteral(o);
+            }
+            break;
+          }
+        case HKUris.BOUND_ANCHOR_URI:
+          {
+            if (this.binds.hasOwnProperty(s))
+            {
+              this.binds[s].anchor = Utils.getValueFromLiteral(o);
+            }
+            break;
 
-    let entity = entities[Utils.getIdFromResource(interf.entityId)];
+          }
+        case HKUris.BOUND_COMPONENT_URI:
+          {
+            if (this.binds.hasOwnProperty(s))
+            {
+              this.binds[s].comp = Utils.getValueFromLiteral(o);
+            }
+            break;
+          }
+        default:
+          {
+            // Set properties of an anchor
+            if (this.interfaces.hasOwnProperty(s))
+            {
+              let interf = this.interfaces[s];
+              if (interf)
+              {
+                let properties = interf.properties;
 
-    if (entity)
-    {
-      if (!entity.hasOwnProperty("interfaces"))
-      {
-        entity.interfaces = {};
+                let value = Utils.isUri(o) ? o : Utils.getValueFromLiteral(o, null, true);
+
+                properties[Utils.getIdFromResource(p)] = value;
+              }
+            }
+            break;
+          }
+
       }
-
-      entity.interfaces[interf.key] = {
-        type: interf.type,
-        key: interf.key,
-        properties: interf.properties
-      };
     }
   }
 
-  // Set compressed binds
-
-  for (let l of this.linksWithCompressedBinds)
+  finish()
   {
-    let link = entities[l];
-    let isLinkBindedWithParent = false;
+    let entities = this.entities;
 
-    for (let role in link.binds)
+    // Set interfaces
+    for (let k in this.interfaces)
     {
-      let linkRoles = link.binds[role];
-      let nonParentBindings = [];
-      for (let comp in linkRoles)
-      {
-        let anchors = linkRoles[comp];
+      let interf = this.interfaces[k];
 
-        if (anchors === null)
+      let entity = entities[Utils.getIdFromResource(interf.entityId)];
+
+      if (entity)
+      {
+        if (!entity.hasOwnProperty("interfaces"))
         {
-          linkRoles[comp] = [LAMBDA];
+          entity.interfaces = {};
         }
 
-        if (comp === link.parent)
-        {
-          isLinkBindedWithParent = true;
-        }
-        else
-        {
-          nonParentBindings.push(comp);
-        }
+        entity.interfaces[interf.key] = {
+          type: interf.type,
+          key: interf.key,
+          properties: interf.properties
+        };
       }
+    }
 
-      // replace nonParentBind by parent anchor
-      if (isLinkBindedWithParent && nonParentBindings.length === 1 &&
-        link.parent !== undefined && linkRoles.hasOwnProperty(link.parent) &&
-        linkRoles[link.parent].length === 1 && linkRoles[nonParentBindings[0]].length === 1 &&
-        linkRoles[link.parent][0] === LAMBDA && linkRoles[nonParentBindings[0]][0] === LAMBDA)
+    // Set compressed binds
+    for (let l of this.linksWithCompressedBinds)
+    {
+      let link = entities[l];
+      let isLinkBindedWithParent = false;
+
+      for (let role in link.binds)
       {
-        delete linkRoles[nonParentBindings[0]];
-        linkRoles[link.parent] = [nonParentBindings[0]];
+        let linkRoles = link.binds[role];
+        let nonParentBindings = [];
+        for (let comp in linkRoles)
+        {
+          let anchors = linkRoles[comp];
+
+          if (anchors === null)
+          {
+            linkRoles[comp] = [LAMBDA];
+          }
+
+          if (comp === link.parent)
+          {
+            isLinkBindedWithParent = true;
+          }
+
+          else
+          {
+            nonParentBindings.push(comp);
+          }
+        }
+
+        // replace nonParentBind by parent anchor
+        if (isLinkBindedWithParent && nonParentBindings.length === 1 &&
+          link.parent !== undefined && linkRoles.hasOwnProperty(link.parent) &&
+          linkRoles[link.parent].length === 1 && linkRoles[nonParentBindings[0]].length === 1 &&
+          linkRoles[link.parent][0] === LAMBDA && linkRoles[nonParentBindings[0]][0] === LAMBDA)
+        {
+          delete linkRoles[nonParentBindings[0]];
+          linkRoles[link.parent] = [nonParentBindings[0]];
+        }
+
+      }
+    }
+
+    // Set binds
+    for (let id in this.bindLinks)
+    {
+      let linkId = Utils.getIdFromResource(id);
+      let link = entities[linkId];
+      let binds = this.bindLinks[id];
+      if (link)
+      {
+        for (let i = 0; i < binds.length; i++)
+        {
+          let bind = binds[i];
+          if (bind.role && bind.comp)
+          {
+            let compId = Utils.getIdFromResource(bind.comp);
+            link.addBind(bind.role, compId, bind.anchor);
+          }
+        }
+      }
+    }
+
+    // suppress referenced nodes with undefined parent
+    for (let id in this.refNodesMap)
+    {
+      let ref = this.refNodesMap[id].ref;
+      if (entities.hasOwnProperty(ref) && entities[ref].parent === undefined && entities[ref].type !== CONNECTOR)
+      {
+        delete this.entities[ref];
+      }
+    }
+
+    // set parents of remaining nodes with undefined parent as null
+    for (let id in this.entities)
+    {
+      const entity = this.entities[id];
+      if (entity.parent === undefined)
+      {
+        entity.parent = null;
       }
 
+      const literalTypeId = HKUris.DATA_LITERAL_URI;
+      if (!this.textLiteralAsNode && (entity.type === Node.type || entity.type === Link.type))
+      {
+        let propertyName = null;
+        if (entity.hasProperty(literalTypeId))
+        {
+          propertyName = entity.getProperty(literalTypeId);
+          delete entity.properties[literalTypeId];
+        }
+        else if (entity.getMetaProperty(literalTypeId))
+        {
+          propertyName = entity.getMetaProperty(literalTypeId);
+          delete entity.metaProperties[literalTypeId];
+        }
+        if (propertyName)
+          delete entity.properties[propertyName];
+      }
     }
   }
 
-  // Set binds
-  for (let id in this.bindLinks)
+  firstLoopCallback(s, p, o, parent)
   {
-    let linkId = Utils.getIdFromResource(id);
-    let link = entities[linkId];
-    let binds = this.bindLinks[id];
-    if (link)
-    {
-      for (let i = 0; i < binds.length; i++)
-      {
-        let bind = binds[i];
-        if (bind.role && bind.comp)
-        {
-          let compId = Utils.getIdFromResource(bind.comp);
-          link.addBind(bind.role, compId, bind.anchor);
-        }
-      }
-    }
+    this.createEntities(s, p, o, parent);
+    // this indicates if the parsing should stop or not...
+    return false;
   }
 
-  // suppress referenced nodes with undefined parent
-  for(let id in this.refNodesMap)
+  secondLoopCallback(s, p, o, parent)
   {
-    let ref = this.refNodesMap[id].ref;
-    if(entities.hasOwnProperty(ref) && entities[ref].parent === undefined && entities[ref].type !== CONNECTOR)
-    {
-      delete this.entities[ref];
-    }
+    return false;
   }
 
-  // set parents of remaining nodes with undefined parent as null
-  for(let id in this.entities)
+  lastLoopCallback(s, p, o, parent)
   {
-    const entity = this.entities[id];
-    if(entity.parent === undefined)
-    {
-      entity.parent = null;
-    }
-
-    const literalTypeId = HKUris.DATA_LITERAL_URI;
-    if(!this.textLiteralAsNode && (entity.type === Node.type || entity.type === Link.type))
-    {
-      let propertyName = null;
-      if(entity.hasProperty(literalTypeId))
-      {
-        propertyName = entity.getProperty(literalTypeId);
-        delete entity.properties[literalTypeId];
-      }
-      else if(entity.getMetaProperty(literalTypeId))
-      {
-        propertyName = entity.getMetaProperty(literalTypeId);
-        delete entity.metaProperties[literalTypeId];
-      }
-      if(propertyName) delete entity.properties[propertyName];  
-    }
+    this.setIntrinsicProperties(s, p, o, parent);
+    return false;
   }
 }
 
@@ -523,7 +559,7 @@ function _createEntities(s, p, o, g)
   if (entity)
   {
     entities[entity.id] = entity;
-    if (g && entity && entity.type !== Connector.type)
+    if (g && entity.type !== Connector.type)
     {
       entity.parent = Utils.getIdFromResource(g);
     }
@@ -576,24 +612,6 @@ function isCompressedAnchor(uri)
 function decompressRoleUri(uri)
 {
   return decodeURIComponent(uri.slice(Constants.HK_ROLE_PREFIX.length + 2, -1));
-}
-
-HKParser.prototype.firstLoopCallback = function (s, p, o, parent)
-{
-  this.createEntities(s, p, o, parent);
-  // this indicates if the parsing should stop or not...
-  return false;
-};
-
-HKParser.prototype.secondLoopCallback = function (s, p, o, parent)
-{
-  return false;
-}
-
-HKParser.prototype.lastLoopCallback = function (s, p, o, parent)
-{
-  this.setIntrinsicProperties(s, p, o, parent);
-  return false;
 }
 
 module.exports = HKParser;
