@@ -34,6 +34,7 @@ const hk = require("./hk");
  * @param {boolean} [options.convertNumber] Convert the number/boolean to xsd schema
  * @param {boolean} [options.reifyArray] Reify the arrays, default is false.
  * @param {boolean} [options.defaultGraph] The uri to set when the parent of a entity is null
+ * @param {boolean} [options.suppressDuplicates] If true, duplicate quads will be suppressed from the output graph. Otherwise, they will not be suppressed. Defaults to true.
  * @param {object} referenceMap A string indexed map. Where the index is a refnode id and the value is the refnode itself.
  * @returns An instance of rdflib.js graph.
  */
@@ -49,6 +50,7 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
   let literalAsNodeTriples = {};
 
   let defaultGraph = options.defaultGraph || null;
+  let suppressDuplicates = options.hasOwnProperty('suppressDuplicates') ? options.suppressDuplicates : true;
 
 
   if (options.convertHK)
@@ -141,7 +143,7 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
           }
 
           // Generate triples to the resource from the ref
-          if (options.convertOwl || ((!options.convertHK || options.compressReification) && entity.parent))
+          if (options.convertOwl || ((!options.convertHK || options.compressReification) && entity.parent))          
           {
 
             let refObj = {
@@ -261,6 +263,7 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
     graph.add(triple.subject, triple.predicate, literal, triple.graph);
   }
 
+  if(suppressDuplicates && typeof graph.suppressDuplicates == 'function') graph.suppressDuplicates();
   return graph;
 }
 
