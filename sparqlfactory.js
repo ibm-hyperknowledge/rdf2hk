@@ -702,10 +702,10 @@ function removeEntities (ids)
 		// removing triples where entities are predicates
 		builder.closure(() =>
 		{
-			builder.addValues("?l", ids);
+			builder.addValues("?p", ids);
 			builder.append(
 `graph ?g {
-	?l ?subject_role ?ref_s ;
+	?p ?subject_role ?ref_s ;
 		?object_role ?ref_o ;
 		${HKUris.USES_CONNECTOR_URI} ?p .
 		OPTIONAL {
