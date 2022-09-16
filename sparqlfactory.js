@@ -730,13 +730,8 @@ function removeEntities (ids)
 }
 ?p ?subject_role "s";
    ?object_role "o" .
-{
-	${DEFAULT_GRAPH_PATTERN}
-}
-UNION
-{
-	GRAPH ?g_ref {?s ?p ?o}
-}`
+${DEFAULT_GRAPH_PATTERN}
+`
 			);
 		});
 		
@@ -846,8 +841,9 @@ function getLinks (ids, sparqlType = "construct")
 				builder.addValues("?x", ids);
 				// Link with a bound entity
 				builder.append(`?s ${HKUris.ISA_URI} ${HKUris.CONNECTOR_URI} .`);
-				builder.append(`?link ?role ?x . ?link ${HKUris.USES_CONNECTOR_URI} ?s . `);
-				builder.append(`GRAPH ?g {?s ?p ?o}`);
+				builder.append(`?link ?role ?x .`);
+				builder.append(`GRAPH ?g {?s ?p ?o}.`);
+				builder.append(`?link ${HKUris.USES_CONNECTOR_URI} ?s .`);
 			});
 
 			// builder.appendUnion();
