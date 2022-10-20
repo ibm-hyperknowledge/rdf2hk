@@ -12,6 +12,7 @@ const Utils = require("./utils");
 
 const owl = require("./owl");
 const rdfs = require("./rdfs");
+const wikidata = require("./wikidata");
 const xml = require("./xmlschema");
 const hk = require("./hk");
 
@@ -94,7 +95,7 @@ function parseGraph(graph, options, customizableOptions)
 
 	const subjectLabel = options.subjectLabel || Constants.DEFAULT_SUBJECT_ROLE;
 	const objectLabel = options.objectLabel || Constants.DEFAULT_OBJECT_ROLE;
-	const hierarchyConnectorIds = options.hierarchyConnectorIds || [rdfs.TYPE_URI, rdfs.SUBCLASSOF_URI, rdfs.SUBPROPERTYOF_URI];
+	const hierarchyConnectorIds = options.hierarchyConnectorIds || [rdfs.TYPE_URI, rdfs.SUBCLASSOF_URI, rdfs.SUBPROPERTYOF_URI, wikidata.INSTANCE_OF_URI, wikidata.SUBCLASS_OF_URI];
 
 	let entities = {};
 	let connectors = {};
