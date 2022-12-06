@@ -199,13 +199,15 @@ function serialize(entities, options = {}, graph = new TriGGraph(), referenceMap
               let objId = o;
 
               //in case we are still using reference nodes
-              if (referenceMap.hasOwnProperty(s))
+              const cachedSubjectRef = referenceMap[s] || referenceMap[Utils.getIdFromResource(s)] || null;
+              if (cachedSubjectRef)
               {
-                subjId = referenceMap[s].ref;
+                subjId = cachedSubjectRef.ref;
               }
-              if (referenceMap.hasOwnProperty(o))
+              const cachedObjectRef = referenceMap[o] || referenceMap[Utils.getIdFromResource(o)] || null;
+              if (cachedObjectRef)
               {
-                objId = referenceMap[o].ref;
+                objId = cachedObjectRef.ref;
               }
 
               let context = undefined;
