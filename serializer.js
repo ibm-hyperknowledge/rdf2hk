@@ -358,15 +358,16 @@ function _collectProperties(entity, graph, options)
       value = Array.from(new Set(value));
       for (let i = 0; i < value.length; i++)
       {
+        let currentMetaProperty = null;
         if (metaProperty)
         {
-          _addLiteral(entity, graph, key, value[i], metaProperty, graphName);
+          currentMetaProperty = Array.isArray(metaProperty) && metaProperty.length == value.length ? metaProperty[i] : metaProperty;
         }
         else
         {
-          let currentMetaProperty = Utils.getTypeIfNumberOrBoolean(value[i]);
-          _addLiteral(entity, graph, key, value[i], currentMetaProperty, graphName);
+          currentMetaProperty = Utils.getTypeIfNumberOrBoolean(value[i]);
         }
+        _addLiteral(entity, graph, key, value[i], currentMetaProperty, graphName);
       }
     }
     else
