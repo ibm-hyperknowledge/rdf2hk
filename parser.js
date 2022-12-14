@@ -13,7 +13,6 @@ const Utils = require("./utils");
 const owl = require("./owl");
 const rdfs = require("./rdfs");
 const wikidata = require("./wikidata");
-const xml = require("./xmlschema");
 const hk = require("./hk");
 
 const uuidv1 = require('uuid/v1');
@@ -519,9 +518,9 @@ function _setPropertyFromLiteral(entity, p, o, entities, connectors, subjectLabe
 
 	entity.setOrAppendToProperty(propertyName, value);
 
-	if (typeInfo.type && typeInfo.type !== xml.STRING_URI)
+	if (typeInfo.type)
 	{
-		entity.setMetaProperty(propertyName, Utils.getIdFromResource(typeInfo.type));
+		entity.setOrAppendToMetaProperty(propertyName, Utils.getIdFromResource(typeInfo.type));
 	}
 }
 
