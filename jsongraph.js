@@ -133,34 +133,42 @@ JSONGraph.prototype.graphSize = function ()
 }
 
 // This method was based on the _parseLiteral function of the N3Lexer.js file from https://github.com/rdfjs/N3.js
-JSONGraph.prototype.parseLiteral = function (literalStr) 
+JSONGraph.prototype.parseLiteral = function (literal) 
 {
 	// Ensure we have enough lookahead to identify triple-quoted strings
-    if (literalStr.length >= 3) 
+	if (literal.length >= 3) 
 	{
+		const xsdBegin = literal.indexOf("^^<");
+		const xsdEnd = literal.lastIndexOf(">");
+		const literalHasXSD = xsdBegin > 0 && xsdEnd == literal.length - 1;
+		const literalXSD = literalHasXSD ? literal.substring(xsdBegin, xsdEnd + 1) : "";
+		let literalStr = literalHasXSD ? literal.substring(0, xsdBegin) : literal;
+
 		// Identify the opening quote(s)
 		const openingQuote = literalStr.match(/^(?:"""|"|'''|'|)/)[0];
 		const openingLength = openingQuote.length
 		let closingIndex = openingLength;
 		while ((closingIndex = literalStr.indexOf(openingQuote, closingIndex)) > 0) 
 		{
-		  // Count backslashes right before the closing quotes
-		  let backslashCount = 0;
-		  while (literalStr[closingIndex - backslashCount - 1] === '\\') backslashCount++; 
-   		  // An even number of backslashes (in particular 0)
-		  // means these are actual, non-escaped closing quotes
-		  if (backslashCount % 2 === 0) 
-		  {
-			// Extract and unescape the value
-			const escapedLiteralStr = literalStr.substring(openingLength, closingIndex);
-			const literalLines = escapedLiteralStr.split(/\r\n|\r|\n/).length - 1;  
-			if (openingLength === 1 && literalLines !== 0 || openingLength === 3) break;
-			return this.unescapeLiteral(escapedLiteralStr);
-		  }
-		  closingIndex++;
+			// Count backslashes right before the closing quotes
+			let backslashCount = 0;
+			while (literalStr[closingIndex - backslashCount - 1] === '\\') backslashCount++;
+			// An even number of backslashes (in particular 0)
+			// means these are actual, non-escaped closing quotes
+			if (backslashCount % 2 === 0) 
+			{
+				// Extract and unescape the value
+				const escapedLiteralStr = literalStr.substring(openingLength, closingIndex);
+				const literalLines = escapedLiteralStr.split(/\r\n|\r|\n/).length - 1;
+				if (openingLength === 1 && literalLines !== 0 || openingLength === 3) break;
+				literalStr = this.unescapeLiteral(escapedLiteralStr);
+				break;
+			}
+			closingIndex++;
 		}
+		literal = `"${literalStr}"${literalXSD}`;
 	}
-	return literalStr;
+	return literal;
 }
 
 // This method was based on the _unescape function of the N3Lexer.js file from https://github.com/rdfjs/N3.js
