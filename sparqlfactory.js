@@ -577,6 +577,15 @@ function updateTriples (changedEntities, changedParents)
 						{
 							builder.append(`GRAPH ${t[3]} { ${t[0]} ${t[1]} ${JSON.stringify(t[2])} } . `);
 						}
+						else if(t[2].match(/"/g) !== null && t[2].match(/"/g).length > 2)
+						{
+							const unescapedLiteralStrBegin = t[2].indexOf(`"`) + 1;
+							const unescapedLiteralStrEnd = t[2].lastIndexOf(`"`);
+							const unescapedLiteralStr = t[2].substring(unescapedLiteralStrBegin, unescapedLiteralStrEnd);
+							const escapedLiteralStr = JSON.stringify(unescapedLiteralStr);
+							const escapedLiteral = t[2].replace(`"${unescapedLiteralStr}"`, escapedLiteralStr);
+							builder.append(`GRAPH ${t[3]} { ${t[0]} ${t[1]} ${escapedLiteral} } . `);
+						}
 						else
 						{
 							builder.append(`GRAPH ${t[3]} { ${t[0]} ${t[1]} ${t[2]} } . `);
