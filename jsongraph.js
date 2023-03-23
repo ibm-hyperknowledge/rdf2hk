@@ -81,7 +81,7 @@ JSONGraph.prototype.forEachStatement = function (callback)
 	{
 		let t = this.triples[i];
 		let object = t[2];
-		object = object.includes(`"`) ? this.parseLiteral(object) : object;
+		object = object && object.includes(`"`) ? this.parseLiteral(object) : object;
 		t[2] = object;
 		callback(t[0], t[1], object, t[3]);
 	}
