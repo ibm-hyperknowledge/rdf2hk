@@ -172,23 +172,24 @@ JSONGraph.prototype.parseLiteral = function (literal)
 }
 
 // This method was based on the _unescape function of the N3Lexer.js file from https://github.com/rdfjs/N3.js
-JSONGraph.prototype.unescapeLiteral = function (literal) 
-{
+JSONGraph.prototype.unescapeLiteral = function (literal) {
 	let invalidEscaping = false;
-	
-	const unescapedLiteral = literal.replace(ESCAPE_SEQUENCE, (sequence, unicode4, unicode8, escapedChar) => 
+
+	let unescapedLiteral = literal;
+	while(unescapedLiteral.match(ESCAPE_SEQUENCE) !== null)
 	{
-		// 4-digit unicode character
-		if (typeof unicode4 === 'string') return String.fromCharCode(Number.parseInt(unicode4, 16)); // 8-digit unicode character
-		if (typeof unicode8 === 'string') 
-		{
-			let charCode = Number.parseInt(unicode8, 16);
-			return charCode <= 0xFFFF ? String.fromCharCode(Number.parseInt(unicode8, 16)) : String.fromCharCode(0xD800 + ((charCode -= 0x10000) >> 10), 0xDC00 + (charCode & 0x3FF));
-		} // fixed escape sequence
-		if (escapedChar in ESCAPE_REPLACEMENTS) return ESCAPE_REPLACEMENTS[escapedChar]; // invalid escape sequence
-		invalidEscaping = true;
-		return '';
-	});
+		unescapedLiteral = unescapedLiteral.replace(ESCAPE_SEQUENCE, (sequence, unicode4, unicode8, escapedChar) => {
+			// 4-digit unicode character
+			if (typeof unicode4 === 'string') return String.fromCharCode(Number.parseInt(unicode4, 16)); // 8-digit unicode character
+			if (typeof unicode8 === 'string') {
+				let charCode = Number.parseInt(unicode8, 16);
+				return charCode <= 0xFFFF ? String.fromCharCode(Number.parseInt(unicode8, 16)) : String.fromCharCode(0xD800 + ((charCode -= 0x10000) >> 10), 0xDC00 + (charCode & 0x3FF));
+			} // fixed escape sequence
+			if (escapedChar in ESCAPE_REPLACEMENTS) return ESCAPE_REPLACEMENTS[escapedChar]; // invalid escape sequence
+			invalidEscaping = true;
+			return '';
+		});
+	}
 	return invalidEscaping ? literal : unescapedLiteral;
 }
 
