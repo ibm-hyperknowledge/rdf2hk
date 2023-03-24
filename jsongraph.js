@@ -135,14 +135,15 @@ JSONGraph.prototype.graphSize = function ()
 // This method was based on the _parseLiteral function of the N3Lexer.js file from https://github.com/rdfjs/N3.js
 JSONGraph.prototype.parseLiteral = function (literal) 
 {
+	
+	const xsdBegin = literal.indexOf("^^<");
+	const xsdEnd = literal.lastIndexOf(">");
+	const literalHasXSD = xsdBegin > 0 && xsdEnd == literal.length - 1;
 	// Ensure we have enough lookahead to identify triple-quoted strings
-	if (literal.length >= 3) 
+	// literals with XSD should not be unescaped
+	if (literal.length >= 3 && !literalHasXSD) 
 	{
-		const xsdBegin = literal.indexOf("^^<");
-		const xsdEnd = literal.lastIndexOf(">");
-		const literalHasXSD = xsdBegin > 0 && xsdEnd == literal.length - 1;
-		const literalXSD = literalHasXSD ? literal.substring(xsdBegin, xsdEnd + 1) : "";
-		let literalStr = literalHasXSD ? literal.substring(0, xsdBegin) : literal;
+		const literalStr = literalHasXSD ? literal.substring(0, xsdBegin) : literal;	
 
 		// Identify the opening quote(s)
 		const openingQuote = literalStr.match(/^(?:"""|"|'''|'|)/)[0];
@@ -161,12 +162,10 @@ JSONGraph.prototype.parseLiteral = function (literal)
 				const escapedLiteralStr = literalStr.substring(openingLength, closingIndex);
 				const literalLines = escapedLiteralStr.split(/\r\n|\r|\n/).length - 1;
 				if (openingLength === 1 && literalLines !== 0 || openingLength === 3) break;
-				literalStr = this.unescapeLiteral(escapedLiteralStr);
-				break;
+				return this.unescapeLiteral(escapedLiteralStr);
 			}
 			closingIndex++;
 		}
-		literal = `"${literalStr}"${literalXSD}`;
 	}
 	return literal;
 }
