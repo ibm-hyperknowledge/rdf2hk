@@ -139,9 +139,10 @@ JSONGraph.prototype.parseLiteral = function (literal)
 	const xsdBegin = literal.indexOf("^^<");
 	const xsdEnd = literal.lastIndexOf(">");
 	const literalHasXSD = xsdBegin > 0 && xsdEnd == literal.length - 1;
+	const literalHasCustomMetaProperty = !literalHasXSD && literal.indexOf(`"^^`) < literal.length - 1;
 	// Ensure we have enough lookahead to identify triple-quoted strings
-	// literals with XSD should not be unescaped
-	if (literal.length >= 3 && !literalHasXSD) 
+	// literals with XSD or Custom MetaProperties should not be unescaped
+	if (literal.length >= 3 && !(literalHasXSD || literalHasCustomMetaProperty)) 
 	{
 		const literalStr = literalHasXSD ? literal.substring(0, xsdBegin) : literal;	
 
