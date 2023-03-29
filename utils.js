@@ -429,7 +429,7 @@ function getTypeIfNumberOrBoolean(value)
 {
     if(typeof value === "number")
     {
-		return Number.isInteger(value) ? xml.INTEGER_URI : xml.DOUBLE_URI;
+		return Number.isInteger(value) ? xml.INTEGER_URI : xml.DECIMAL_URI;
     }
 	else if(typeof value === "boolean")
 	{
@@ -454,11 +454,11 @@ function createLiteralObject(value, lang, type)
 			case 'number':
 				if (Number.isFinite(value)) 
 				{
-					type = Number.isInteger(value) ? xml.INTEGER_URI : xml.DOUBLE_URI;
+					type = Number.isInteger(value) ? xml.INTEGER_URI : xml.DECIMAL_URI;
 				}
 				else 
 				{
-					type = xml.DOUBLE_URI;
+					type = xml.DECIMAL_URI;
 					if (!Number.isNaN(value)) 
 					{
 						value = value > 0 ? 'INF' : '-INF';
