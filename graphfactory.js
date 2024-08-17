@@ -13,9 +13,13 @@ const RDFSParser = require("rdfxml-streaming-parser");
 const N3 = require("n3");
 const { Store, Parser, Writer } = N3;
 
-function createGraph(mimeType, store = false)
+
+let escapeStringListsBetweenSingleQuotes = false;
+
+function createGraph(mimeType, store = false, escapingOptions = {})
 {
 	let out = null;
+	escapeStringListsBetweenSingleQuotes = escapingOptions.stringListsBetweenSingleQuotes || false;
 	switch(mimeType)
 	{
 		case "application/json":
@@ -25,7 +29,7 @@ function createGraph(mimeType, store = false)
 		case "application/trig":
 		case "application/turtle":
 		case "text/turtle":
-			return new TriGGraph(undefined, undefined, mimeType, store);
+			return new TriGGraph(undefined, undefined, mimeType, store, escapingOptions);
 		case "application/rdf+xml":
 			return new RDFGraph(undefined, undefined, mimeType);
 	}
@@ -194,6 +198,10 @@ function _end(graphOrWriter, callback)
 	{
 		if(!err)
 		{
+			if (escapeStringListsBetweenSingleQuotes)
+			{
+				data = data.replaceAll(`"[\\"`, `'[\\"`).replaceAll(`\\"]"`, `\\"]'`)
+			}
 			callback(null, data);
 		}
 		else

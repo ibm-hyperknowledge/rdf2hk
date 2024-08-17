@@ -44,6 +44,7 @@ const isUriOrBlankNode = Utils.isUriOrBlankNode;
  * @param {boolean} [options.onlyHK] If set, it will ONLY read the Hyperknowledge vocabulary and convert those entities, this options override `convertHK`. Default is false.
  * @param {boolean} [options.textLiteralAsNode] If true, string literals will be converted to content nodes, which will be linked to subject using a link whose connector is the predicate.
  * @param {boolean} [options.textLiteralAsNodeEncoding] If 'property', textLiteralAsNode encoding will be made using node and link properties. If 'metaproperty' encoding will be made using node and link metaproperties. Default is 'metaproperty'.
+ * @param {boolean} [options.escapeTextPredicateAsHTML] If true, will assume text predicate contains single quotes and double codes encoded in HTML format
  * @param {string} [options.strategy] "pre-existing-context", "new-context" or "automatically."
  * @param {array} [options.hierarchyConnectorIds] "List of predicates that should become hierarchy connectors."
  * @param {object|undefined} [customizableOptions] A dictionary of customizable options while parsing.
@@ -87,6 +88,8 @@ function parseGraph(graph, options, customizableOptions)
 	
 	let textLiteralAsNode = options.textLiteralAsNode || false;
 	let textLiteralAsNodeEncoding = options.textLiteralAsNodeEncoding || 'metaproperty';
+
+	let escapeTextPredicateAsHTML = options.escapeTextPredicateAsHTML || false;
 
 	convertHK = convertHK || onlyHK;
 
@@ -311,11 +314,11 @@ function parseGraph(graph, options, customizableOptions)
 		}
 		else
 		{
-			// Since it is a literal the it become a property
+			// Since it is a literal then it becomes a property
 
 			let entity = null;
 
-			// Get maped blank node
+			// Get mapped blank node
 			if (!preserveBlankNodes && blankNodesMap.hasOwnProperty(s))
 			{
 				s = blankNodesMap[s];
@@ -364,7 +367,7 @@ function parseGraph(graph, options, customizableOptions)
 			}
 
 			// Convert the literal
-			_setPropertyFromLiteral(entity, p, o, entities, connectors, subjectLabel, objectLabel, textLiteralAsNode, textLiteralAsNodeEncoding);
+			_setPropertyFromLiteral(entity, p, o, entities, connectors, subjectLabel, objectLabel, textLiteralAsNode, textLiteralAsNodeEncoding, escapeTextPredicateAsHTML);
 			
 		}
 
@@ -396,11 +399,15 @@ function parseGraph(graph, options, customizableOptions)
 	return entities;
 }
 
-function _setPropertyFromLiteral(entity, p, o, entities, connectors, subjectLabel, objectLabel, textLiteralAsNode = false, textLiteralAsNodeEncoding = 'property')
+function _setPropertyFromLiteral(entity, p, o, entities, connectors, subjectLabel, objectLabel, textLiteralAsNode = false, textLiteralAsNodeEncoding = 'property', escapeTextPredicateAsHTML = false)
 {
 	let typeInfo = {};
 	let value = Utils.getValueFromLiteral(o, typeInfo, true);
 	let propertyName = Utils.getIdFromResource(p);
+	if(escapeTextPredicateAsHTML && propertyName === 'hk://id/text')
+	{
+		value = value.replaceAll(`&quot;`, `\\"`).replaceAll(`&apos;`, `'`);
+	}
 
 	if (typeInfo.lang)
 	{

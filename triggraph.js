@@ -11,14 +11,14 @@ const { namedNode, literal, blankNode } = DataFactory;
 const Constants = require("./constants");
 const Utils = require("./utils");
 
-function TriGGraph( storedGraph, baseUri, mimetype, store = false) 
+function TriGGraph( storedGraph, baseUri, mimetype, store = false, escapingOptions = {}) 
 {
 	this.mimeType = mimetype || "application/trig";
 	this.store = store;
 	this.graph = storedGraph || (this.store? new Store() : new Writer({format: this.mimeType}));
 	this.baseUri = baseUri || Constants.HK_NULL;
 	this.statementCounter = 0;
-	
+	this.escapeTextPredicateAsHTML = escapingOptions.escapeTextPredicateAsHTML || false;
 }
 
 TriGGraph.prototype.add = function(s, p, o, g) {
@@ -39,6 +39,11 @@ TriGGraph.prototype.add = function(s, p, o, g) {
 	else
 	{
 		o = createResource(o);
+	}
+	if(this.escapeTextPredicateAsHTML && p.id === 'hk://id/text')
+	{
+		//https://en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references#Character_entity_references_in_HTML
+		o = literal(`"${o.id.substring(1, o.id.length-1).replaceAll(`\\"`, `&quot;`).replaceAll(`'`, `&apos;`)}"`, o.datatype);
 	}
 	if(this.mimeType !== Constants.MIMETYPE_APPLICATION_NTRIPLE && this.mimeType !== Constants.MIMETYPE_APPLICATION_TURTLE && this.mimeType !== Constants.MIMETYPE_TEXT_TURTLE)
 	{
