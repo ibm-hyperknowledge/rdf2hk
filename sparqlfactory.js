@@ -559,6 +559,8 @@ function updateTriples (changedEntities, changedParents)
 			let entity = changedEntities[entityId];
 			let newTriples = entity.triples || [];
 
+			if(newTriples.length == 0) continue;
+
 			const hasChangedParent = changedParents.hasOwnProperty(entityId);
 
 
